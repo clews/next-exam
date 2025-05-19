@@ -28,7 +28,7 @@ jobs:
         path: |
           ./release/
           !./release/**/win-unpacked
-        retention-days: 1
+        retention-days: 3
     - name: Student install dependencies
       working-directory: ./student
       run: |
@@ -44,4 +44,4 @@ jobs:
         path: |
           ./release/
           !./release/**/win-unpacked
-        retention-days: 1
+        retention-days: 3
