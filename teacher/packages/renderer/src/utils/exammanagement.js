@@ -77,29 +77,16 @@ function stopserver(){
                 await this.updateBiPServerInfo("offline");
             }
 
-            if (!this.hostip){   // somehow the teacher disconnected - stop everything without network address
-                await ipcRenderer.invoke("stopserver", this.servername)  // need to stop server first otherwise router.js won't route back
-                this.$router.push({ path: '/startserver' });  // route back to startserver view
-                return;  
-            }
-            axios.get(`https://${this.serverip}:${this.serverApiPort}/server/control/stopserver/${this.servername}/${this.servertoken}`)
-            .then( async (response) => {
-                this.status(response.data.message);
-                //log.info(response.data);
-                await this.sleep(2000);
-                this.$router.push({ path: '/startserver' });  // route back to startserver view
+            await ipcRenderer.invoke("stopserver", this.servername)  // need to stop server first otherwise router.js won't route back
 
-                this.$router.push({  // for some reason this doesn't work on mobile
-                    name: 'startserver', 
-                    params:{
-                        bipToken: this.bipToken,
-                        bipUsername: this.bipUsername,
-                        bipuserID:this.bipuserID
-                    }
-                })
-
-
-            }).catch( err => {log.error(err)});
+            this.$router.push({  // for some reason this doesn't work on mobile
+                name: 'startserver', 
+                params:{
+                    bipToken: this.bipToken,
+                    bipUsername: this.bipUsername,
+                    bipuserID:this.bipuserID
+                }
+            })  
         } 
     });    
 }

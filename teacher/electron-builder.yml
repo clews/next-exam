@@ -6,9 +6,8 @@ asar: true
 asarUnpack:
   - public
 afterPack: scripts/afterpack.js
-afterSign: scripts/notarize.cjs
 directories:
-  output: ../release/1.1.0.1_20250519
+  output: ../release/1.1.0.1_20250521
 compression: normal
 files:
   - dist
@@ -17,7 +16,7 @@ linux:
   target: AppImage
   category: Utility
   icon: public/icons/256x256.png
-  artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250519_${arch}.${ext}
+  artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250521_${arch}.${ext}
   files:
     - dist
     - public
@@ -26,7 +25,7 @@ linux:
     - "!public/minimal-jre-11-mac-arm64/**/*"
 mac:
   icon: public/icons/icon.png
-  artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250519_${arch}.${ext}
+  artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250521_${arch}.${ext}
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: scripts/entitlements.mac.plist
@@ -61,10 +60,11 @@ win:
     - target: msi
       arch:
         - x64
-  artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250519_${arch}.${ext}
+  artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250521_${arch}.${ext}
   files:
     - dist
     - public
     - "!public/minimal-jre-11-mac/**/*"
     - "!public/minimal-jre-11-mac-arm64/**/*"
     - "!public/minimal-jre-11-lin/**/*"
+  sign: false
