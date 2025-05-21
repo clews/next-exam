@@ -311,6 +311,9 @@ class IpcHandler {
                     if (fs.existsSync(serverstatusPath)) { // check if file exists
                     
                     const serverstatus = JSON.parse(fs.readFileSync(serverstatusPath, 'utf-8')) // parse JSON to object
+                    if (!serverstatus.examName) {
+                        serverstatus.examName = dirname
+                    }
 
                     examfolders.push(serverstatus) // add object to array
                     }
