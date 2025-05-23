@@ -294,11 +294,11 @@
             <div v-if="(availablePrinters.length < 1)">
                 <button class="btn btn-secondary mt-1 mb-0"><img src="/src/assets/img/svg/print.svg" class="" width="22" height="22" >  no printer found </button>
             </div>
-            <div v-for="printer in availablePrinters" :key="printer" style="position: relative;">
-                <button @click="selectPrinter(printer)" :class="{'btn-cyan': defaultPrinter === printer}" class="printerbutton btn btn-secondary mt-1 mb-0" @mouseenter="visiblePrinter = printer" @mouseleave="visiblePrinter = null"><img src="/src/assets/img/svg/print.svg" alt="print" width="22" height="22" /> {{ printer }} </button>
-                <div v-if="visiblePrinter === printer" class="tooltip-content"> {{ printer }} </div>
+            <div v-for="printer in availablePrinters" :key="printer.printerName" style="position: relative;">
+                <button @click="selectPrinter(printer)" :class="{'btn-cyan': defaultPrinter === printer.printerName}" class="printerbutton btn btn-secondary mt-1 mb-0" @mouseenter="visiblePrinter = printer" @mouseleave="visiblePrinter = null"><img src="/src/assets/img/svg/print.svg" alt="print" width="22" height="22" /> {{ printer.printerName }} </button>
+                <div v-if="visiblePrinter === printer" class="tooltip-content"> {{ printer.printerName }} </div>
                 <!-- Icon für den Standarddrucker -->
-                <img v-if="printer === defaultPrinter" src="/src/assets/img/svg/games-solve.svg" class="printercheck" width="22" height="22" />
+                <img v-if="printer.printerName === defaultPrinter" src="/src/assets/img/svg/games-solve.svg" class="printercheck" width="22" height="22" />
             </div>
             <div v-if="currentpreviewPath && defaultPrinter">
                 <button id="printButton" class="btn btn-dark mt-1 mb-0" @click="printBase64();hideSetup()"><img src="/src/assets/img/svg/print.svg" class="" width="22" height="22" > Print: {{ currentpreviewname }} </button>
@@ -1259,7 +1259,7 @@ computed: {
         },
 
         selectPrinter(printer){
-            this.defaultPrinter = printer
+            this.defaultPrinter = printer.printerName
             console.log(`dashboard: selected default printer: ${this.defaultPrinter}`)
             console.log(`dashboard: allow direct print: ${this.directPrintAllowed}`)
         },
@@ -1426,7 +1426,7 @@ computed: {
 
 
 
-    mounted() {  // when ready
+    async mounted() {  // when ready
         this.$nextTick( async function () { // Code that will run only after the entire view has been rendered
        
             document.querySelector("#statusdiv").style.visibility = "hidden";
@@ -1470,7 +1470,17 @@ computed: {
         this.currentdirectory = ipcRenderer.sendSync('getCurrentWorkdir')  //in case user changed it to different location
         this.workdirectory= `${this.currentdirectory}/${this.servername}`
 
+        this.availablePrinters = await ipcRenderer.invoke("getprinters")
+        this.availablePrinters.forEach(printer => {
+            if (printer.isDefault){
+                console.log(`dashboard @ mounted: found and set default printer: ${printer.printerName}`)
+                this.defaultPrinter = printer.printerName
+            }
+        })
+       
         
+  
+
         ipcRenderer.on('reconnected', (event, student) => {  
             this.$swal.fire({
                     title: this.$t("dashboard.attention"),
@@ -2237,7 +2247,7 @@ hr {
 }
 
 .swal2-icon{
-    margin-left: 1.5em !important;
+    margin-left: 2.5em !important;
 }
 
 .my-title {
@@ -2246,10 +2256,12 @@ hr {
 }
 
 .my-content {
+   
     margin-bottom: 0px;
     overflow:hidden;
     padding-left: 4px !important;
-    justify-content: flex-start !important;
+    display: block !important;
+    text-align: left !important;
 }
 
 .my-content h5 {

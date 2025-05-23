@@ -62,8 +62,6 @@ class IpcHandler {
 
 
 
-
-
         // returns the current serverstatus object of the given server(name)
         ipcMain.handle('getserverstatus', (event, servername) => { 
             const mcServer = this.config.examServerList[servername]
@@ -81,6 +79,7 @@ class IpcHandler {
                 mcServer.broadcastInterval.stop()
                 mcServer.server.close();
                 delete config.examServerList[servername]    //delete mcServer
+                this.multicastClient.examServerList = this.multicastClient.examServerList.filter(exam => exam.servername !== servername)  // multicastclient keeps track of running servers in the lan
                 return true
             }
             else {  return false  }
@@ -346,9 +345,13 @@ class IpcHandler {
          */
         ipcMain.handle('getprinters', async (event, arg) => {
             const printers = await this.WindowHandler.mainwindow.webContents.getPrintersAsync();
-            const printerNames = printers.map(printer => printer.name);
-            //printerNames.push('dummy')
-            return printerNames
+            const printerData = printers.map(printer => ({
+                printerName: printer.name,
+                isDefault: printer.isDefault,
+                description: printer.description
+            }));
+
+            return printerData
         })
 
 

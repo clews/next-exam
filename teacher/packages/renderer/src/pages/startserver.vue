@@ -577,13 +577,20 @@ export default {
                         this.password = previousExam.examPassword
                         this.advanced = true
                         await this.$nextTick();
+
                     }
                     document.getElementById('examstart').innerHTML = this.$t("startserver.resume")
-                    document.getElementById('examPassword').disabled = true  // lock password input field if existing exam is found and password is already set - prevent changing examPassword
+                    let examPassword = document.getElementById('examPassword')
+                    if (examPassword){
+                        examPassword.disabled = true  // lock password input field if existing exam is found and password is already set - prevent changing examPassword
+                    }
                     break
                 } else {
                     document.getElementById('examstart').innerHTML = this.$t("startserver.start")
-                    document.getElementById('examPassword').disabled = false  // unlock password input field if no existing exam is found
+                    let examPassword = document.getElementById('examPassword')
+                    if (examPassword){
+                        examPassword.disabled = false  // unlock password input field if no existing exam is found
+                    }
                 }
             }        
         },
@@ -592,12 +599,20 @@ export default {
         delPreviousExam(name){
             // ASK for confirmation!
             this.$swal.fire({
+                customClass: {
+                    popup: 'my-popup',
+                    title: 'my-title',
+                    content: 'my-content',
+                    input: 'my-custom-input',
+                    inputLabel: 'my-input-label',
+                    actions: 'my-swal2-actions'
+                },
                 title: this.$t("startserver.previousexams"),
-                html: `${this.$t("startserver.folderdelete")} <br> <br> <span style="font-weight:bold;">${name}</span>`,
+                html: `<div class="my-content">${this.$t("startserver.folderdelete")} <br> <br> <span style="font-weight:bold; text-align:left;">${name}</span></div>`,
                 icon: "warning",
                 showCancelButton: true,
                 cancelButtonText: this.$t("dashboard.cancel"),
-                reverseButtons: true
+              
             })
             .then(async (result) => {
                 if (result.isConfirmed) { 
@@ -753,6 +768,7 @@ export default {
         log.info('startserver @ mounted: next-exam ready!');
         document.querySelector("#statusdiv").style.visibility = "hidden";  //do not show on first mount of ui
         
+
         if (this.prod) {  //clear input fields in production mode
             document.querySelector("#servername").value = "";
             document.querySelector("#pin").value = "";
