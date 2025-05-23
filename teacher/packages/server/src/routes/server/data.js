@@ -635,6 +635,7 @@ router.post('/getexammaterials/:servername/:token', async (req, res, next) => {
         const month = String(now.getMonth() + 1).padStart(2, '0'); // Monate: 0-11, daher +1
         const day = String(now.getDate()).padStart(2, '0');
         const dateString = `${year}${month}${day}`;
+        
         let tstring = `${dateString}_${timestring}`;
         
         let student = mcServer.studentList.find(element => element.token === studenttoken) // get student from token
