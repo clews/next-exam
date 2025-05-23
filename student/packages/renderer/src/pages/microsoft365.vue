@@ -190,23 +190,6 @@ export default {
                 }
             })
         },
-        gracefullyexit(){
-            ipcRenderer.send('collapse-browserview')
-            this.$swal.fire({
-                title: this.$t("editor.exit"),
-                text:  this.$t("editor.exitkiosk"),
-                icon: "question",
-                showCancelButton: true,
-                cancelButtonText: this.$t("editor.cancel"),
-                reverseButtons: true,
-                didClose: () => { ipcRenderer.send('restore-browserview') }
-            })
-            .then((result) => {
-                if (result.isConfirmed) {
-                    ipcRenderer.send('gracefullyexit')
-                } 
-            }); 
-        },
 
         gracefullyexit(){
             ipcRenderer.send('collapse-browserview')

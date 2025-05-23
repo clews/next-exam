@@ -3,11 +3,21 @@
  */
 function getTestURL(){
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.website"),
         icon: 'question',
         input: 'text',
+        showCancelButton: true,
+        cancelButtonText: this.$t("dashboard.cancel"),
         html: `
-            <div class="row m-4 mt-1">                   
+            <div class="my-content">                   
                 zB.: https://classtime.com
             </div>
             `,  
@@ -31,15 +41,25 @@ function getTestURL(){
          * Eduvidual
          */
 async function getTestID(){
+    
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.eduvidualid"),
         icon: 'question',
-
+        showCancelButton: true,
+        cancelButtonText: this.$t("dashboard.cancel"),
         input: 'url',
         inputLabel: this.$t("dashboard.eduvidualidhint"),
         inputPlaceholder: 'https://www.eduvidual.at/mod/quiz/view.php?id=6153159',
         html: `                    
-            <div  style="text-align: center; width: 150px; margin: auto auto;">
+            <div class="my-content" style="width: 150px; margin: auto auto;">
                 <img  width="24" height="24" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACUAAAAlCAIAAABK/LdUAAAACXBIWXMAABYlAAAWJQFJUiTwAAAGuUlEQVRYw6VXbWxbVxl+zznXvnZsN99N4zRNmjhNnGbd2m5dtlDWaV9oyia1qGJNoWzt2JAQXwEKQiAGqNCuaehAZBJsA/UHiEFRWdSsBVFKO4HSHx0gLWqb5jtpnPjGdh37+n6cc15+xG0+7DQOHB3Jx77vOY+f55znvO8liAgAANB10YT/qT22SdnsZzkGK3dHiJDnhGIfyXHm+IyUCADwt2s2IjRVsNXiYZGX7KjN9Z8W5sGHQ6KyRI5p5EKfVeRR/QX0HvHS0qkzbxE/QACAyaTIBc/tQSGRUBYo59cnyLtXjAMtriJPdkhj8Ap1+Zz+4ILHmEbMsVNGSvIhGheVZWp9BQohfn1ZjyRlJlhq8Mrs1fec/iAAzOMhrAYNARBQom6gSyGVZaq/CATHdy4ml0CmBq9M/vJQyZ7X5r7ShfRwlaBulSCiysClkKYaV0UJCoFvXUhEEmnImbMnRo8/V/n1HkKVTDyYA8y9u1RIGZJRMgd5X617fSkIgb/462wkIbWzHeHuY2s/9SNHcWX285n2IubqPERwKkAAGCUqIADZEnAj6iMhvNh1pPHmz9T1jQUf/+yy/pvfyNza9AyXiHOGvQt5f13eug+PVfT/FAHWff7UXSWX6gm4GigAANBisqyAAQECd1gycFzo9F99AyVcrf9uV28+l8v7Pb1/uaFKRNOUKNnAhBVNyHhSouRVl9qLhroBwCppGKh4AXVxsjv2ldYChWXTc86AOZKMxQUi9k9Y/RMWAJQXQ+Dci4Uz/5yb/peGn0vCADGREpMxXlmsZOO3GkEZI9ub3N486lIJRaH+qo1p/2AuNzdS1vNHHtpabyXkcMie0PjCVWnmfZY2xkrd52GlRYrbRYkU6tttrP+Dwo0BYVqiZqf9yEG3izZtVFsf8Xq8Dp+bZsObV3Q1XXD17X305uXyB7YasajkPLWva2EAECBkGX64yvMJZlJ9ax/t/8C/5X6RSiWnNeOFLvCWLPFo9vMJiMTWAVy5oiY094nHSSLsv6/JoaoT//oPD+zkW/csPQOLl5vnp6Rmat5pSb53PKftS4Rdx3fB7Wl/Y9C9xhfquya5MPZ3LYrBLJql8Xhca+l5hiXDyT8dU86fWJGZ6/XHIR72b96Ut8YTD4WSkZi5f6mSC7LcYjwe1/raW5x62N9Qq3rylJ7X2fsdy1Kb1dSju1gy4m+ozfN6bD0Vuj7EAzv5tj1LIjPl5HGN8rjW99UWOzpVUb/R43VvCNa4PHmO948r5zqyMzu6S9EjVU0Bj9cN3J66MYxCWgfeXP5Snx9+9OVH2SdDZ+zoVMWmDZ41bpjVgCn5pYXJWEJ+9HfpKZTV2+alGOh1HfkYE0bV5hrFQQFlXItGbmnmq7/B9U2ZQPkqBYB/D1o76lSXgwCAt/4hWnv4FErQxqaRc3R6MBpCy6zctJ5S5nj32+Rm75w45Gavs/M5StmG4AZGATm3U8Zk/y17627R+GRW5Rf4LD30BpupN9gcPHo+NZsa7RsBKcGdD7EpsIyq+nLKiLOzlQz0koFeZ2crZaSqvlwBCaYO3B67NiZ9pXZb5wo5EjLOpzfYHDz6Z33WHLk2gYjozsfbYQayqm4dJdTZ0ersaKWEVtWtYwQxEUWESChq6ra1/ySqnuWungWjDD/4Gpt7P/EHPWGOXJ8EKdDlw9thhrw6UEwpcTpZdaCYIcdoCBUnN8yp8SjfvltsfupeJs2WUuf9Hlv74Nj+M6mEPXIjDFKi6sVkjIKs3lhYXVNIUWA8jA4XSBwdmEHvWvvTP8m16MiKhwCpyh1Fr53TdT4yEAEUqKiYjFHCpW3i7AwiAcoi4YRpCOvAG/dQciGtZfnNRTkbms1vnNWTfGQwTqQExQnJOCSiIDg4VG5YU5M6f3C3bHpq5er07i7CPfODDDxsHu7RdTE8nAAhkCnIJSoqCDE6qkvfWvvgm7mkqqz5gUJGwYQAsu5h85tndV0OjxhESHCoBCEyYxqGtNpPI1Nyx1tCMCO/31Uj0Gx9q0c3cGjcBslt0w5pkj/xClY0rq7mXzb/3Ymp9N0ppra1WD84H/nO00PjKBHImrLyl39MWK4vbLji+18iJQZvWYueF20nX+tJdTwLAPbh0+MaAti55//pKEdcpK6y+LGYjiYzZjXlP3+6bKD7RrgKwkn4P9pLBw/Biy8dPPTy51559fvpoubMZ7rbL+0FKHjgj+2X9gK0pX/3AYD8HsDJvvPtl/YCDGtzcc+m17rzSZ6eHPndTv77M/VtXaX+L/12y2Xj+om6R7/4hVPPTPywyPdfXxuLF8NH7dIAAAAASUVORK5CYII="/>
             </div>
            
@@ -76,14 +96,25 @@ async function getTestID(){
          */
 async function getFormsID(){
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.gforms"),
         icon: 'question',
         input: 'text',
-        html: `
+        showCancelButton: true,
+        cancelButtonText: this.$t("dashboard.cancel"),
+        html: `<div class="m-1 my-content">
         ${this.$t("dashboard.gformshint")} <br>
         <span style="font-size:0.8em">
             (https://docs.google.com/forms/d/e/<span style="background-color: lightblue; padding:0 3px 0 3px;">1FAIpQLScuTG7yldD0VRhFgOC_2fhbVdgXn95Kf_w2rUbJm79S1kJBnA</span>/viewform)
-        </span>`,
+        </span>
+        </div>`,
         inputValidator: (value) => {
             if (!value) {return 'No ID given!'}
         }
@@ -102,13 +133,22 @@ async function getFormsID(){
 
 async function configureMath(){
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.math"),
         icon: 'question',
         input: 'text',
+        showCancelButton: true,
+        cancelButtonText: this.$t("dashboard.cancel"),
         inputLabel: this.$t("dashboard.allowedURL"),
         inputPlaceholder: 'https://www.example.com',
         inputValue: this.serverstatus.examSections[this.serverstatus.activeSection].allowedUrl || '',
-        showCancelButton: true,
         inputValidator: (value) => {
             if (value && !isValidFullDomainName(value)) {
                 return 'Invalid Domain!';
@@ -126,10 +166,17 @@ async function configureMath(){
 
 async function configureRDP(){
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.rdp"),
         icon: 'question',
         html: `
-        <div class="m-1">
+        <div class="my-content">
             <h6>${this.$t("dashboard.rdpconfiginfo")}</h6>
 
             <label>
@@ -155,6 +202,7 @@ async function configureRDP(){
         </div>
         `,
         showCancelButton: true,
+        cancelButtonText: this.$t("dashboard.cancel"),
         didOpen: () => {
             if (this.serverstatus.examSections[this.serverstatus.activeSection].rdpConfig) {
                 document.getElementById('domain').value = this.serverstatus.examSections[this.serverstatus.activeSection].rdpConfig.domain
@@ -217,7 +265,7 @@ async function configureEditor(){
         },
         title: this.$t("dashboard.texteditor"),
         html: `
-        <div class="my-content" style="font-size: 0.8em !important; text-align:left; margin-left:10px;">
+        <div class="my-content" style="font-size: 0.8em !important; text-align:left; margin-left:6px;">
             <div>
                 <label >
                     <h6>${this.$t("dashboard.cmargin-value")}</h6>
@@ -271,7 +319,7 @@ async function configureEditor(){
                 </select>
             </div>
             <hr>
-            <div class="m-1">
+            <div>
                 <h6>${this.$t("dashboard.allowedURL")}</h6>
                 <input type="text" id="allowedURL" class="form-control my-select" placeholder="https://www.example.com">
             </div>
@@ -291,6 +339,8 @@ async function configureEditor(){
         input: 'select',
         inputOptions: inputOptions,
         focusConfirm: false,
+        showCancelButton: true,
+        cancelButtonText: this.$t("dashboard.cancel"),
         didOpen: () => {
             const marginValueInput = document.getElementById('marginValue');
             marginValueInput.addEventListener('input', updateMarginValueDisplay);
@@ -342,6 +392,23 @@ async function configureEditor(){
             if (allowedUrl) {
                 document.getElementById('allowedURL').value = allowedUrl;
             }
+
+
+
+            const checkboxLT = document.getElementById('checkboxLT');
+            const checkboxSuggestions = document.getElementById('checkboxsuggestions');
+            
+            // Initial: suggestions-Checkbox deaktivieren, falls LT nicht gecheckt ist
+            checkboxSuggestions.disabled = !checkboxLT.checked;
+            
+            // Event Listener für checkboxLT, um den Status von checkboxsuggestions anzupassen
+            checkboxLT.addEventListener('change', () => {
+                checkboxSuggestions.disabled = !checkboxLT.checked;
+                // Wenn checkboxLT abgewählt wird, soll suggestions zusätzlich zurückgesetzt werden:
+                if (!checkboxLT.checked) {
+                    checkboxSuggestions.checked = false;
+                }
+            });
 
             
         },

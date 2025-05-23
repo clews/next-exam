@@ -26,17 +26,24 @@ function startExam(){
 function endExam(){
     if (this.hostip){  this.getFiles('all') }  // fetch files from students before ending exam for everybody
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.sure"),
-        html: `<div>
+        html: `<div class="my-content">
             <input class="form-check-input" type="checkbox" id="checkboxdel">
             <label class="form-check-label" for="checkboxdel"> ${this.$t("dashboard.exitdelete")} </label>
             <br><br>
             <span>${this.$t("dashboard.exitkiosk")}</span>
         </div>`,
-        icon: "question",
+        icon: "warning",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true,
         preConfirm: () => {
             this.serverstatus.delfolderonexit = document.getElementById('checkboxdel').checked; 
         }
@@ -62,12 +69,19 @@ function stopserver(){
     if (!this.serverstatus.exammode) { message = this.$t("dashboard.exitexaminfo")}
 
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.exitexamsure"),
-        html: `<div> ${message} <br> </div>`,
-        icon: "question",
+        html: `<div class="my-content" > ${message} <br> </div>`,
+        icon: "error",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true,
     })
     .then( async (result) => {
         if (result.isConfirmed) {
@@ -103,20 +117,27 @@ function kick(studenttoken, studentip){
     console.log("studentname:", studentname)
 
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.sure"),
-        html:  `<span style='font-weight:bold;'>${studentname}</span> ${this.$t("dashboard.reallykick")}
+        html:  `<div class="my-content">
+        <span style='font-weight:bold;'>${studentname}</span> ${this.$t("dashboard.reallykick")}
         <br><br>
-        <div>
+        
             <input class="form-check-input" type="checkbox" id="checkboxdel">
             <label class="form-check-label" for="checkboxdel"> ${this.$t("dashboard.exitdelete")} </label>
            
         </div>
         `,
-        icon: "warning",
+        icon: "error",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true
-
     })
     .then(async (result) => {
         if (result.isConfirmed) {
@@ -207,12 +228,13 @@ function lockscreens(state, feedback=true){
 //upload files to all students
 function sendFiles(who) {
     if (this.studentlist.length === 0) { this.status(this.$t("dashboard.noclients")); return;}
-    let htmlcontent = `
+    let htmlcontent = `<div class="my-content"> 
         ${this.$t("dashboard.filesendtext")} <br>
-        <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>`
+        <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>
+        </div>`
 
     if (this.serverstatus.examSections[this.serverstatus.activeSection].groups && who == "all"){ //wenn who != "all" sondern ein studenttoken ist dann soll die datei an eine einzelne person gesandt werden
-        htmlcontent =  `
+        htmlcontent =  `<div class="my-content"> 
             ${this.$t("dashboard.filesendtext")} <br>
             <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>
             <br>  <br> 
@@ -220,12 +242,20 @@ function sendFiles(who) {
             <button id="fbtnA" class="swal2-button btn btn-info m-2" style="width: 42px; height: 42px;">A</button>
             <button id="fbtnB" class="swal2-button btn btn-warning m-2" style="width: 42px; height: 42px;filter: grayscale(90%);">B</button>
             <button id="fbtnC" class="swal2-button btn btn-warning m-2" style="padding:0px;width: 42px; height: 42px;filter: grayscale(90%); background: linear-gradient(-60deg, #0dcaf0 50%, #ffc107 50%);">AB</button>
-        `
+        </div>`
     }
          
     let activeGroup = "a"
 
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.filesend"),
         html: htmlcontent,
         icon: "info",
@@ -315,12 +345,13 @@ function sendFiles(who) {
  * @returns 
  */
 function defineMaterials(who) {
-    let htmlcontent = `
+    let htmlcontent = `<div class="my-content"> 
         ${this.$t("dashboard.filesendtext")} <br>
-        <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>`
+        <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>
+        </div>`
 
     if (this.serverstatus.examSections[this.serverstatus.activeSection].groups && who == "all") {
-        htmlcontent = `
+        htmlcontent = `<div class="my-content"> 
             ${this.$t("dashboard.filesendtext")} <br>
             <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>
             <br>  <br> 
@@ -328,19 +359,26 @@ function defineMaterials(who) {
             <button id="fbtnA" class="swal2-button btn btn-info m-2" style="width: 42px; height: 42px;">A</button>
             <button id="fbtnB" class="swal2-button btn btn-warning m-2" style="width: 42px; height: 42px;filter: grayscale(90%);">B</button>
             <button id="fbtnC" class="swal2-button btn btn-warning m-2" style="padding:0px;width: 42px; height: 42px;filter: grayscale(90%); background: linear-gradient(-60deg, #0dcaf0 50%, #ffc107 50%);">AB</button>
-        `
+        </div>`
     }
          
     let activeGroup = "a"  // prinzipiell ist jeder user automatisch in der gruppe a
 
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.materials"),
         html: htmlcontent,
-        icon: "info",
+        icon: "success",
         input: 'file',
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true,
         inputAttributes: {
             type: "file",
             name: "files",
@@ -483,19 +521,27 @@ async function calculateMD5(file) {
 
 
         // show warning
-function delfolderquestion(token="all"){
+function delfolderquestion(event, token="all"){
     if (this.studentlist.length === 0) { this.status(this.$t("dashboard.noclients")); return;}
     let text =  this.$t("dashboard.delsure")
+
     if (token !== "all"){ 
         text = this.$t("dashboard.delsinglesure")
     }
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.attention"),
-        text:  text,
-        icon: "question",
+        html:  `<div class="my-content">${text}</div>`,
+        icon: "warning",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true,
     })
     .then((result) => {
         if (result.isConfirmed) {

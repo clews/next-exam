@@ -942,13 +942,20 @@ computed: {
 
             if (this.serverstatus.exammode && !this.serverstatus.examSections[this.serverstatus.activeSection].locked) {
                 this.$swal.fire({
+                    customClass: {
+                        popup: 'my-popup',
+                        title: 'my-title',
+                        content: 'my-content',
+                        input: 'my-custom-input',
+                        inputLabel: 'my-input-label',
+                        actions: 'my-swal2-actions'
+                    },
                     title: this.$t("dashboard.examsections"),
-                    icon: 'question',
-                    text: this.$t("dashboard.examsectionsinfo"),
+                    icon: 'warning',
+                    html: `<div class="my-content">${this.$t("dashboard.examsectionsinfo")}</div>`,
                     showCancelButton: true,
                     cancelButtonText: this.$t("dashboard.no"),
                     confirmButtonText: this.$t("dashboard.yes"),
-                    reverseButtons: true,
                 }).then(async (result) => {
                     if (result.isConfirmed) {
                         //inform all students to save current work
@@ -2229,7 +2236,9 @@ hr {
     width: 99% !important;
 }
 
-
+.swal2-icon{
+    margin-left: 1.5em !important;
+}
 
 .my-title {
     text-align: left;
@@ -2239,6 +2248,8 @@ hr {
 .my-content {
     margin-bottom: 0px;
     overflow:hidden;
+    padding-left: 4px !important;
+    justify-content: flex-start !important;
 }
 
 .my-content h5 {
@@ -2251,17 +2262,40 @@ hr {
     margin-bottom: 1px;
     margin-top:8px;
 }
+.my-popup {
+    justify-content: flex-start !important;
+    justify-items: flex-start !important;
+}
 
+.my-input-label {    
+    justify-content: flex-start !important;
+    justify-items: flex-start !important; 
+    width: -webkit-fill-available !important;
+    margin: 1em 2em 3px !important;
+}
 
 .my-custom-input {
     margin-top: 0px !important;
+    width: -webkit-fill-available !important;
+    margin: 1em 2em 3px !important;
 }  
 
 .my-swal2-actions {
-    width: 100%;
-    margin-left: 1.9em;
-  justify-content: flex-start !important; /* Richtet die Buttons linksbündig aus */
+    margin-top: 10px !important;
+    width: 100% !important;
+    margin-left: 1.9em !important;
+    justify-content: flex-start !important; /* Richtet die Buttons linksbündig aus */
 }
+
+
+
+
+
+
+
+
+
+
 .printerbutton {
     position: relative;
 }

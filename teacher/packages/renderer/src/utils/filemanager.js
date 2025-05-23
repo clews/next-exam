@@ -7,12 +7,19 @@ import { Buffer } from 'buffer';
 //delete file or folder
 function fdelete(file){
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.sure"),
-        text:  this.$t("dashboard.filedelete"),
-        icon: "question",
+        html:  `<div class="my-content">${this.$t("dashboard.filedelete")}</div>`,
+        icon: "warning",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true
     })
     .then((result) => {
         if (result.isConfirmed) {
@@ -80,11 +87,18 @@ function dashboardExplorerSendFile(file){
         resolve(connectedStudents)
     })
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.choosestudent"),
         input: 'select',
         icon: 'success',
         showCancelButton: true,
-        reverseButtons: true,
         inputOptions: inputOptions,
         inputValidator: (value) => { if (!value) { return this.$t("dashboard.chooserequire") } },
     })
