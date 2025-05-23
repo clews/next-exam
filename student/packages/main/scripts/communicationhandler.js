@@ -291,7 +291,10 @@ const __dirname = import.meta.dirname;
             .then(data => {
                 if (data.status === "error") {
                     if      (data.message === "notavailable"){ log.warn('communicationhandler @ requestUpdate: Exam Instance not found!');        this.multicastClient.beaconsLost = 5; }    // exam instance not available but server reachable
-                    else if (data.message === "removed"){      log.warn('communicationhandler @ requestUpdate: Student registration not found!'); this.multicastClient.beaconsLost = 5; this.multicastClient.kicked = true; }   // student got kicked
+                    else if (data.message === "removed"){      
+                        log.warn('communicationhandler @ requestUpdate: Student registration not found!'); 
+                        this.kickStudent()
+                    }   // student got kicked - we handle this differently now. teacher stores "kicked" for student to collect. student is removed from server when collecting kicked info. student closes exam and cleans up.
                     else {                                     log.warn(`communicationhandler @ requestUpdate: ${this.multicastClient.beaconsLost} Heartbeat lost..`);              this.multicastClient.beaconsLost += 1;}   // heartbeat lost server not reachable
                 } else if (data.status === "success") {
                     this.multicastClient.beaconsLost = 0; // Dies zählt ebenfalls als erfolgreicher Heartbeat - Verbindung halten
@@ -444,7 +447,17 @@ const __dirname = import.meta.dirname;
 
 
 
-
+    async kickStudent(studentstatus){
+        log.warn("communicationhandler @ kickStudent: Student got kicked by Teacher")
+        this.multicastClient.kicked = false
+        this.multicastClient.beaconsLost = 0
+        let serverstatus = {delfolderonexit: false}  // do not delete folder on exit because student got kicked
+        if (studentstatus && studentstatus.delfolder){ serverstatus.delfolderonexit = true}
+        
+        this.endExam(serverstatus)
+        this.resetConnection() 
+        return   //this ends here because we got kicked by the teacher
+    }
 
 
 
@@ -466,14 +479,7 @@ const __dirname = import.meta.dirname;
             }
 
             if (studentstatus.kicked) {  // student got kicked by teacher
-                log.warn("communicationhandler @ processUpdatedServerstatus: Student got kicked by Teacher")
-                this.multicastClient.kicked = false
-                this.multicastClient.beaconsLost = 0
-                let serverstatus = {delfolderonexit: false}  // do not delete folder on exit because student got kicked
-                if (studentstatus.delfolder){ serverstatus.delfolderonexit = true}
-                
-                this.endExam(serverstatus)
-                this.resetConnection() 
+                this.kickStudent(studentstatus)
                 return   //this ends here because we got kicked by the teacher
             }
 

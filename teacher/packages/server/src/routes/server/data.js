@@ -627,14 +627,20 @@ router.post('/getexammaterials/:servername/:token', async (req, res, next) => {
     if ( !checkToken(studenttoken, mcServer ) ) { res.json({ status: t("data.tokennotvalid") }) }
     else {
         let errors = 0
-        let time = new Date(new Date().getTime()).toLocaleTimeString('de-DE');  //convert to locale string otherwise the foldernames will be created in UTC
-        let student = mcServer.studentList.find(element => element.token === studenttoken) // get student from token
+        const now = new Date();
+        let time = now.toLocaleTimeString('de-DE');  //convert to locale string otherwise the foldernames will be created in UTC
+        let timestring = String(time).replace(/:/g, "_");
         
-        log.warn("time: ", time)
-
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // Monate: 0-11, daher +1
+        const day = String(now.getDate()).padStart(2, '0');
+        const dateString = `${year}${month}${day}`;
+        let tstring = `${dateString}_${timestring}`;
+        
+        let student = mcServer.studentList.find(element => element.token === studenttoken) // get student from token
         let absoluteFilepath = path.join(config.workdirectory, mcServer.serverinfo.servername, student.clientname, filename);
         let studentdirectory =  path.join(config.workdirectory, mcServer.serverinfo.servername, student.clientname)
-        let tstring = String(time).replace(/:/g, "_");
+        
         let studentarchivedir = path.join(studentdirectory, tstring)
         try {
             if (!fs.existsSync(studentdirectory)){ fs.mkdirSync(studentdirectory, { recursive: true });  }
@@ -643,8 +649,6 @@ router.post('/getexammaterials/:servername/:token', async (req, res, next) => {
         catch (err) {
             log.error("data @ receive: ", err)
         }
-
-
 
         if (file){
 
