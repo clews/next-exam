@@ -11,23 +11,32 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '22.x'
-    # - name: Teacher install dependencies
-    #   working-directory: ./teacher
-    #   run: |
-    #     npm install
-    #     mkdir dist
-    # - name: Teacher build
-    #   working-directory: ./teacher
-    #   run: npm run build:mac
-    # - name: Upload artifacts
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: teacher-current-main-macos
-    #     path: |
-    #       ./release/
-    #       !./release/**/mac
-    #       !./release/**/mac-arm64
-    #     retention-days: 3
+    - name: Teacher cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ./teacher/.npm
+          ./teacher/node_modules
+        key: ${{ runner.os }}-node-s-${{ hashFiles('./teacher/**/package-lock.json') }}
+    - name: Teacher install dependencies
+      working-directory: ./teacher
+      run: |
+        npm install
+        mkdir dist
+    - name: Teacher build
+      working-directory: ./teacher
+      run: npm run build:mac
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: teacher-current-main-macos
+        path: |
+          ./release/
+          !./release/**/*.blockmap
+          !./release/**/*.yml          
+          !./release/**/mac
+          !./release/**/mac-arm64
+        retention-days: 3
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -51,9 +60,11 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: student-current-main-macos
+        name: student-teacher-current-main-macos
         path: |
           ./release/
+          !./release/**/*.blockmap
+          !./release/**/*.yml
           !./release/**/mac
           !./release/**/mac-arm64
         retention-days: 3
