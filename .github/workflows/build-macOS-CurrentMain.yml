@@ -31,8 +31,7 @@ jobs:
     - name: Student install dependencies
       working-directory: ./student
       run: |
-        python3 --version
-        pip3 install setuptools
+        pip install setuptools
         npm install -g node-gyp
         npm install
         mkdir dist
