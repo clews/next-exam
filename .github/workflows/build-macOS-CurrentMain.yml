@@ -32,6 +32,7 @@ jobs:
       working-directory: ./student
       run: |
         pip install setuptools
+        npm install -g node-gyp
         npm install
         mkdir dist
     - name: Student build
