@@ -6,9 +6,12 @@ asar: true
 asarUnpack:
   - public
 afterPack: scripts/afterpack.js
-afterSign: scripts/notarize.cjs
 directories:
+<<<<<<< HEAD
   output: ../release/1.1.0.1_20250605
+=======
+  output: ../release/1.1.0.1_20250604
+>>>>>>> bde810a538ca5d3d8b0f90edecc7bedc9a6dcced
 compression: normal
 files:
   - dist
@@ -17,7 +20,11 @@ linux:
   target: AppImage
   category: Utility
   icon: public/icons/256x256.png
+<<<<<<< HEAD
   artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250605_${arch}.${ext}
+=======
+  artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250604_${arch}.${ext}
+>>>>>>> bde810a538ca5d3d8b0f90edecc7bedc9a6dcced
   files:
     - dist
     - public
@@ -26,7 +33,11 @@ linux:
     - "!public/minimal-jre-11-mac-arm64/**/*"
 mac:
   icon: public/icons/icon.png
+<<<<<<< HEAD
   artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250605_${arch}.${ext}
+=======
+  artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250604_${arch}.${ext}
+>>>>>>> bde810a538ca5d3d8b0f90edecc7bedc9a6dcced
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: scripts/entitlements.mac.plist
@@ -61,14 +72,19 @@ win:
     - target: msi
       arch:
         - x64
+<<<<<<< HEAD
   artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250605_${arch}.${ext}
   signtoolOptions:
     certificateSubjectName: OSOS Austria
     signingHashAlgorithms:
       - sha256
+=======
+  artifactName: ${productName}_${env.VERSION}.${env.BUILD_NUMBER}_20250604_${arch}.${ext}
+>>>>>>> bde810a538ca5d3d8b0f90edecc7bedc9a6dcced
   files:
     - dist
     - public
     - "!public/minimal-jre-11-mac/**/*"
     - "!public/minimal-jre-11-mac-arm64/**/*"
     - "!public/minimal-jre-11-lin/**/*"
+  sign: false

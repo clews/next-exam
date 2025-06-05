@@ -294,17 +294,19 @@
             <div v-if="(availablePrinters.length < 1)">
                 <button class="btn btn-secondary mt-1 mb-0"><img src="/src/assets/img/svg/print.svg" class="" width="22" height="22" >  no printer found </button>
             </div>
-            <div v-for="printer in availablePrinters" :key="printer" style="position: relative;">
-                <button @click="selectPrinter(printer)" :class="{'btn-cyan': defaultPrinter === printer}" class="printerbutton btn btn-secondary mt-1 mb-0" @mouseenter="visiblePrinter = printer" @mouseleave="visiblePrinter = null"><img src="/src/assets/img/svg/print.svg" alt="print" width="22" height="22" /> {{ printer }} </button>
-                <div v-if="visiblePrinter === printer" class="tooltip-content"> {{ printer }} </div>
+            <div v-for="printer in availablePrinters" :key="printer.printerName" style="position: relative;">
+                <button @click="selectPrinter(printer)" :class="{'btn-cyan': defaultPrinter === printer.printerName}" class="printerbutton btn btn-secondary mt-1 mb-0" @mouseenter="visiblePrinter = printer" @mouseleave="visiblePrinter = null"><img src="/src/assets/img/svg/print.svg" alt="print" width="22" height="22" /> {{ printer.printerName }} </button>
+                <div v-if="visiblePrinter === printer" class="tooltip-content"> {{ printer.printerName }} </div>
                 <!-- Icon für den Standarddrucker -->
-                <img v-if="printer === defaultPrinter" src="/src/assets/img/svg/games-solve.svg" class="printercheck" width="22" height="22" />
+                <img v-if="printer.printerName === defaultPrinter" src="/src/assets/img/svg/games-solve.svg" class="printercheck" width="22" height="22" />
             </div>
             <div v-if="currentpreviewPath && defaultPrinter">
                 <button id="printButton" class="btn btn-dark mt-1 mb-0" @click="printBase64();hideSetup()"><img src="/src/assets/img/svg/print.svg" class="" width="22" height="22" > Print: {{ currentpreviewname }} </button>
             </div> 
             <div>  <!-- ok button resets currentpreviewPath / print button only appears if currentpreviewPath is set and defaultprinter is set -->
-                <div id="okButton" class="btn mt-3 btn-success" @click="hideSetup(); this.currentpreviewPath=null;">OK</div>
+                <div id="okButton" class="btn mt-3 btn-success" @click="hideSetup(); this.currentpreviewPath=null;">{{$t('general.ok')}}</div> 
+        <!-- ok button resets currentpreviewPath / print button only appears if currentpreviewPath is set and defaultprinter is set -->
+                <div id="cancelButton" class="btn mt-3 ms-1 btn-danger" @click="hideSetup(false); this.currentpreviewPath=null;">{{$t('dashboard.cancel')}}</div>
             </div>
         </div>
        
@@ -553,6 +555,7 @@ export default {
                 id: "1234",
                 nextexamVersion: this.$route.params.version,
                 examName: this.$route.params.servername,
+                examPassword: this.$route.params.passwd,
                 examDate: new Date().toISOString().slice(0, 19),
                 examDurationMinutes: 100, 
                 pin: this.$route.params.pin,
@@ -779,6 +782,7 @@ computed: {
          * Checks Screenshots and MSO Share Links
          */
         async fetchInfo() {
+
             if (!this.config.accessToken &&  this.isExamType("microsoft365")){
                 this.config = await ipcRenderer.invoke('getconfigasync')  // this is only needed in order to get the accesstoken from the backend for MSAuthentication
             }
@@ -940,13 +944,20 @@ computed: {
 
             if (this.serverstatus.exammode && !this.serverstatus.examSections[this.serverstatus.activeSection].locked) {
                 this.$swal.fire({
+                    customClass: {
+                        popup: 'my-popup',
+                        title: 'my-title',
+                        content: 'my-content',
+                        input: 'my-custom-input',
+                        inputLabel: 'my-input-label',
+                        actions: 'my-swal2-actions'
+                    },
                     title: this.$t("dashboard.examsections"),
-                    icon: 'question',
-                    text: this.$t("dashboard.examsectionsinfo"),
+                    icon: 'warning',
+                    html: `<div class="my-content">${this.$t("dashboard.examsectionsinfo")}</div>`,
                     showCancelButton: true,
                     cancelButtonText: this.$t("dashboard.no"),
                     confirmButtonText: this.$t("dashboard.yes"),
-                    reverseButtons: true,
                 }).then(async (result) => {
                     if (result.isConfirmed) {
                         //inform all students to save current work
@@ -1250,7 +1261,7 @@ computed: {
         },
 
         selectPrinter(printer){
-            this.defaultPrinter = printer
+            this.defaultPrinter = printer.printerName
             console.log(`dashboard: selected default printer: ${this.defaultPrinter}`)
             console.log(`dashboard: allow direct print: ${this.directPrintAllowed}`)
         },
@@ -1259,14 +1270,14 @@ computed: {
             if (!this.defaultPrinter){ document.getElementById('directprint').checked = false }
         },
 
-        async hideSetup(){
+        async hideSetup(save=true){
             if (!this.defaultPrinter){ document.getElementById('directprint').checked = false  }
             document.getElementById("setupoverlay").style.opacity = 0;
             document.getElementById('setupdiv').classList.remove('scaleIn');
             document.getElementById('setupdiv').classList.add('scaleOut');
             await this.sleep(200)  //the transition setting is set to .3s
             document.getElementById("setupoverlay").style.display = "none";
-            this.setServerStatus()
+            if (save){ this.setServerStatus() }
         },
 
         async showSetup(){
@@ -1417,7 +1428,7 @@ computed: {
 
 
 
-    mounted() {  // when ready
+    async mounted() {  // when ready
         this.$nextTick( async function () { // Code that will run only after the entire view has been rendered
        
             document.querySelector("#statusdiv").style.visibility = "hidden";
@@ -1461,7 +1472,17 @@ computed: {
         this.currentdirectory = ipcRenderer.sendSync('getCurrentWorkdir')  //in case user changed it to different location
         this.workdirectory= `${this.currentdirectory}/${this.servername}`
 
+        this.availablePrinters = await ipcRenderer.invoke("getprinters")
+        this.availablePrinters.forEach(printer => {
+            if (printer.isDefault){
+                console.log(`dashboard @ mounted: found and set default printer: ${printer.printerName}`)
+                this.defaultPrinter = printer.printerName
+            }
+        })
+       
         
+  
+
         ipcRenderer.on('reconnected', (event, student) => {  
             this.$swal.fire({
                     title: this.$t("dashboard.attention"),
@@ -2227,7 +2248,9 @@ hr {
     width: 99% !important;
 }
 
-
+.swal2-icon{
+    margin-left: 2.5em !important;
+}
 
 .my-title {
     text-align: left;
@@ -2235,8 +2258,12 @@ hr {
 }
 
 .my-content {
+   
     margin-bottom: 0px;
     overflow:hidden;
+    padding-left: 4px !important;
+    display: block !important;
+    text-align: left !important;
 }
 
 .my-content h5 {
@@ -2249,17 +2276,40 @@ hr {
     margin-bottom: 1px;
     margin-top:8px;
 }
+.my-popup {
+    justify-content: flex-start !important;
+    justify-items: flex-start !important;
+}
 
+.my-input-label {    
+    justify-content: flex-start !important;
+    justify-items: flex-start !important; 
+    width: -webkit-fill-available !important;
+    margin: 1em 2em 3px !important;
+}
 
 .my-custom-input {
     margin-top: 0px !important;
+    width: -webkit-fill-available !important;
+    margin: 1em 2em 3px !important;
 }  
 
 .my-swal2-actions {
-    width: 100%;
-    margin-left: 1.9em;
-  justify-content: flex-start !important; /* Richtet die Buttons linksbündig aus */
+    margin-top: 10px !important;
+    width: 100% !important;
+    margin-left: 1.9em !important;
+    justify-content: flex-start !important; /* Richtet die Buttons linksbündig aus */
 }
+
+
+
+
+
+
+
+
+
+
 .printerbutton {
     position: relative;
 }

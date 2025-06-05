@@ -120,7 +120,7 @@
             <!-- could be used to set an ESCAPE PASSWORD for students to make it harder to leave on connection loss -->
             <div v-if="advanced" class="input-group mb-1" style="max-width: fit-content"> 
                 <span id="pwd" class="input-group-text col-2 grayback"  style="width:170px;">{{$t("startserver.pwd")}}</span>
-                <input v-model="password" type="text" class="form-control " style="width:200px;" >
+                <input v-model="password" type="text" class="form-control " id="examPassword" style="width:200px;" >
             </div>
 
 
@@ -200,7 +200,7 @@ export default {
             config: this.$route.params.config,  //achtung: config enthält rekursive elemente und wird daher in ipchandler.copyConfig() kopiert
             title: document.title,
             servername : this.$route.params.config.development ? "5a-mathematik":"",
-            password: this.$route.params.config.development ? "password": Math.floor(100000 + Math.random() * 9000),   //we could use this password to allow students to manually leave exam mode 
+            password: "",   //we use this password to allow students to manually leave exam mode 
             prod : false,
             serverApiPort: this.$route.params.serverApiPort,
             electron: this.$route.params.electron,
@@ -546,7 +546,7 @@ export default {
            // previousExams = previousExams.filter(exam => exam.nextexamVersion === this.version)
 
             this.previousExams = previousExams
-           
+           // console.log("previousExams:", this.previousExams)
 
 
             this.config = await ipcRenderer.invoke('getconfigasync') 
@@ -555,23 +555,42 @@ export default {
 
 
         /**  setzt das feld prüfungsname auf den namen des angeklickten prüfungsverzeichnisses */
-        setPreviousExam(exam){
+        async setPreviousExam(exam){
             document.getElementById('servername').value = exam.examName
             this.servername = exam.examName
             this.selectedExam = exam
+   
+           
+           
             this.checkExistingExam()  //ändert den text am startbutton
         },
 
 
         /** überprüft ob die ausgewählte prüfung bereits existiert und ändert den text am startbutton */
-        checkExistingExam(){
+        async checkExistingExam(){
             for (let i = 0; i < this.previousExams.length; i++) {
                 const previousExam = this.previousExams[i] // current exam object
                 if (previousExam.examName === this.servername) {
+                    this.password = previousExam.examPassword
+
+                    if (previousExam.examPassword !== ""){
+                        this.password = previousExam.examPassword
+                        this.advanced = true
+                        await this.$nextTick();
+
+                    }
                     document.getElementById('examstart').innerHTML = this.$t("startserver.resume")
+                    let examPassword = document.getElementById('examPassword')
+                    if (examPassword){
+                        examPassword.disabled = true  // lock password input field if existing exam is found and password is already set - prevent changing examPassword
+                    }
                     break
                 } else {
                     document.getElementById('examstart').innerHTML = this.$t("startserver.start")
+                    let examPassword = document.getElementById('examPassword')
+                    if (examPassword){
+                        examPassword.disabled = false  // unlock password input field if no existing exam is found
+                    }
                 }
             }        
         },
@@ -580,12 +599,20 @@ export default {
         delPreviousExam(name){
             // ASK for confirmation!
             this.$swal.fire({
+                customClass: {
+                    popup: 'my-popup',
+                    title: 'my-title',
+                    content: 'my-content',
+                    input: 'my-custom-input',
+                    inputLabel: 'my-input-label',
+                    actions: 'my-swal2-actions'
+                },
                 title: this.$t("startserver.previousexams"),
-                html: `${this.$t("startserver.folderdelete")} <br> <br> <span style="font-weight:bold;">${name}</span>`,
+                html: `<div class="my-content">${this.$t("startserver.folderdelete")} <br> <br> <span style="font-weight:bold; text-align:left;">${name}</span></div>`,
                 icon: "warning",
                 showCancelButton: true,
                 cancelButtonText: this.$t("dashboard.cancel"),
-                reverseButtons: true
+              
             })
             .then(async (result) => {
                 if (result.isConfirmed) { 
@@ -606,10 +633,11 @@ export default {
         },
 
         toggleAdvanced(){
-            if (!this.advanced){
-                if (!this.password){
-                    this.password = Math.floor(100000 + Math.random() * 9000)
-                }
+            if (!this.advanced){     
+                this.password = ""
+            }
+            else {
+                this.checkExistingExam()
             }
         },
 
@@ -617,9 +645,9 @@ export default {
             if (this.servername === "" ){
                 this.status(this.$t("startserver.emptyname")); 
             }
-            else if (this.password === ""){
-                this.status(this.$t("startserver.emptypw")); 
-            }
+            // else if (this.password === ""){
+            //     this.status(this.$t("startserver.emptypw")); 
+            // }
             else {
                 let isBip = this.selectedExam && this.selectedExam.bip && this.servername === this.selectedExam.examName ? true : false
                 let bipId = this.selectedExam && this.selectedExam.id ? this.selectedExam.id : null
@@ -736,10 +764,11 @@ export default {
 
 
     },
-    mounted() {  // when ready
+    async mounted() {  // when ready
         log.info('startserver @ mounted: next-exam ready!');
         document.querySelector("#statusdiv").style.visibility = "hidden";  //do not show on first mount of ui
         
+
         if (this.prod) {  //clear input fields in production mode
             document.querySelector("#servername").value = "";
             document.querySelector("#pin").value = "";
@@ -748,8 +777,8 @@ export default {
       
         this.hostname = "localhost"
         this.checkDiscspace()
-        this.getPreviousExams()
-      
+        await this.getPreviousExams()
+        this.checkExistingExam()
 
         ipcRenderer.on('bipToken', (event, token) => {  
             console.log("token received: ",token)

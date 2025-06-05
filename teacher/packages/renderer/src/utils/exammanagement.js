@@ -26,17 +26,24 @@ function startExam(){
 function endExam(){
     if (this.hostip){  this.getFiles('all') }  // fetch files from students before ending exam for everybody
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.sure"),
-        html: `<div>
-            <input class="form-check-input" type="checkbox" id="checkboxdel">
+        html: `<div class="my-content">
+            <input class="form-check-input" style="margin-top: 0.1em;" type="checkbox" id="checkboxdel">
             <label class="form-check-label" for="checkboxdel"> ${this.$t("dashboard.exitdelete")} </label>
             <br><br>
             <span>${this.$t("dashboard.exitkiosk")}</span>
         </div>`,
-        icon: "question",
+        icon: "warning",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true,
         preConfirm: () => {
             this.serverstatus.delfolderonexit = document.getElementById('checkboxdel').checked; 
         }
@@ -62,12 +69,19 @@ function stopserver(){
     if (!this.serverstatus.exammode) { message = this.$t("dashboard.exitexaminfo")}
 
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.exitexamsure"),
-        html: `<div> ${message} <br> </div>`,
-        icon: "question",
+        html: `<div class="my-content" > ${message} <br> </div>`,
+        icon: "error",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true,
     })
     .then( async (result) => {
         if (result.isConfirmed) {
@@ -77,29 +91,16 @@ function stopserver(){
                 await this.updateBiPServerInfo("offline");
             }
 
-            if (!this.hostip){   // somehow the teacher disconnected - stop everything without network address
-                await ipcRenderer.invoke("stopserver", this.servername)  // need to stop server first otherwise router.js won't route back
-                this.$router.push({ path: '/startserver' });  // route back to startserver view
-                return;  
-            }
-            axios.get(`https://${this.serverip}:${this.serverApiPort}/server/control/stopserver/${this.servername}/${this.servertoken}`)
-            .then( async (response) => {
-                this.status(response.data.message);
-                //log.info(response.data);
-                await this.sleep(2000);
-                this.$router.push({ path: '/startserver' });  // route back to startserver view
+            await ipcRenderer.invoke("stopserver", this.servername)  // need to stop server first otherwise router.js won't route back
 
-                this.$router.push({  // for some reason this doesn't work on mobile
-                    name: 'startserver', 
-                    params:{
-                        bipToken: this.bipToken,
-                        bipUsername: this.bipUsername,
-                        bipuserID:this.bipuserID
-                    }
-                })
-
-
-            }).catch( err => {log.error(err)});
+            this.$router.push({  // for some reason this doesn't work on mobile
+                name: 'startserver', 
+                params:{
+                    bipToken: this.bipToken,
+                    bipUsername: this.bipUsername,
+                    bipuserID:this.bipuserID
+                }
+            })  
         } 
     });    
 }
@@ -116,21 +117,49 @@ function kick(studenttoken, studentip){
     console.log("studentname:", studentname)
 
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.sure"),
-        html:  `<span style='font-weight:bold;'>${studentname}</span> ${this.$t("dashboard.reallykick")}`,
-        icon: "warning",
+        html:  `<div class="my-content">
+        <span style='font-weight:bold;'>${studentname}</span> ${this.$t("dashboard.reallykick")}
+        <br><br>
+        
+            <input class="form-check-input" type="checkbox" id="checkboxdel">
+            <label class="form-check-label" for="checkboxdel"> ${this.$t("dashboard.exitdelete")} </label>
+           
+        </div>
+        `,
+        icon: "error",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true
     })
-    .then((result) => {
+    .then(async (result) => {
         if (result.isConfirmed) {
-                //unregister locally
-            axios.get(`https://${this.serverip}:${this.serverApiPort}/server/control/kick/${this.servername}/${this.servertoken}/${studenttoken}`)
-            .then( response => {
-                log.info("exammanagment @ kick:", response.data.message) 
-                this.status(response.data.message);
-            }).catch(error => {log.error("exammanagment @ kick:", error)});
+
+            let delfolderonexit = document.getElementById('checkboxdel').checked;
+ 
+            fetch(`https://${this.serverip}:${this.serverApiPort}/server/control/setstudentstatus/${this.servername}/${this.servertoken}/${studenttoken}`, { 
+                method: 'POST',
+                headers: {'Content-Type': 'application/json' },
+                body: JSON.stringify({ delfolder : delfolderonexit, kick : true } )
+            })
+            .then( res => res.json() )
+            .then( result => { log.info("exammanagment @ kick:", result.message)});
+        
+
+
+            //     //unregister locally
+            // axios.get(`https://${this.serverip}:${this.serverApiPort}/server/control/kick/${this.servername}/${this.servertoken}/${studenttoken}`)
+            // .then( response => {
+            //     log.info("exammanagment @ kick:", response.data.message) 
+            //     this.status(response.data.message);
+            // }).catch(error => {log.error("exammanagment @ kick:", error)});
         } 
     });  
 }
@@ -199,12 +228,13 @@ function lockscreens(state, feedback=true){
 //upload files to all students
 function sendFiles(who) {
     if (this.studentlist.length === 0) { this.status(this.$t("dashboard.noclients")); return;}
-    let htmlcontent = `
+    let htmlcontent = `<div class="my-content"> 
         ${this.$t("dashboard.filesendtext")} <br>
-        <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>`
+        <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>
+        </div>`
 
     if (this.serverstatus.examSections[this.serverstatus.activeSection].groups && who == "all"){ //wenn who != "all" sondern ein studenttoken ist dann soll die datei an eine einzelne person gesandt werden
-        htmlcontent =  `
+        htmlcontent =  `<div class="my-content"> 
             ${this.$t("dashboard.filesendtext")} <br>
             <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>
             <br>  <br> 
@@ -212,12 +242,20 @@ function sendFiles(who) {
             <button id="fbtnA" class="swal2-button btn btn-info m-2" style="width: 42px; height: 42px;">A</button>
             <button id="fbtnB" class="swal2-button btn btn-warning m-2" style="width: 42px; height: 42px;filter: grayscale(90%);">B</button>
             <button id="fbtnC" class="swal2-button btn btn-warning m-2" style="padding:0px;width: 42px; height: 42px;filter: grayscale(90%); background: linear-gradient(-60deg, #0dcaf0 50%, #ffc107 50%);">AB</button>
-        `
+        </div>`
     }
          
     let activeGroup = "a"
 
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.filesend"),
         html: htmlcontent,
         icon: "info",
@@ -307,12 +345,13 @@ function sendFiles(who) {
  * @returns 
  */
 function defineMaterials(who) {
-    let htmlcontent = `
+    let htmlcontent = `<div class="my-content"> 
         ${this.$t("dashboard.filesendtext")} <br>
-        <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>`
+        <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>
+        </div>`
 
     if (this.serverstatus.examSections[this.serverstatus.activeSection].groups && who == "all") {
-        htmlcontent = `
+        htmlcontent = `<div class="my-content"> 
             ${this.$t("dashboard.filesendtext")} <br>
             <span style="font-size:0.8em;">(.pdf, .docx, .bak, .ogg, .wav, .mp3, .jpg, .png, .gif, .ggb)</span>
             <br>  <br> 
@@ -320,19 +359,26 @@ function defineMaterials(who) {
             <button id="fbtnA" class="swal2-button btn btn-info m-2" style="width: 42px; height: 42px;">A</button>
             <button id="fbtnB" class="swal2-button btn btn-warning m-2" style="width: 42px; height: 42px;filter: grayscale(90%);">B</button>
             <button id="fbtnC" class="swal2-button btn btn-warning m-2" style="padding:0px;width: 42px; height: 42px;filter: grayscale(90%); background: linear-gradient(-60deg, #0dcaf0 50%, #ffc107 50%);">AB</button>
-        `
+        </div>`
     }
          
     let activeGroup = "a"  // prinzipiell ist jeder user automatisch in der gruppe a
 
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.materials"),
         html: htmlcontent,
-        icon: "info",
+        icon: "success",
         input: 'file',
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true,
         inputAttributes: {
             type: "file",
             name: "files",
@@ -475,19 +521,27 @@ async function calculateMD5(file) {
 
 
         // show warning
-function delfolderquestion(token="all"){
+function delfolderquestion(event, token="all"){
     if (this.studentlist.length === 0) { this.status(this.$t("dashboard.noclients")); return;}
     let text =  this.$t("dashboard.delsure")
+
     if (token !== "all"){ 
         text = this.$t("dashboard.delsinglesure")
     }
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.attention"),
-        text:  text,
-        icon: "question",
+        html:  `<div class="my-content">${text}</div>`,
+        icon: "warning",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true,
     })
     .then((result) => {
         if (result.isConfirmed) {
@@ -498,7 +552,7 @@ function delfolderquestion(token="all"){
                 body: JSON.stringify({ delfolder : true } )
             })
             .then( res => res.json() )
-            .then( result => { log.info("exmmmanagment @ delfolderquestion:", result.message)});
+            .then( result => { log.info("exammanagment @ delfolderquestion:", result.message)});
         } 
     });  
 }

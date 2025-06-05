@@ -7,12 +7,19 @@ import { Buffer } from 'buffer';
 //delete file or folder
 function fdelete(file){
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.sure"),
-        text:  this.$t("dashboard.filedelete"),
-        icon: "question",
+        html:  `<div class="my-content">${this.$t("dashboard.filedelete")}</div>`,
+        icon: "warning",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true
     })
     .then((result) => {
         if (result.isConfirmed) {
@@ -80,11 +87,18 @@ function dashboardExplorerSendFile(file){
         resolve(connectedStudents)
     })
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
         title: this.$t("dashboard.choosestudent"),
         input: 'select',
         icon: 'success',
         showCancelButton: true,
-        reverseButtons: true,
         inputOptions: inputOptions,
         inputValidator: (value) => { if (!value) { return this.$t("dashboard.chooserequire") } },
     })
@@ -417,8 +431,8 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
-//print pdf in focus - depends on system print dialog
+// deprecated - make sure its not used anymore and remove it (along with printpdf ipc handler)
+//print pdf in focus - uses unix-print and pdf-to-printer module (sumatrapdf.exe)
 async function print(){
     if (!this.defaultPrinter){
         this.showSetup()
@@ -428,6 +442,8 @@ async function print(){
     ipcRenderer.invoke("printpdf", this.currentpreviewPath, this.defaultPrinter)  //default printer could be set upfront and students may print directly
 }
 
+
+//print pdf in focus - uses window.print()
 async function printBase64(documentBase64 = this.currentpreviewBase64, type=this.currentpreviewType){   //use currentpreview or a given base64 document
     if (!this.defaultPrinter){
         this.showSetup()

@@ -138,7 +138,7 @@ router.get('/msauth', async (req, res) => {
  * @param password the password to enter the exam (not neccessary on single instance system (app) but will be used to exit secure exam mode in the future)
  * #FIXME !!!  This route needs to be secured (anyone can start a server right now - or 1000 servers)
  */
- router.post('/start/:servername/:passwd', function (req, res, next) {
+ router.post('/start/:servername/:passwd?', function (req, res, next) {
     // this route may be used by localhost only
     if (!requestSourceAllowed(req, res)) return   // for the webversion we need to check user permissions here (future stuff)
 
@@ -167,7 +167,13 @@ router.get('/msauth', async (req, res) => {
     
     log.info('control @ start: Initializing new Exam Server:', servername)
     let mcs = new multiCastserver();
-    mcs.init(servername, pin, req.params.passwd, bip, bipId)
+
+    if (!req.params.passwd){ 
+        mcs.init(servername, pin, "", bip, bipId)
+    }
+    else {
+        mcs.init(servername, pin, req.params.passwd, bip, bipId)
+    }
 
     config.examServerList[servername]=mcs
     // log.info(config.workdirectory)
@@ -208,9 +214,10 @@ router.get('/msauth', async (req, res) => {
  * @param servername the chosen name (for example "mathe")
  * @param passwd the password needed to enter the dashboard  !!FIXME: use https and proper auth 
  **/
- router.get('/checkpasswd/:servername/:passwd', function (req, res, next) {
+ router.get('/checkpasswd/:servername/:passwd?', function (req, res, next) {
     const servername = req.params.servername 
-    const passwd = req.params.passwd
+    let passwd = req.params.passwd
+    if (!passwd){ passwd = ""}   // we allow empty passwords for now
     const mcServer = config.examServerList[servername]
 
     if (mcServer) { 
@@ -315,7 +322,7 @@ for (let i = 0; i<16; i++ ){
     let vstudent = version.split('.').slice(0, 2),
     versionstudent = vstudent.join('.'); 
 
-    console.log(versionteacher, versionstudent)
+    //console.log(versionteacher, versionstudent)
   
     if (!mcServer) {  return res.send({sender: "server", message:t("control.notfound"), status: "error"} )  }
     if (`${versionteacher}` !== versionstudent ) {  return res.send({sender: "server", message:t("control.versionmismatch"), status: "error", version: config.version, versioninfo: config.info} )  }  
@@ -487,20 +494,20 @@ for (let i = 0; i<16; i++ ){
  * @param csrfservertoken the servers token to authenticate
  * @param studenttoken the students token who should be kicked
  */
- router.get('/kick/:servername/:csrfservertoken/:studenttoken', function (req, res, next) {
-    const servername = req.params.servername
-    const studenttoken = req.params.studenttoken
-    const mcServer = config.examServerList[servername]
+//  router.get('/kick/:servername/:csrfservertoken/:studenttoken', function (req, res, next) {
+//     const servername = req.params.servername
+//     const studenttoken = req.params.studenttoken
+//     const mcServer = config.examServerList[servername]
 
-    if (req.params.csrfservertoken === mcServer.serverinfo.servertoken) {  //first check if csrf token is valid and server is allowed to trigger this api request
-        let student = mcServer.studentList.find(element => element.token === studenttoken)
-        if (student) {   mcServer.studentList = mcServer.studentList.filter( el => el.token !==  studenttoken); } // remove client from studentlist
-        res.send( {sender: "server", message: t("control.studentremove"), status: "success"} )
-    }
-    else {
-        res.send( {sender: "server", message: t("control.actiondenied"), status: "error"} )
-    }
-})
+//     if (req.params.csrfservertoken === mcServer.serverinfo.servertoken) {  //first check if csrf token is valid and server is allowed to trigger this api request
+//         let student = mcServer.studentList.find(element => element.token === studenttoken)
+//         if (student) {   mcServer.studentList = mcServer.studentList.filter( el => el.token !==  studenttoken); } // remove client from studentlist
+//         res.send( {sender: "server", message: t("control.studentremove"), status: "success"} )
+//     }
+//     else {
+//         res.send( {sender: "server", message: t("control.actiondenied"), status: "error"} )
+//     }
+// })
 
 
 
@@ -703,7 +710,7 @@ router.post('/setstudentstatus/:servername/:csrfservertoken/:studenttoken', func
     const activatePrivateSuggestions = req.body.activatePrivateSuggestions
     const removeprintrequest = req.body.removeprintrequest
     const group = req.body.group
-
+    const kicked = req.body.kick
     if (req.params.csrfservertoken === mcServer.serverinfo.servertoken) {  //first check if csrf token is valid and server is allowed to trigger this api request
         
         if (studenttoken === "all"){
@@ -730,7 +737,7 @@ router.post('/setstudentstatus/:servername/:csrfservertoken/:studenttoken', func
                 }
                 if (removeprintrequest == true){ student.printrequest = false }  // unset printrequest so that dashboard fetchInfo (which fetches the studentlist) doesnt trigger it again
                 if (group) {student.status.group = group; }
-
+                if (kicked) { student.status.kicked = true }
 
 
                 //log.info("control @ setstudentstatus:", req.body)
@@ -785,6 +792,13 @@ router.post('/setstudentstatus/:servername/:csrfservertoken/:studenttoken', func
 
     let studentstatus = JSON.parse(JSON.stringify(student.status))  // copy current status > send copy of original to student
    
+    // teacher sets studentstatus.kick to true - the moment the student fetches his status and knwon he's kicked he will be removed from the server
+    if (student.status.kicked)    {
+        let student = mcServer.studentList.find(element => element.token === studenttoken)
+        if (student) {   mcServer.studentList = mcServer.studentList.filter( el => el.token !==  studenttoken); } // remove client from studentlist
+    }
+
+
     // reset some status values that are only used to transport something once
     student.status.printdenied = false 
     student.status.delfolder = false 

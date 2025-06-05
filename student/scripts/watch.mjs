@@ -30,8 +30,8 @@ function watchMain(server) {
         electronProcess = spawn(electron, ['.', '--js-flags=--expose-gc', '--inspect=5858'], { stdio: 'inherit', env })
         //electronProcess = spawn(electron, ['.'], { stdio: 'inherit', env })
         electronProcess.on('exit', () => {
-          server.close(); // Vite-Dev-Server beenden
-          process.exit(0); // Hauptprozess beenden
+          //server.close(); // Vite-Dev-Server beenden
+          //process.exit(0); // Hauptprozess beenden
         });
       },
     }],
