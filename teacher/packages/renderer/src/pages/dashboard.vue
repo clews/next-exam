@@ -220,7 +220,7 @@
      <!-- AUDIO Player start -->
      <div id="aplayer" >
             <div style="text-align: left; margin-left: 40px;">{{ audioFilename }} </div>
-            <audio id="audioPlayer" controls controlsList="nodownload">
+            <audio id="audioPlayer" controls controlsList="nodownload noplaybackrate" >
                 <source :src="audioSource" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
