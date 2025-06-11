@@ -220,21 +220,25 @@ export default {
                     //check if this an exception (login, init) - if URL doesn't include either of these combinations - block! EXPLICIT is easier to read ;-)
                     if ( event.url.includes("startattempt.php") && event.url.includes(this.moodleDomain) )        { console.log(" url allowed") }  // moodledomain ohne testid
                     else if ( event.url.includes("processattempt.php") && event.url.includes(this.moodleDomain) ) { console.log(" url allowed") }  // moodledomain ohne testid
-                    else if ( event.url.includes("login") && event.url.includes("Microsoft") )                                 { console.log(" url allowed") }  // microsoft365 login
-                    else if ( event.url.includes("mysignins") && event.url.includes("microsoft") )                             { console.log(" url allowed") }  // 2fa activation
-                    else if ( event.url.includes("account") && event.url.includes("windowsazure") )                            { console.log(" url allowed") }  // microsoft braucht mehr contact information (telnr)
-                    else if ( event.url.includes("login") && event.url.includes("Google") )                                    { console.log(" url allowed") }
-                    else if ( event.url.includes("login") && event.url.includes("microsoftonline") )                           { console.log(" url allowed") }  // microsoft365 login
-                    else if ( event.url.includes("accounts") && event.url.includes("google.com") )                             { console.log(" url allowed") }
+                    else if ( event.url.includes("login") && event.url.includes("Microsoft") )                    { console.log(" url allowed") }  // microsoft365 login
+                    else if ( event.url.includes("mysignins") && event.url.includes("microsoft") )                { console.log(" url allowed") }  // 2fa activation
+                    else if ( event.url.includes("account") && event.url.includes("windowsazure") )               { console.log(" url allowed") }  // microsoft braucht mehr contact information (telnr)
+                    else if ( event.url.includes("login") && event.url.includes("Google") )                       { console.log(" url allowed") }
+                    else if ( event.url.includes("login") && event.url.includes("microsoftonline") )              { console.log(" url allowed") }  // microsoft365 login
+                    else if ( event.url.includes("accounts") && event.url.includes("google.com") )                { console.log(" url allowed") }
                     else if ( event.url.includes("logout") && event.url.includes(this.moodleDomain) )             { console.log(" url allowed") }
-                    else if ( event.url.includes("lookup") && event.url.includes("google") )                                   { console.log(" url allowed") }
-                    else if ( event.url.includes("login") && event.url.includes("eduvidual") )                                 { console.log(" url allowed") }
+                    else if ( event.url.includes("lookup") && event.url.includes("google") )                      { console.log(" url allowed") }
+                    else if ( event.url.includes("login") && event.url.includes("eduvidual") )                    { console.log(" url allowed") }
                     else if ( event.url.includes("login") && event.url.includes(this.moodleDomain) )              { console.log(" url allowed") }
                     else if ( event.url.includes("policy") && event.url.includes(this.moodleDomain) )             { console.log(" url allowed") }
-                    else if ( event.url.includes("SAML2") && event.url.includes("portal.tirol.gv.at") )                        { console.log(" url allowed") }
-                    else if ( event.url.includes("login") && event.url.includes("portal.tirol.gv.at") )                        { console.log(" url allowed") }      
-                    else if ( event.url.includes("login") && event.url.includes("tirol.gv.at") )                               { console.log(" url allowed") }
+                    else if ( event.url.includes("SAML2") && event.url.includes("portal.tirol.gv.at") )           { console.log(" url allowed") }
+                    else if ( event.url.includes("login") && event.url.includes("portal.tirol.gv.at") )           { console.log(" url allowed") }      
+                    else if ( event.url.includes("login") && event.url.includes("tirol.gv.at") )                  { console.log(" url allowed") }
                     else if ( event.url.includes("auth") && event.url.includes(this.moodleDomain) )               { console.log(" url allowed") }
+                    else if ( event.url.includes("bildung.gv.at") && event.url.includes("SAML2") )                { console.log(" url allowed") }
+                    else if ( event.url.includes("id-austria.gv.at") && event.url.includes("authHandler") )       { console.log(" url allowed") }
+
+                    
 
                     else {
                         console.log("webview @ will-navigate: blocked leaving exam mode")

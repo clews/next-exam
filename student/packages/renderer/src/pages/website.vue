@@ -204,9 +204,12 @@ export default {
                     else if ( event.url.includes("account") && event.url.includes("windowsazure") )                            { console.log("webview @ will-navigate: url allowed") }  // microsoft braucht mehr contact information (telnr)
                     else if ( event.url.includes("login") && event.url.includes("microsoftonline") )                           { console.log("webview @ will-navigate: url allowed") }  // microsoft365 login
                     else if ( event.url.includes("lookup") && event.url.includes("google") )                                   { console.log("webview @ will-navigate: url allowed") }  // google lookup
-       
+                    else if ( event.url.includes("bildung.gv.at") && event.url.includes("SAML2") )                                   { console.log("webview @ will-navigate: url allowed") }  // google lookup
+                    else if ( event.url.includes("id-austria.gv.at") && event.url.includes("authHandler") )                                   { console.log("webview @ will-navigate: url allowed") }  // google lookup
+
                     else {
                         console.log("webview @ will-navigate: blocked leaving exam mode")
+                        console.log(`webview @ will-navigate: url: ${event.url}`)
                         webview.stop()
                     }
                 }
