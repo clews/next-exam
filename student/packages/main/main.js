@@ -20,7 +20,7 @@
  * This is the ELECTRON main file that actually opens the electron window
  */
 
-import { app, BrowserWindow, powerSaveBlocker, nativeTheme, globalShortcut, Tray, Menu, dialog} from 'electron'
+import { app, BrowserWindow, powerSaveBlocker, nativeTheme, globalShortcut, Tray, Menu, dialog, session} from 'electron'
 import { release } from 'os'
 import WindowHandler from './scripts/windowhandler.js'
 import CommHandler from './scripts/communicationhandler.js'
@@ -206,6 +206,8 @@ app.on('activate', () => {
 app.whenReady()
 .then(async ()=>{
     nativeTheme.themeSource = 'light'  // verhindere dass theme einstellungen von windows übernommen werden
+    session.defaultSession.setUserAgent(`Next-Exam/${config.version} (${config.info}) ${process.platform}`);
+
 
     if (config.hostip == "127.0.0.1") { config.hostip = false }
     if (config.hostip) {
