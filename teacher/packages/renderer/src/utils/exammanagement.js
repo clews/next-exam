@@ -112,9 +112,9 @@ function kick(studenttoken, studentip){
     if ( this.studentlist.length <= 0 ) { this.status(this.$t("dashboard.noclients")); return; }
     
     //get student name
-    console.log("studentlist:", this.studentlist)
+    //console.log("studentlist:", this.studentlist)
     const studentname = this.studentlist.find(student => student.token === studenttoken).clientname
-    console.log("studentname:", studentname)
+    //console.log("studentname:", studentname)
 
     this.$swal.fire({
         customClass: {
@@ -130,7 +130,7 @@ function kick(studenttoken, studentip){
         <span style='font-weight:bold;'>${studentname}</span> ${this.$t("dashboard.reallykick")}
         <br><br>
         
-            <input class="form-check-input" type="checkbox" id="checkboxdel">
+            <input class="form-check-input" style="margin-top: 0.1em;" type="checkbox" id="checkboxdel">
             <label class="form-check-label" for="checkboxdel"> ${this.$t("dashboard.exitdelete")} </label>
            
         </div>

@@ -96,11 +96,12 @@ export default {
             
 
             activeSection: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.activeSection],
-            serverstatus: this.$route.params.serverstatus[this.$route.params.serverstatus.activeSection],
-            url: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.activeSection].moodleURL,
-            moodleDomain: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.activeSection].moodleDomain,
-            moodleTestType: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.activeSection].moodleTestType,
-            moodleTestId: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.activeSection].moodleTestId,
+            lockedSection: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection],
+            serverstatus: this.$route.params.serverstatus[this.$route.params.serverstatus.lockedSection],
+            url: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection].moodleURL,
+            moodleDomain: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection].moodleDomain,
+            moodleTestType: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection].moodleTestType,
+            moodleTestId: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection].moodleTestId,
 
 
 

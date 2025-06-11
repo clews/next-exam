@@ -743,6 +743,13 @@ router.post('/setstudentstatus/:servername/:csrfservertoken/:studenttoken', func
                 //log.info("control @ setstudentstatus:", req.body)
               
             }
+            let now = new Date().getTime()
+      
+            if (now - 20000 > student.timestamp && student.status.kicked)    {
+                let student = mcServer.studentList.find(element => element.token === studenttoken)
+                if (student) {   mcServer.studentList = mcServer.studentList.filter( el => el.token !==  studenttoken); } // remove client from studentlist
+            }
+
         }
         res.send( {sender: "server", message: t("control.studentupdate"), status: "success"} )
     }

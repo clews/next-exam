@@ -94,6 +94,12 @@ export default {
             serverstatus: this.$route.params.serverstatus,
             config: this.$route.params.config,
             localLockdown: this.$route.params.localLockdown,
+
+            lockedSection: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection],
+            serverstatus: this.$route.params.serverstatus[this.$route.params.serverstatus.lockedSection],
+            url: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection].domainname,
+            domain: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection].domainname.replace(/https?:\/\//, '').split('/')[0], // Remove protocol and any path
+
             clientinfo: null,
             entrytime: 0,
             timesinceentry: 0,
@@ -101,7 +107,7 @@ export default {
             now : new Date().getTime(),
             localfiles: null,
             battery: null,
-            url: null,
+          
             currentpreview: null,
             isLoading: true,
             wlanInfo: null,
@@ -110,10 +116,7 @@ export default {
     }, 
     components: { ExamHeader },  
     mounted() {
-
-        this.url = this.serverstatus.examSections[this.serverstatus.lockedSection].domainname
-        this.domain = this.url.replace(/https?:\/\//, '').split('/')[0]; // Remove protocol and any path
-                 
+        
         console.log(`website @ mounted: ${this.url}`)
 
         this.currentFile = this.clientname
