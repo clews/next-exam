@@ -531,7 +531,7 @@ export default {
 
         async fetchInfo() {
             this.hostip = ipcRenderer.sendSync('checkhostip')
-            if (this.hostip && this.hostip.availableInterfaces.length > 0 && !this.hostip.preferredInterface){
+            if (this.hostip && this.hostip.availableInterfaces.length > 1 && !this.hostip.preferredInterface){
                 if (this.activeDialog) return;
                 //first block dialog to prevent multiple dialogs 
                 this.activeDialog = true
@@ -550,20 +550,18 @@ export default {
                     html: "<div class='my-content'>" + this.$t("startserver.selectinterfaceinfo") + "</div>",
                     showCancelButton: true,
                     cancelButtonText: this.$t("dashboard.cancel"),
-                    confirmButtonText: this.$t("dashboard.select"),
                     input: "select",
-                    inputOptions: this.hostip.availableInterfaces,
-                    inputPlaceholder: this.$t("startserver.selectinterfaceinfo"),
-                    inputValidator: (value) => {
-                        return new Promise((resolve, reject) => {
-                            if (value) {
-                                this.hostip.preferredInterface = value
-                                this.activeDialog = false
-                                resolve()
-                            }
-                        })
+                    inputOptions: this.hostip.availableInterfaces.reduce((acc, curr) => {
+                        acc[curr.name] = curr.name;
+                        return acc;
+                    }, {}),
+                    inputPlaceholder: "",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        ipcRenderer.invoke('setPreferredInterface', result.value);
+                        this.activeDialog = false;
                     }
-                })
+                });
             }
         },
 

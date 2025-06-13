@@ -497,7 +497,6 @@ class IpcHandler {
             const oldHostIp = this.config.hostip
             let address = this.multicastClient.client.address()
 
-
             // Wenn ein bevorzugtes Interface gesetzt ist, nutze dieses um schnell eine ip zu bekommen
             if (this.preferredInterface) {
                 const preferred = availableInterfaces?.find(iface => iface.name === this.preferredInterface)
@@ -587,6 +586,11 @@ class IpcHandler {
                 availableInterfaces,
                 preferredInterface: this.preferredInterface 
             }
+        })
+
+        // does what it says..  if more than one interface is found this will set the preferred interface
+        ipcMain.handle('setPreferredInterface', (event, arg) => {
+            this.preferredInterface = arg
         })
 
 
