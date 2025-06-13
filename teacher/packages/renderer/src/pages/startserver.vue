@@ -1,13 +1,14 @@
 <template>
 
 <!-- Header START -->
-<div class="w-100 p-3 text-white bg-dark text-right mt-1" style="height: 66px; z-index: 1000;">
+<div class="w-100 p-3 text-white bg-dark text-right" style="height: 63px; z-index: 1000;">
     <span class="text-white m-1">
         <img src="/src/assets/img/svg/shield-lock-fill.svg" class="white me-2  " width="32" height="32" >
-        <span class="fs-4 align-middle me-1 ">Next-Exam</span>
+        <span style="font-size:23px;" class="align-middle me-1 ">Next-Exam</span>
     </span>
-    <span class="fs-4 align-middle ms-3" style="float: right">Teacher</span>
-    <div v-if="!hostip" id="adv" class="btn btn-danger btn-sm m-0  mt-1 " style="cursor: unset; float: right">{{ $t("general.offline") }}</div>
+    <span class="align-middle ms-3 " style="float: right; font-size:23px;">Teacher</span>
+    <div v-if="!hostip" id="adv" class="btn btn-sm btn-outline-danger  " style="cursor: unset; float: right">{{ $t("general.offline") }}</div>
+    <div v-if="hostip && hostip.interface" id="adv" class="btn btn-sm btn-outline-success " style="cursor: unset; float: right">{{ hostip.interface }} :   {{ hostip.hostip }}</div>
 </div>
 <!-- Header END -->
  
@@ -530,8 +531,40 @@ export default {
 
         async fetchInfo() {
             this.hostip = ipcRenderer.sendSync('checkhostip')
-            if (!this.hostip) return; 
+            if (this.hostip && this.hostip.availableInterfaces.length > 0 && !this.hostip.preferredInterface){
+                if (this.activeDialog) return;
+                //first block dialog to prevent multiple dialogs 
+                this.activeDialog = true
 
+                //ask user to select a preferred interface
+                this.$swal.fire({
+                    customClass: {
+                        popup: 'my-popup',
+                        title: 'my-title',
+                        content: 'my-content',
+                        input: 'my-custom-input',
+                        inputLabel: 'my-input-label',
+                        actions: 'my-swal2-actions'
+                    },
+                    title: this.$t("startserver.selectinterface"),
+                    html: "<div class='my-content'>" + this.$t("startserver.selectinterfaceinfo") + "</div>",
+                    showCancelButton: true,
+                    cancelButtonText: this.$t("dashboard.cancel"),
+                    confirmButtonText: this.$t("dashboard.select"),
+                    input: "select",
+                    inputOptions: this.hostip.availableInterfaces,
+                    inputPlaceholder: this.$t("startserver.selectinterfaceinfo"),
+                    inputValidator: (value) => {
+                        return new Promise((resolve, reject) => {
+                            if (value) {
+                                this.hostip.preferredInterface = value
+                                this.activeDialog = false
+                                resolve()
+                            }
+                        })
+                    }
+                })
+            }
         },
 
         async checkDiscspace(){   // achtung: custom workdir spreizt sich mit der idee die teacher instanz als reine webversion laufen zulassen - wontfix?

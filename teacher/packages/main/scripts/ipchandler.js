@@ -23,6 +23,7 @@ import fs from 'fs'
 import { BrowserWindow, ipcMain, dialog } from 'electron'
 import {join} from 'path'
 import log from 'electron-log';
+import { networkInterfaces } from 'os'
 
 import pdfToPrinter from "pdf-to-printer";
 const { print: printWin } = pdfToPrinter;
@@ -30,7 +31,9 @@ const { print: printWin } = pdfToPrinter;
 import { print } from "unix-print";
 //import { print as printWin } from "pdf-to-printer";
 import { exec } from 'child_process';
-import defaultGateway from'default-gateway';
+
+import { gateway4sync} from 'default-gateway';
+
 import ip from 'ip'
 
 import server from "../../server/src/server.js"
@@ -467,46 +470,123 @@ class IpcHandler {
         /**
          * re-check hostip and enable multicast client
          */ 
-        ipcMain.on('checkhostip', (event) => { 
-            let address = false
-            try { address = this.multicastClient.client.address() }
-            catch (e) { /* log.error("ipcHandler @ checkhostip: multicastclient not running") */ }
-            if (address) { event.returnValue = this.config.hostip }
+        ipcMain.on('checkhostip', async (event) => { 
+            // Sammle alle verfügbaren Netzwerkschnittstellen mit IP-Adressen
+            const interfaces = networkInterfaces()
+            let availableInterfaces = null
+            
+            // Sammle alle IPv4 Adressen
+            Object.keys(interfaces).forEach((interfaceName) => {
+                interfaces[interfaceName].forEach((iface) => {
+                    // Filtere Loopback und lokale Adressen aus
+                    if (iface.family === 'IPv4' && 
+                        !iface.address.startsWith('127.') && 
+                        !iface.address.startsWith('169.254.')) {
+                        if (!availableInterfaces) {
+                            availableInterfaces = []
+                        }
+                        availableInterfaces.push({
+                            name: interfaceName,
+                            address: iface.address
+                        })
+                    }
+                })
+            })
+
+            // Speichere die alte IP-Adresse
+            const oldHostIp = this.config.hostip
+            let address = this.multicastClient.client.address()
 
 
-            try { //bind to the correct interface
-                const {gateway, interface: iface} =  defaultGateway.v4.sync()
-                this.config.hostip = ip.address(iface)    // this returns the ip of the interface that has a default gateway..  should work in MOST cases.  probably provide "ip-options" in UI ?
-                this.config.gateway = true
-            }
-            catch (e) {
-                this.config.hostip = false
-                this.config.gateway = false
-            }
-
-            if (!this.config.hostip) {
-                try {
-                    this.config.hostip = ip.address() //this delivers an ip even if gateway is not set
-                }  
+            // Wenn ein bevorzugtes Interface gesetzt ist, nutze dieses um schnell eine ip zu bekommen
+            if (this.preferredInterface) {
+                const preferred = availableInterfaces?.find(iface => iface.name === this.preferredInterface)
+                if (preferred) {
+                    this.config.hostip = preferred.address
+                    this.config.interface = preferred.name
+                    // Überprüfe ob ein Gateway für das bevorzugte Interface existiert
+                    try {
+                        const {gateway, version, int} = gateway4sync(preferred.name)
+                        this.config.gateway = int === this.preferredInterface
+                    } catch (e) {
+                        this.config.gateway = false
+                    }
+                }
+            } 
+            else {
+                try { 
+                    const {gateway, version, int} =  gateway4sync()
+                    this.config.hostip = ip.address(int)
+                    this.config.interface = int
+                    this.config.gateway = true
+                }
                 catch (e) {
-                    log.error("ipcHandler @ checkhostip: Unable to determine ip address")
                     this.config.hostip = false
                     this.config.gateway = false
+                }
+
+                if (!this.config.hostip) {
+                    try {
+                        this.config.hostip = ip.address() //this delivers an ip even if gateway is not set - the first ip address of the system
+                        // use this address to find the name of the interface
+                        const interfaceName = Object.keys(interfaces).find(key => interfaces[key].some(iface => iface.address === this.config.hostip))
+                        this.config.interface = interfaceName
+
+                    }  
+                    catch (e) {
+                        log.error("ipcHandler @ checkhostip: Unable to determine ip address")
+                        this.config.hostip = false
+                        this.config.gateway = false
+                        this.config.interface = false
+                    }
                 }
             }
            
             // check if multicast client is running - otherwise start it
             if (this.config.hostip == "127.0.0.1") { this.config.hostip = false }
-            if (this.config.hostip && !address ) {  //probably a temporary disconnect
-                this.multicastClient.init(this.config.gateway) 
-                if (server && !server.listening){
-                    server.listen(config.serverApiPort, () => {  // start express API
-                        log.info(`main: Express restarting on https://${config.hostip}:${config.serverApiPort}`)
-                    }) 
+
+            // Prüfe ob sich die IP geändert hat und initialisiere alles neu wenn nötig
+            if (oldHostIp !== this.config.hostip && this.config.hostip) {
+                log.info(`main: IP changed from ${oldHostIp} to ${this.config.hostip}, reinitializing services...`)
+
+                // Multicast-Client neu initialisieren bei ip-änderung
+                if (this.multicastClient) {
+                    try {
+                        this.multicastClient.init(this.config.gateway)
+                        log.info('main: Multicast client reinitialized')
+                    } 
+                    catch (e) {
+                        log.error('main: Failed to reinitialize multicast client:', e)
+                    }
                 }
-              
+
+                // Express Server neu starten bei ip-änderung
+                if (server) {
+                    if (server.listening) {
+                        server.close(() => {
+                            log.info(`main: Express server stopped due to IP change`)
+                            server.listen(config.serverApiPort, () => {
+                                log.info(`main: Express server restarted on https://${config.hostip}:${config.serverApiPort}`)
+                            })
+                        })
+                    } 
+                    else {
+                        server.listen(config.serverApiPort, () => {
+                            log.info(`main: Express server started on https://${config.hostip}:${config.serverApiPort}`)
+                        })
+                    }
+                }
+            } 
+            else if (this.config.hostip && !address) {  // Wenn keine IP-Änderung aber Multicast-Client läuft nicht
+                this.multicastClient.init(this.config.gateway)
             }
-            event.returnValue = this.config.hostip 
+              
+            event.returnValue = { 
+                hostip: this.config.hostip, 
+                interface: this.config.interface,
+                availableInterfaces,
+                preferredInterface: this.preferredInterface 
+            }
         })
 
 

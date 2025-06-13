@@ -34,7 +34,9 @@
         "backupfolder": "Backup-Directory",
         "backupfolderinfo": "Please provide a path for the backup directory",
         "extendedsettings": "Extended Settings",
-        "incompatible": "Incompatible with current version"
+        "incompatible": "Incompatible with current version",
+        "selectinterface": "Select Network Interface",
+        "selectinterfaceinfo": "Please select a preferred network interface!"
     },
     "dashboard":{
         "server": "Server",

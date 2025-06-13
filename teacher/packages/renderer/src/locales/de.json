@@ -33,7 +33,9 @@
         "backupfolder": "Backupverzeichnis",
         "backupfolderinfo": "Bitte geben Sie einen Pfad für das Backup-Verzeichnis ein",
         "extendedsettings": "Erweitert",
-        "incompatible": "Nicht kompatibel mit der aktuellen Version"
+        "incompatible": "Nicht kompatibel mit der aktuellen Version",
+        "selectinterface": "Netzwerk-Schnittstelle wählen",
+        "selectinterfaceinfo": "Bitte wählen Sie eine bevorzugte Netzwerkschnittstelle aus!"
     },
     "dashboard":{
         "server": "Server-Adresse",

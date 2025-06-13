@@ -2,14 +2,14 @@
 
 
 <!-- Header START -->
-<div :key="0" class="w-100 p-3 text-white bg-dark text-right " style="min-width: 1180px; height: 66px; z-index: 100;">
+<div :key="0" class="w-100 p-3 text-white bg-dark text-right " style="min-width: 1180px; height: 63px; z-index: 100;">
     <span class="text-white m-1">
         <img src="/src/assets/img/svg/speedometer.svg" class="white me-2  " width="32" height="32" >
         <span style="font-size:23px;" class="align-middle me-1 ">Next-Exam</span>
     </span>
     <span class="align-middle ms-3" style="float: right; font-size:23px;">Dashboard</span>
 
-    <div v-if="serverstatus.useExamSections" style="position: absolute; left:257px; top:41px; min-width: 550px; z-index: 0;">
+    <div v-if="serverstatus.useExamSections" style="position: absolute; left:257px; top:38px; min-width: 550px; z-index: 0;">
         <div id="section1" v-if="serverstatus.examSections[1]" @click="activateSection(1)" class="sectionbutton btn btn-sm" :class="{'sectionbuttonactive': serverstatus.activeSection == 1 && !serverstatus.examSections[1].locked, 'sectionbuttonactivered': serverstatus.activeSection == 1 && serverstatus.examSections[1].locked, 'btn-secondary': serverstatus.activeSection != 1,'btn-danger': serverstatus.examSections[1].locked}">{{ serverstatus.examSections[1].sectionname }}</div>
         <div id="section2" v-if="serverstatus.examSections[2]" @click="activateSection(2)" class="sectionbutton btn btn-sm" :class="{'sectionbuttonactive': serverstatus.activeSection == 2 && !serverstatus.examSections[2].locked, 'sectionbuttonactivered': serverstatus.activeSection == 2 && serverstatus.examSections[2].locked, 'btn-secondary': serverstatus.activeSection != 2,'btn-danger': serverstatus.examSections[2].locked}">{{ serverstatus.examSections[2].sectionname }}</div>
         <div id="section3" v-if="serverstatus.examSections[3]" @click="activateSection(3)" class="sectionbutton btn btn-sm" :class="{'sectionbuttonactive': serverstatus.activeSection == 3 && !serverstatus.examSections[3].locked, 'sectionbuttonactivered': serverstatus.activeSection == 3 && serverstatus.examSections[3].locked, 'btn-secondary': serverstatus.activeSection != 3,'btn-danger': serverstatus.examSections[3].locked}">{{ serverstatus.examSections[3].sectionname }}</div>
@@ -892,6 +892,12 @@ computed: {
         // remove file from group a or b
         handleFileRemove({ group, index }) {
             this.$swal.fire({
+                customClass: {
+                    popup: 'my-popup',
+                    title: 'my-title',
+                    content: 'my-content',
+                    actions: 'my-swal2-actions'
+                },
                 title: this.$t("dashboard.removefile"),
                 text: this.$t("dashboard.removefileconfirm"),
                 icon: 'warning',
