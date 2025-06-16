@@ -28,7 +28,7 @@ class MulticastClient {
     constructor () {
         this.PORT = config.multicastServerClientPort
         this.MULTICAST_ADDR = '239.255.255.250'
-        this.client = dgram.createSocket('udp4')
+        this.client = null
         this.examServerList = []
         this.refreshExamsIntervall = null
     }
@@ -40,6 +40,7 @@ class MulticastClient {
     init (gateway) {
         this.gateway = gateway
         try {
+            this.client = dgram.createSocket('udp4')
             this.client.bind(this.PORT, '0.0.0.0', () => { 
                 this.client.setBroadcast(true)
                 this.client.setMulticastTTL(128); 
@@ -59,6 +60,16 @@ class MulticastClient {
 
     }
 
+    async stop () {
+        try {
+            this.client.dropMembership(this.MULTICAST_ADDR) // entfernt Multicast-Mitgliedschaft
+        } catch(e){}
+        this.client.close() // schließt den UDP-Socket
+        if (this.refreshExamsScheduler) this.refreshExamsScheduler.stop() // stoppt den Scheduler
+        return true
+    }
+
+    
     /**
      * receives messages and stores new exam instances in this.examServerList[]
      */

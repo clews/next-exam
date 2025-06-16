@@ -495,7 +495,6 @@ class IpcHandler {
 
             // Speichere die alte IP-Adresse
             const oldHostIp = this.config.hostip
-            let address = this.multicastClient.client.address()
 
             // Wenn ein bevorzugtes Interface gesetzt ist, nutze dieses um schnell eine ip zu bekommen
             if (this.preferredInterface) {
@@ -548,9 +547,10 @@ class IpcHandler {
             if (oldHostIp !== this.config.hostip && this.config.hostip) {
                 log.info(`main: IP changed from ${oldHostIp} to ${this.config.hostip}, reinitializing services...`)
 
-                // Multicast-Client neu initialisieren bei ip-änderung
-                if (this.multicastClient) {
+                // Multicast-Client neu initialisieren bei ip-änderung (multicastclient wird nur zur discovery anderer exam-server verwendet)
+                if (this.multicastClient && this.multicastClient.client.address()) { // check if multicast client is actually running
                     try {
+                        await this.multicastClient.stop()
                         this.multicastClient.init(this.config.gateway)
                         log.info('main: Multicast client reinitialized')
                     } 
@@ -576,9 +576,9 @@ class IpcHandler {
                     }
                 }
             } 
-            else if (this.config.hostip && !address) {  // Wenn keine IP-Änderung aber Multicast-Client läuft nicht
-                this.multicastClient.init(this.config.gateway)
-            }
+            // else if (this.config.hostip && this.multicastClient && !this.multicastClient.client.address()) {  // Wenn keine IP-Änderung aber Multicast-Client läuft nicht
+            //     this.multicastClient.init(this.config.gateway)
+            // }
               
             event.returnValue = { 
                 hostip: this.config.hostip, 
