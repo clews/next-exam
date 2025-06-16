@@ -441,20 +441,31 @@ export default {
             //get moodle information about the forum with the given cmid (id on website) to get the actual forumid for the api call
             //let url = `https://www.bildung.gv.at/webservice/rest/server.php?wstoken=${token}&wsfunction=core_course_get_course_module&moodlewsrestformat=json&cmid=${cmid}`
 
-    
-            
-            fetch(url, { method: 'POST'})
-            .then( res => res.json() )
-            .then( response => {
-                console.log(response)
-      
+            let discussionid = 37
+            let url1 = `https://www.bildung.gv.at/webservice/rest/server.php?wstoken=${token}&wsfunction=mod_forum_get_discussion_posts&moodlewsrestformat=json&discussionid=${discussionid}`
 
-                if (response.discussions && response.discussions.length > 0){
-                    this.bipnews = response.discussions
+            fetch(url1, { method: 'POST'})
+            .then(res => res.json())
+            .then(response => {
+                if (response.posts && response.posts.length > 0){
+                    this.bipnews = response.posts
                 }
                 else {
                     this.bipnews = []
                 }
+            // });
+                        
+            // fetch(url, { method: 'POST'})
+            // .then( res => res.json() )
+            // .then( response => {
+            //     if (response.discussions && response.discussions.length > 0){
+            //         this.bipnews = response.discussions
+            //     }
+            //     else {
+            //         this.bipnews = []
+            //     }
+
+
 
 
 
