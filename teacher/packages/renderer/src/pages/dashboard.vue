@@ -423,6 +423,7 @@
                             <div v-if="student.virtualized && now - 20000 < student.timestamp" class="virtualizedinfo" >{{$t("dashboard.virtualized")}}</div>
                             <div v-if="!student.focus && now - 20000 < student.timestamp" class="kioskwarning" >{{$t("dashboard.leftkiosk")}}</div>
                             <div v-if="student.status.sendexam && now - 20000 < student.timestamp" class="examrequest" >{{$t("dashboard.examrequest")}}</div>
+                            <div v-if="student.remoteassistant && now - 20000 < student.timestamp" class="remoteassistant" >{{$t("dashboard.remoteassistant")}}</div>
                             <span>   
                                 <div v-if="now - 20000 < student.timestamp" style="display: inline-block; overflow: hidden; width: 140px; height: 22px" v-bind:title="(student.files) ? 'Documents: '+student.files : ''"> 
                                     <img v-for="file in student.files" style="width:22px; margin-left:-4px; position: relative; filter: sepia(10%) hue-rotate(306deg) brightness(0.3) saturate(75);" class="" src="/src/assets/img/svg/document.svg">
@@ -1866,6 +1867,20 @@ computed: {
     padding-right: 10px;
     border-bottom-right-radius: 5px;
     border-top-right-radius: 5px;
+}
+
+.remoteassistant {
+    position: absolute;
+    top:78px;
+    left:0;
+    background-color: #1aa179;
+    font-size: 0.7em;
+    padding: 2px;
+    padding-left: 4px;
+    padding-right: 10px;
+    border-bottom-right-radius: 5px;
+    border-top-right-radius: 5px;
+    z-index: 1000;
 }
 
 .widgetbutton {

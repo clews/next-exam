@@ -36,7 +36,7 @@ import log from 'electron-log';
 import { gateway4sync } from 'default-gateway';
 
 import { Worker } from 'worker_threads';
-
+import { runRemoteCheck } from './scripts/remoteCheck.js'
 
 // Verhindert, dass Electron das Standardmenü erstellt
 Menu.setApplicationMenu(null);
@@ -284,7 +284,11 @@ app.whenReady()
 
     }
 
-
+        const usesRemoteAssistant = runRemoteCheck(process.platform)
+        if (usesRemoteAssistant) {
+            log.warn('main @ ready: Remote Assistant detected');
+            WindowHandler.multicastClient.clientinfo.remoteassistant = true
+        }
 
 
 

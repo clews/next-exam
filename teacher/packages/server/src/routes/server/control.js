@@ -793,7 +793,8 @@ router.post('/setstudentstatus/:servername/:csrfservertoken/:studenttoken', func
     student.timestamp = new Date().getTime()   //last seen  / this is like a heartbeat - update lastseen
     student.exammode = exammode  
     student.files = clientinfo.numberOfFiles
-   
+    student.remoteassistant = clientinfo.remoteassistant
+
     if (clientinfo.focus) { student.status.restorefocusstate = false }  // remove task because its obviously done
     if (clientinfo.screenshotinterval == 0){ student.imageurl = "person-lines-fill.svg"  }
 

@@ -38,6 +38,7 @@
         "selectinterfaceinfo": "Bitte wählen Sie eine bevorzugte Netzwerkschnittstelle aus!"
     },
     "dashboard":{
+        "remoteassistant": "Remote Assistant",
         "server": "Server-Adresse",
         "name": "Prüfungsname",
         "pin": "Pincode",

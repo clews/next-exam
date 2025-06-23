@@ -39,6 +39,7 @@
         "selectinterfaceinfo": "Please select a preferred network interface!"
     },
     "dashboard":{
+        "remoteassistant": "Remote Assistant",
         "server": "Server",
         "name": "Name",
         "pin": "Pin",
