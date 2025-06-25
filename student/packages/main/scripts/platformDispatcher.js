@@ -27,48 +27,55 @@ import { app } from 'electron';
 import log from 'electron-log';
 import config from '../config.js';
 import { pathToFileURL } from 'url';
+import os from 'os';
+import path from 'path';
+
 const __dirname = import.meta.dirname;
 
 
 
-class EnvironmentConfig {
+class PlatformDispatcher {
   constructor() {
 
     this._platform = process.platform;
     this._arch = process.arch;
     this._env = process.env;
 
-    log.warn(`platformDispatcher: -------------------`)
-    log.warn(`platformDispatcher: starting Next-Exam Student "${config.version} ${config.info}" (${process.platform})`)
-    log.warn(`platformDispatcher: -------------------`)
- 
-
-  
+    this.messages = []
     this.arch = this._normalizeArch();
-    this.displayServer = this.getDisplayServer();
-    this.flameshot = this.getVersion('flameshot');
-    this.imagemagick = this.getVersion('convert');
-    this.imVersion = null // set in _imagemagickAvailable()
-
-    this.useWorker = null; // set in _setupScreenshotAndWorker()
-    this.screenshotAbility = null; // set in _setupScreenshotAndWorker()
-
+    this.displayServer = this._getDisplayServer();
+    this.flameshot = this._getVersion('flameshot');
+    this.imagemagick = this._getVersion('convert');
+    this.imVersion = this._getImageMagickVersion();
+    this.workerFileName = this._getWorkerFileName();
+    this.useWorker = this._getUseWorker();
+    this.screenshotAbility = this._getScreenshotAbility();
     this.jre = this._detectJREId();
     this.jreDir = this._resolveJREDir();
     this.javaBin = this._resolveJavaBin();
-    this.jreInfo = this.getJRE();
-
-  
-    this._setupScreenshotAndWorker();
-
-
-
-
+    this.jreInfo = this._getJRE();
     
-
+    this.homedirectory = os.homedir();
+    this.desktopPath = this._getDesktopPath();
+    this.workerURL = this._getWorkerURL();
+    this.tempdirectory = this._getTempdirectory();
+    this.workdirectory = this._getWorkdirectory();
+    this.logfile = this._getLogfile();
   }
 
 
+  _getWorkdirectory() {
+    return join(this.homedirectory, config.clientdirectory);
+  }
+
+  _getTempdirectory() {
+    return join(os.tmpdir(), 'exam-tmp');
+  }
+
+
+  _getLogfile() {
+    return join(this.workdirectory, 'next-exam-student.log');
+  }
 
   _normalizeArch() {
     if (this._arch === 'ia32') return 'i586';
@@ -101,14 +108,14 @@ class EnvironmentConfig {
     }
   }
 
-  getDisplayServer() {
+  _getDisplayServer() {
     if (this._platform !== 'linux') return 'n/a';
     if (this._env.XDG_SESSION_TYPE === 'wayland') return 'wayland';
     if (this._env.XDG_SESSION_TYPE === 'x11' || this._env.DISPLAY) return 'x11';
     return 'unknown';
   }
 
-  getVersion(cmd) {
+  _getVersion(cmd) {
     try {
       const output = execSync(`${cmd} --version`, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).split('\n')[0];
       const version = output.match(/[\d]+(\.[\d]+)+/);
@@ -118,7 +125,7 @@ class EnvironmentConfig {
     }
   }
 
-  getJRE() {
+  _getJRE() {
     try {
       const output = execSync('java -version', { encoding: 'utf-8', stdio: ['pipe', 'ignore', 'pipe'] });
       const version = output.match(/version "([\d._]+)"/)?.[1] || 'unknown';
@@ -129,35 +136,18 @@ class EnvironmentConfig {
     }
   }
 
-  _setupScreenshotAndWorker() {
-    if (this._platform === 'linux') {
-      this.useWorker = this._imagemagickAvailable();
-      if ((this._isGNOME() || this._isUNITY()) && this.isWayland()) {
-        this.screenshotAbility = false;
-        log.info("platformDispatcher @ _setupScreenshotAndWorker: GNOME/Unity + Wayland – ScreenshotAbility set to false");
-      } else if (this._isKDE() && this.isWayland() && this._flameshotAvailable()) {
-        this.screenshotAbility = true;
-        log.info("platformDispatcher @ _setupScreenshotAndWorker: KDE/Wayland + Flameshot – ScreenshotAbility set to true");
-      } else if (!this.isWayland() && this.useWorker) {
-        this.screenshotAbility = true;
-        log.info("platformDispatcher @ _setupScreenshotAndWorker: X11 + ImageMagick – ScreenshotAbility set to true");
-      } else {
-        this.screenshotAbility = false;
-        log.info("platformDispatcher @ _setupScreenshotAndWorker: ScreenshotAbility set to false – fallback to pagecapture");
-      }
-    } else {
-      this.useWorker = true;
-      this.screenshotAbility = true;
-    }
-  
+  _getWorkerFileName() {
+    return this._platform === 'linux' ? 'imageWorkerLinux.mjs' : 'imageWorkerSharp.js';
+  }
+
+  _getWorkerURL() {
     // Worker-Logik direkt anschließen
-    const workerFileName = this._platform === 'linux' ? 'imageWorkerLinux.mjs' : 'imageWorkerSharp.js';
     const baseDir = app.isPackaged ? process.resourcesPath : import.meta.dirname;
     const workerPath = app.isPackaged
-      ? join(baseDir, 'app.asar.unpacked', 'public', workerFileName)
-      : join(baseDir, '../../public', workerFileName);
+      ? join(baseDir, 'app.asar.unpacked', 'public', this.workerFileName)
+      : join(baseDir, '../../public', this.workerFileName);
   
-    this.workerURL = pathToFileURL(workerPath);
+    return pathToFileURL(workerPath);
   }
 
   isWayland() {
@@ -169,7 +159,7 @@ class EnvironmentConfig {
       const out = execSync('echo $XDG_CURRENT_DESKTOP', { shell: '/bin/bash', encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
       return out === 'KDE';
     } catch {
-      log.warn("platformDispatcher @ _isKDE: no data");
+      this.messages.push("platformDispatcher @ _isKDE: no data");
       return false;
     }
   }
@@ -179,7 +169,7 @@ class EnvironmentConfig {
       const out = execSync('echo $XDG_CURRENT_DESKTOP', { shell: '/bin/bash', encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim().toLowerCase();
       return out.includes('gnome');
     } catch (err) {
-      log.warn("platformDispatcher @ _isGNOME: no data", err);
+      this.messages.push("platformDispatcher @ _isGNOME: no data");
       return false;
     }
   }
@@ -197,17 +187,15 @@ class EnvironmentConfig {
   _imagemagickAvailable() {
     try {
       execSync("magick -version", { stdio: 'ignore' });
-      this.imVersion = "7";
-      log.info("platformDispatcher @ _imagemagickAvailable: Found ImageMagick v7 (magick)");
+      //log.info("platformDispatcher @ _imagemagickAvailable: Found ImageMagick v7 (magick)");
       return true;
     } catch {
       try {
         execSync("which import", { stdio: 'ignore' });
-        this.imVersion = "<7";
-        log.info("platformDispatcher @ _imagemagickAvailable: Found ImageMagick <7 (import)");
+        //log.info("platformDispatcher @ _imagemagickAvailable: Found ImageMagick <7 (import)");
         return true;
       } catch (err) {
-        log.error("platformDispatcher @ _imagemagickAvailable: ImageMagick not found", err);
+        this.messages.push("platformDispatcher @ _imagemagickAvailable: ImageMagick not found");
         return false;
       }
     }
@@ -218,15 +206,72 @@ class EnvironmentConfig {
       execSync("which flameshot", { stdio: 'ignore' });
       return true;
     } catch {
-      log.error("platformDispatcher @ _flameshotAvailable: Flameshot not found");
+      this.messages.push("platformDispatcher @ _flameshotAvailable: Flameshot not found");
       return false;
+    }
+  }
+
+  _setupDesktopPath() {
+    this.desktopPath = this._getDesktopPath();
+  }
+
+  _getDesktopPath() {
+    if (this._platform === 'win32') {
+      return path.join(process.env['USERPROFILE'], 'Desktop');
+    } else {
+      return path.join(os.homedir(), 'Desktop');
     }
   }
 
   _fail(msg) {
       throw new Error(`[platformDispatcher] ${msg}`);
   }
+
+  _getImageMagickVersion() {
+    try {
+      execSync("magick -version", { stdio: 'ignore' });
+      this.messages.push("platformDispatcher @ _getImageMagickVersion: Found ImageMagick v7 (magick)");
+      return "7";
+    } catch {
+      try {
+        execSync("which import", { stdio: 'ignore' });
+        this.messages.push("platformDispatcher @ _getImageMagickVersion: Found ImageMagick <7 (import)");
+        return "<7";
+      } catch (err) {
+        this.messages.push("platformDispatcher @ _getImageMagickVersion: ImageMagick not found");
+        return null;
+      }
+    }
+  }
+
+  _getUseWorker() {
+    if (this._platform === 'linux') {
+      return this._imagemagickAvailable();
+    } else {
+      return true;
+    }
+  }
+
+  _getScreenshotAbility() {
+    if (this._platform === 'linux') {
+      if ((this._isGNOME() || this._isUNITY()) && this.isWayland()) {
+        this.messages.push("platformDispatcher @ _getScreenshotAbility: GNOME/Unity + Wayland – ScreenshotAbility set to false");
+        return false;
+      } else if (this._isKDE() && this.isWayland() && this._flameshotAvailable()) {
+        this.messages.push("platformDispatcher @ _getScreenshotAbility: KDE/Wayland + Flameshot – ScreenshotAbility set to true");
+        return true;
+      } else if (!this.isWayland() && this.useWorker) {
+        this.messages.push("platformDispatcher @ _getScreenshotAbility: X11 + ImageMagick – ScreenshotAbility set to true");
+        return true;
+      } else {
+        this.messages.push("platformDispatcher @ _getScreenshotAbility: ScreenshotAbility set to false – fallback to pagecapture");
+        return false;
+      }
+    } else {
+      return true;
+    }
+  }
 }
 
-const environmentConfig = new EnvironmentConfig();
-export default environmentConfig;
+const platformDispatcher = new PlatformDispatcher();
+export default platformDispatcher;

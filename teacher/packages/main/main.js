@@ -20,7 +20,8 @@
  */
 
 
-
+import log from 'electron-log';
+import chalk from 'chalk';
 import { app, BrowserWindow, powerSaveBlocker, nativeTheme, globalShortcut, Menu  } from 'electron'
 import { release } from 'os'
 import config from './config.js';
@@ -28,22 +29,42 @@ import server from "../server/src/server.js"
 import multicastClient from './scripts/multicastclient.js'
 import WindowHandler from './scripts/windowhandler.js'
 import IpcHandler from './scripts/ipchandler.js'
-import log from 'electron-log';
+
+
+
+
+log.initialize(); // initialize the logger for any renderer process
+let logfile = `${config.workdirectory}/next-exam-teacher.log`
+
+log.eventLogger.startLogging();
+log.errorHandler.startCatching();
+
+log.transports.file.resolvePathFn = () => { return logfile  }
+log.transports.console.format = (message) => {
+    // Gib immer ein Array zurück, keine Strings!
+    switch (message.level) {
+      case 'info': return [chalk.green(message.data.join ? message.data.join(' ') : String(message.data))];
+      case 'warn': return [chalk.yellow(message.data.join ? message.data.join(' ') : String(message.data))];
+      case 'error': return [chalk.red(message.data.join ? message.data.join(' ') : String(message.data))];
+      case 'debug': return [chalk.blue(message.data.join ? message.data.join(' ') : String(message.data))];
+      case 'verbose': return [chalk.magenta(message.data.join ? message.data.join(' ') : String(message.data))];
+      default:     return [String(message.data)];
+    }
+};
+log.verbose(`main @ init: -------------------`)
+log.verbose(`main @ init: starting Next-Exam Teacher "${config.version} ${config.info}" (${process.platform})`)
+log.verbose(`main @ init: -------------------`)
+log.info(`main @ init: Logfilelocation at ${logfile}`)
+
 
 // Verhindert, dass Electron das Standardmenü erstellt
 Menu.setApplicationMenu(null);
-//app.disableHardwareAcceleration(); 
-// app.commandLine.appendSwitch('disable-frame-rate-limit');
-// app.commandLine.appendSwitch('disable-gpu-vsync', 'false');
-// app.commandLine.appendSwitch('enable-gpu-rasterization');
-// app.commandLine.appendSwitch('enable-threaded-compositing');
 app.commandLine.appendSwitch('enable-features', 'Metal,CanvasOopRasterization');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
 app.commandLine.appendSwitch('lang', 'de');
 
 WindowHandler.init(multicastClient, config)  // mainwindow, examwindow, blockwindow
 IpcHandler.init(multicastClient, config, WindowHandler)  //controll all Inter Process Communication
-
 
 
 /**
@@ -60,20 +81,6 @@ process.on('uncaughtException', (err) => {
     } 
     else {  log.error('main:', err.message); }  // Andere Fehler protokollieren oder anzeigen
 });
-
-
-log.initialize(); // initialize the logger for any renderer process
-let logfile = `${WindowHandler.config.workdirectory}/next-exam-teacher.log`
-log.transports.file.resolvePathFn = () => { return logfile  }
-log.eventLogger.startLogging();
-log.errorHandler.startCatching();
-
-log.warn(`main @ init: -------------------`)
-log.warn(`main @ init: starting Next-Exam Teacher "${config.version} ${config.info}" (${process.platform})`)
-log.warn(`main @ init: -------------------`)
-log.info(`main @ init: Logfilelocation at ${logfile}`)
-log.info('main @ init: Next-Exam Logger initialized...');
-
 
 
 // Disable GPU Acceleration for Windows 7

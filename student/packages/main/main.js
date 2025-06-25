@@ -20,6 +20,8 @@
  * This is the ELECTRON main file that actually opens the electron window
  */
 import platformDispatcher from './scripts/platformDispatcher.js';
+import chalk from 'chalk';
+import log from 'electron-log';
 import { app, BrowserWindow, powerSaveBlocker, nativeTheme, globalShortcut, Tray, Menu, dialog, session} from 'electron'
 import { release } from 'os'
 import config from './config.js';
@@ -29,28 +31,44 @@ import fs from 'fs'
 import * as fsExtra from 'fs-extra';
 import os from 'os'
 import ip from 'ip'
-import log from 'electron-log';
 import { gateway4sync } from 'default-gateway';
 import { Worker } from 'worker_threads';
 import { runRemoteCheck } from './scripts/remoteCheck.js'
-
 import WindowHandler from './scripts/windowhandler.js'
 import CommHandler from './scripts/communicationhandler.js'
 import IpcHandler from './scripts/ipchandler.js'
+
+
+log.initialize(); // initialize the logger for any renderer process
+log.eventLogger.startLogging();
+log.errorHandler.startCatching();
+log.transports.file.resolvePathFn = () => { return platformDispatcher.logfile  }
+
+log.transports.console.format = (message) => {
+    // Gib immer ein Array zurück, keine Strings!
+    switch (message.level) {
+      case 'info': return [chalk.green(message.data.join ? message.data.join(' ') : String(message.data))];
+      case 'warn': return [chalk.yellow(message.data.join ? message.data.join(' ') : String(message.data))];
+      case 'error': return [chalk.red(message.data.join ? message.data.join(' ') : String(message.data))];
+      case 'debug': return [chalk.blue(message.data.join ? message.data.join(' ') : String(message.data))];
+      case 'verbose': return [chalk.magenta(message.data.join ? message.data.join(' ') : String(message.data))];
+      default:     return [String(message.data)];
+    }
+};
+
+log.verbose()
+log.verbose(`main: -------------------`)
+log.verbose(`main: starting Next-Exam Student "${config.version} ${config.info}" (${process.platform})`)
+log.verbose(`main: -------------------`)
+log.info(`main: Logfilelocation at ${platformDispatcher.logfile}`)
+platformDispatcher.messages.forEach(message => { log.debug(message) });
 
 WindowHandler.init(multicastClient, config)  // mainwindow, examwindow, blockwindow
 CommHandler.init(multicastClient, config)    // starts "beacon" intervall and fetches information from the teacher - acts on it (startexam, stopexam, sendfile, getfile)
 IpcHandler.init(multicastClient, config, WindowHandler, CommHandler)  //controll all Inter Process Communication
 
-
-
 // Verhindert, dass Electron das Standardmenü erstellt
 Menu.setApplicationMenu(null);
-//app.disableHardwareAcceleration(); 
-// app.commandLine.appendSwitch('disable-frame-rate-limit');
-// app.commandLine.appendSwitch('disable-gpu-vsync', 'false');
-// app.commandLine.appendSwitch('enable-gpu-rasterization');
-// app.commandLine.appendSwitch('enable-threaded-compositing');
 app.commandLine.appendSwitch('enable-features', 'Metal,CanvasOopRasterization');  // macos only
 app.commandLine.appendSwitch('lang', 'de');
 app.commandLine.appendSwitch('enable-unsafe-swiftshader');
@@ -73,30 +91,26 @@ app.on('second-instance', () => {
 })
 
 
+/**
+ * additional config settings and path checks
+ */
+
 let tray = null;
 const __dirname = import.meta.dirname;
 config.electron = true
 
-config.homedirectory = os.homedir();
-config.workdirectory = path.join(config.homedirectory, config.clientdirectory);
-config.tempdirectory = path.join(os.tmpdir(), 'exam-tmp');
+config.homedirectory = platformDispatcher.homedirectory;
+config.workdirectory = platformDispatcher.workdirectory;
+config.tempdirectory = platformDispatcher.tempdirectory;
 config.examdirectory = config.workdirectory    // we need this variable setup even if we do not connect to a teacher instance
 
 
 if (!fs.existsSync(config.workdirectory)){ fs.mkdirSync(config.workdirectory, { recursive: true }); }
 if (!fs.existsSync(config.tempdirectory)){ fs.mkdirSync(config.tempdirectory, { recursive: true }); }
+if (!fs.existsSync(platformDispatcher.desktopPath)) {  fs.mkdirSync(platformDispatcher.desktopPath, { recursive: true }); }  // Check if the desktop folder exists and create if it doesn't
 
-
-// Define the desktop path based on the platform
-const desktopPath = process.platform === 'win32'
-    ? path.join(process.env['USERPROFILE'], 'Desktop')
-    : path.join(config.homedirectory, 'Desktop');
-
-
-
-// Create the symbolic link
-if (!fs.existsSync(desktopPath)) {  fs.mkdirSync(desktopPath, { recursive: true }); }  // Check if the desktop folder exists and create if it doesn't
-const linkPath = path.join(desktopPath, config.clientdirectory);  // Define the path for the symbolic link
+// Create the symbolic link to the workdirectory on the desktop
+const linkPath = path.join(platformDispatcher.desktopPath, config.clientdirectory);  // Define the path for the symbolic link
 try {fs.unlinkSync(linkPath) }catch(e){}
 try {   if (!fs.existsSync(linkPath)) { fs.symlinkSync(config.workdirectory, linkPath, 'junction'); }}
 catch(e){log.error("main @ create-symlink: can't create symlink")}
@@ -117,6 +131,12 @@ try { //bind to the correct interface
 
 fsExtra.emptyDirSync(config.tempdirectory)  // clean temp directory
 
+
+
+
+
+
+
 /**
  * This function specifically checks for EPIPE errors and disables the console transport for the ElectronLogger if such an error occurs.
  * EPIPE errors typically happen when trying to write to a closed pipe, which can occur if the stdout stream is unexpectedly closed.
@@ -131,22 +151,6 @@ process.on('uncaughtException', (err) => {
     else {  log.error('main @ uncaughtException:', err.message); }  // Andere Fehler protokollieren oder anzeigen
 });
 
-
-
-
-log.initialize(); // initialize the logger for any renderer process
-let logfile = `${config.workdirectory}/next-exam-student.log`
-log.transports.file.resolvePathFn = () => { return logfile  }
-log.eventLogger.startLogging();
-log.errorHandler.startCatching();
-log.info(`main @ init: Logfilelocation at ${logfile}`)
-
-
-
-
-  ////////////////////////////////
- // APP handling (Backend) START
-////////////////////////////////
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
@@ -237,11 +241,9 @@ app.whenReady()
         });
     
 
-
         // this checks if the app was started from within a browser (directly after download)
         const runCheckParentInWorker = () => {
             const workerPath = path.join(__dirname, '../../public', 'checkparent.worker.js');
-            
             const worker = new Worker(workerPath, { type: 'module' });
         
             worker.on('message', (result) => {
@@ -269,22 +271,14 @@ app.whenReady()
                 log.error('main @ checkParent worker error:', error);
             });
         };
-        
         runCheckParentInWorker();
-
-
     }
 
-        const usesRemoteAssistant = runRemoteCheck(process.platform)
-        if (usesRemoteAssistant) {
-            log.warn('main @ ready: Remote Assistant detected');
-            WindowHandler.multicastClient.clientinfo.remoteassistant = true
-        }
-
-
-
-
-
+    const usesRemoteAssistant = runRemoteCheck(process.platform)
+    if (usesRemoteAssistant) {
+        log.warn('main @ ready: Possible remote assistance detected');
+        WindowHandler.multicastClient.clientinfo.remoteassistant = true
+    }
 
     //these are some shortcuts we try to capture
     globalShortcut.register('CommandOrControl+R', () => {});
@@ -314,19 +308,3 @@ app.whenReady()
         // Navigation attempt blocked
     });
 })
-
-
-
-
-
-
-
-
-
-//capture global keyboard shortcuts like alt+tab and send a signal to the frontend that a key combination has been detected 
-    
-
-
-  ////////////////////////////////
- // APP handling (Backend) END
-////////////////////////////////

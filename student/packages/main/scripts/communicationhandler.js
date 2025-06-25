@@ -78,8 +78,9 @@ const __dirname = import.meta.dirname;
         const workerURL = platformDispatcher.workerURL;
         
         this.worker = new Worker(workerURL, { type: 'module', env: { ...process.env } });
-        log.info("communicationhandler @ setupImageWorker: ImageWorker initialized - using " + platformDispatcher.workerURL)
+        log.debug("communicationhandler @ setupImageWorker: ImageWorker initialized. Using " + platformDispatcher.workerFileName)
         
+
         this.worker.on('error', error => {
             log.error('communicationhandler @ setupImageWorker: Worker error:', error);
         });
