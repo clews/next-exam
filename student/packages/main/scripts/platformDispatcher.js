@@ -53,10 +53,7 @@ class PlatformDispatcher {
     this.workerFileName = this._getWorkerFileName();
     this.useWorker = this._getUseWorker();
     this.screenshotAbility = this._getScreenshotAbility();
-    this.jre = this._detectJREId();
-    this.jreDir = this._resolveJREDir();
     this.javaBin = this._resolveJavaBin();
-    this.jreInfo = this._getJRE();
     
     this.homedirectory = os.homedir();
     this.desktopPath = this._getDesktopPath();
@@ -64,8 +61,14 @@ class PlatformDispatcher {
     this.tempdirectory = this._getTempdirectory();
     this.workdirectory = this._getWorkdirectory();
     this.logfile = this._getLogfile();
-    this.useBundledJRE = process.env.useBundledJRE;
 
+  }
+  
+  init(config) {
+      this.config = config;
+      this.jre = this._detectJREId();
+      this.jreDir = this._resolveJREDir();
+      this.jreInfo = this._getJRE();
   }
 
 
@@ -116,7 +119,7 @@ class PlatformDispatcher {
 
   _resolveJREDir() {
     // use bundled jre because its smaller and provides only the needed java modules
-    if (process.env.useBundledJRE) {
+    if (this.config.useBundledJRE) {
       if (app.isPackaged) {
         this.messages.push("platformDispatcher @ _resolveJREDir: app.isPackaged: " + join(process.resourcesPath, 'app.asar.unpacked', 'public', this.jre));
         return join(process.resourcesPath, 'app.asar.unpacked', 'public', this.jre);
