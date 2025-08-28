@@ -39,7 +39,6 @@ import IpcHandler from './scripts/ipchandler.js'
 
 
 import JreHandler from './scripts/jre-handler.js';
-platformDispatcher.init(config)
 JreHandler.init()
 
 
