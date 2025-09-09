@@ -1007,36 +1007,71 @@ class IpcHandler {
     }
 
     isVirtualMachine() {
+        const VENDORS = /(oracle|virtualbox|vmware|kvm|qemu|xen|innotek|parallels|microsoft|hyper-v|bhyve)/i // common VM ids
 
+        // ---------- Linux ----------
         if (process.platform === 'linux') {
-        try {
-            const cpuinfo = fs.readFileSync('/proc/cpuinfo', 'utf8')                // Linux CPU flags
-            if (/^flags.* hypervisor/m.test(cpuinfo)) return true
-        } catch {}
-        
-        try {
-            const v = fs.readFileSync('/sys/class/dmi/id/sys_vendor', 'utf8')        // Linux DMI vendor
-            const p = fs.readFileSync('/sys/class/dmi/id/product_name', 'utf8')      // Linux DMI product
-            if (/Oracle|VirtualBox|VMware|QEMU|KVM|Xen/i.test(v + p)) return true
-        } catch {}
+          try {
+            const cpuinfo = readFileSync('/proc/cpuinfo', 'utf8')      // CPU flags
+            if (/^flags.*\bhypervisor\b/m.test(cpuinfo)) return true    // hypervisor bit detected
+          } catch {}
+      
+          try {
+            const files = [
+              '/sys/class/dmi/id/sys_vendor',
+              '/sys/class/dmi/id/product_name',
+              '/sys/class/dmi/id/product_version',
+              '/sys/class/dmi/id/board_vendor',
+              '/sys/class/dmi/id/bios_vendor',
+              '/sys/class/dmi/id/chassis_vendor'
+            ]
+            const dmi = files.map(p => { try { return readFileSync(p, 'utf8') } catch { return '' } }).join(' ')
+            if (VENDORS.test(dmi)) return true                         // vendor strings match
+          } catch {}
+      
+          try {
+            execSync('systemd-detect-virt -q', { stdio: 'ignore' })    // exit 0 => VM
+            return true
+          } catch {}
         }
 
+        // ---------- Windows ----------
         if (process.platform === 'win32') {
-        try {
-            const ps = execSync('powershell -NoProfile -Command "(Get-CimInstance Win32_ComputerSystem).Manufacturer, (Get-CimInstance Win32_ComputerSystem).Model" ',  { encoding: 'utf8' })                                                                   
-            // Convert to lowercase for case-insensitive comparison and check for common VM identifiers
-            const psLower = ps.toLowerCase();
-            if (psLower.includes('virtualbox') || 
-                psLower.includes('vmware') || 
-                psLower.includes('kvm') || 
-                psLower.includes('hyper-v') || 
-                psLower.includes('xen') ||
-                psLower.includes('innotek'))  { 
-                    return true
-                 }
+            try {
+            const ps =
+                'powershell -NoProfile -Command "(Get-CimInstance Win32_ComputerSystem | ForEach-Object { $_.Manufacturer, $_.Model }) -join \' \'"'
+            const basic = execSync(ps, { encoding: 'utf8' }).trim()    // manufacturer + model
+            if (VENDORS.test(basic)) return true
+            } catch {}
+
+            try {
+            const psRobust =
+                'powershell -NoProfile -Command "$o=@();' +
+                'try{$cs=Get-CimInstance Win32_ComputerSystem;$o+=@($cs.Manufacturer,$cs.Model)}catch{};' +
+                'try{$bb=Get-CimInstance Win32_BaseBoard;$o+=@($bb.Manufacturer,$bb.Product)}catch{};' +
+                'try{$bios=Get-CimInstance Win32_BIOS;$o+=@($bios.SMBIOSBIOSVersion)}catch{};' +
+                'try{$csp=Get-CimInstance Win32_ComputerSystemProduct;$o+=@($csp.Name)}catch{};' +
+                'Write-Output (($o -join \' \').Trim())"'
+            const robust = execSync(psRobust, { encoding: 'utf8' }).trim()
+            if (VENDORS.test(robust)) return true
             } catch {}
         }
-        return false                                                           // default to physical
+
+
+         // ---------- macOS ----------
+        if (process.platform === 'darwin') {
+            try {
+            const hwModel = execSync('sysctl -n hw.model', { encoding: 'utf8' })
+            if (/^virtual/i.test(hwModel) || VENDORS.test(hwModel)) return true
+            } catch {}
+
+            try {
+            const sp = execSync('system_profiler SPHardwareDataType', { encoding: 'utf8' })
+            if (VENDORS.test(sp)) return true
+            } catch {}
+        }
+
+        return false       
     }
 
     compareVersions(versionA, versionB) {
