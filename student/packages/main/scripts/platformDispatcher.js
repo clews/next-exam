@@ -64,10 +64,8 @@ class PlatformDispatcher {
     this.tempdirectory = this._getTempdirectory();
     this.workdirectory = this._getWorkdirectory();
     this.logfile = this._getLogfile();
-    this.useBundledJRE = process.env.useBundledJRE;
 
   }
-
 
   _getWorkdirectory() {
     return join(this.homedirectory, config.clientdirectory);
@@ -116,7 +114,7 @@ class PlatformDispatcher {
 
   _resolveJREDir() {
     // use bundled jre because its smaller and provides only the needed java modules
-    if (process.env.useBundledJRE) {
+    if (config.useBundledJRE) {
       if (app.isPackaged) {
         this.messages.push("platformDispatcher @ _resolveJREDir: app.isPackaged: " + join(process.resourcesPath, 'app.asar.unpacked', 'public', this.jre));
         return join(process.resourcesPath, 'app.asar.unpacked', 'public', this.jre);
