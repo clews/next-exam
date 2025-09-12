@@ -196,6 +196,15 @@ app.on('window-all-closed', () => {  // if window is closed
     app.quit()   
 })
 
+app.on('before-quit', async () => {
+    try {
+        await session.defaultSession.clearStorageData({}); // clear cookies, cache, localStorage etc.
+    } catch (err) {
+        log.error('main @ before-quit: Error clearing cache:', err);
+    }
+  });
+
+
 app.on('activate', () => {
     const allWindows = BrowserWindow.getAllWindows()
     if (allWindows.length) { allWindows[0].focus() } 
