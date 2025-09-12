@@ -183,8 +183,11 @@ async function configureRDP(){
         icon: 'question',
         html: `
         <div class="my-content">
-            <h6>${this.$t("dashboard.rdpconfiginfo")}</h6>
+            
 
+            <span class="text-danger">Beachten sie bitte, dass es sich bei dem RDP Modus um ein Developer-Preview handelt!</span>
+
+            <h6>${this.$t("dashboard.rdpconfiginfo")}</h6>
             <label>
                 <input type="text" id="domain" class="form-control my-select" placeholder="domain">
             </label>
