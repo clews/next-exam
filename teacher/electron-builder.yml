@@ -61,8 +61,4 @@ win:
   files:
     - dist
     - public
-  signtoolOptions:
-    certificateSubjectName: OSOS Austria
-    signingHashAlgorithms:
-      - sha256
 afterSign: ./scripts/notarize.cjs

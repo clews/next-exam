@@ -79,8 +79,4 @@ win:
     - "!public/minimal-jre-11-mac/**/*"
     - "!public/minimal-jre-11-mac-arm64/**/*"
     - "!public/minimal-jre-11-lin/**/*"
-  signtoolOptions:
-    certificateSubjectName: OSOS Austria
-    signingHashAlgorithms:
-      - sha256
 afterSign: scripts/notarize.cjs
