@@ -78,11 +78,11 @@ if (process.env.SIGN === 'false') {
    // builderConfig.win.sign = false;
 }
 else {
-    // füge die Sign-Optionen wieder hinzu
-    builderConfig.win.signtoolOptions = {
-        certificateSubjectName: 'OSOS Austria',
-        signingHashAlgorithms: ['sha256']
-    };
+    // füge die Sign-Optionen wieder hinzu  //nicht geeigent für github automations
+    // builderConfig.win.signtoolOptions = {
+    //     certificateSubjectName: 'OSOS Austria',
+    //     signingHashAlgorithms: ['sha256']
+    // };
   //  builderConfig.win.sign = true;
     builderConfig.afterSign = './scripts/notarize.cjs';   
 }
