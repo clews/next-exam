@@ -25,7 +25,7 @@ jobs:
       run: npm install
     - name: Teacher build
       working-directory: ./teacher
-      run: npm run build
+      run: npm run build:linux
     # - name: Upload artifacts
     #   uses: actions/upload-artifact@v4
     #   with:
@@ -47,7 +47,7 @@ jobs:
       run: npm install
     - name: Student build
       working-directory: ./student
-      run: npm run build
+      run: npm run build:linux
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
