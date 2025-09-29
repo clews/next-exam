@@ -75,7 +75,7 @@ if (process.env.SIGN === 'false') {
     // Entferne den Abschnitt "signtoolOptions"
     delete builderConfig.win.signtoolOptions;
     delete builderConfig.afterSign;
-    builderConfig.win.sign = false;
+   // builderConfig.win.sign = false;
 }
 else {
     // füge die Sign-Optionen wieder hinzu
@@ -83,7 +83,7 @@ else {
         certificateSubjectName: 'OSOS Austria',
         signingHashAlgorithms: ['sha256']
     };
-    builderConfig.win.sign = true;
+  //  builderConfig.win.sign = true;
     builderConfig.afterSign = './scripts/notarize.cjs';   
 }
 

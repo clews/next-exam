@@ -79,7 +79,6 @@ win:
     - "!public/minimal-jre-11-mac/**/*"
     - "!public/minimal-jre-11-mac-arm64/**/*"
     - "!public/minimal-jre-11-lin/**/*"
-  sign: true
   signtoolOptions:
     certificateSubjectName: OSOS Austria
     signingHashAlgorithms:

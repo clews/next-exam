@@ -61,7 +61,6 @@ win:
   files:
     - dist
     - public
-  sign: true
   signtoolOptions:
     certificateSubjectName: OSOS Austria
     signingHashAlgorithms:
