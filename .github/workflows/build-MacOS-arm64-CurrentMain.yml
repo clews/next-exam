@@ -1,6 +1,8 @@
 name: Build current macOS arm64 Main Branch
 
-on: workflow_dispatch
+on:
+  workflow_call: {}
+  workflow_dispatch: {}
 
 jobs:
   build:
