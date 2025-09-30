@@ -3,7 +3,7 @@ name: prerelease
 on:
   push:
     tags:
-      - "pre-*.*.*"                   # läuft nur bei Tag push, z.B. v1.0.0
+      - "pre-*.*.*"                   # läuft nur bei Tag push, z.B. pre-1.0.0
 
 jobs:
   linux:
@@ -22,7 +22,8 @@ jobs:
     uses: ./.github/workflows/build-Windows-Portable-CurrentMain.yml
 
   release:
-    needs: [linux, macos-arm64, macos-x64, windows-msi, windows-portable]
+     #needs: [linux, macos-arm64, macos-x64, windows-msi, windows-portable]
+    needs: [linux]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
