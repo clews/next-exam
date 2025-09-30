@@ -8,18 +8,24 @@ on:
 jobs:
   linux:
     uses: ./.github/workflows/build-Linux-CurrentMain.yml
+    secrets: inherit
 
   macos-arm64:
     uses: ./.github/workflows/build-MacOS-arm64-CurrentMain.yml
+    secrets: inherit
 
   macos-x64:
     uses: ./.github/workflows/build-MacOS-x64-CurrentMain.yml
+    secrets: inherit
 
   windows-msi:
     uses: ./.github/workflows/build-Windows-MSI-CurrentMain.yml
+    secrets: inherit
 
   windows-portable:
     uses: ./.github/workflows/build-Windows-Portable-CurrentMain.yml
+    secrets: inherit
+
 
   release:
     needs: [linux, macos-arm64, macos-x64, windows-msi, windows-portable]
