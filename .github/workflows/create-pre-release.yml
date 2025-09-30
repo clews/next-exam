@@ -22,8 +22,8 @@ jobs:
     uses: ./.github/workflows/build-Windows-Portable-CurrentMain.yml
 
   release:
-     #needs: [linux, macos-arm64, macos-x64, windows-msi, windows-portable]
-    needs: [linux]
+    needs: [linux, macos-arm64, macos-x64, windows-msi, windows-portable]
+    #needs: [linux]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
