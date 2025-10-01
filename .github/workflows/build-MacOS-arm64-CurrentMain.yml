@@ -102,14 +102,14 @@ jobs:
       - name: Upload Student macOS arm64 DMG
         uses: actions/upload-artifact@v4
         with:
-          name: student-macos-arm64-dmg
+          name: next-exam-student-macos-arm64-dmg
           path: ./release/**/Next-Exam-Student*arm64*.dmg
           retention-days: 5
 
       - name: Upload Teacher macOS arm64 DMG
         uses: actions/upload-artifact@v4
         with:
-          name: teacher-macos-arm64-dmg
+          name: next-exam-teacher-macos-arm64-dmg
           path: ./release/**/Next-Exam-Teacher*arm64*.dmg
           retention-days: 5
 

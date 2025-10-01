@@ -69,14 +69,14 @@ jobs:
     - name: Upload Student Windows MSI
       uses: actions/upload-artifact@v4
       with:
-        name: student-windows-msi
+        name: next-exam-student-win-msi
         path: ./release/**/Next-Exam-Student*.msi
         retention-days: 5
 
     - name: Upload Teacher Windows MSI
       uses: actions/upload-artifact@v4
       with:
-        name: teacher-windows-msi
+        name: next-exam-teacher-win-msi
         path: ./release/**/Next-Exam-Teacher*.msi
         retention-days: 5
 
