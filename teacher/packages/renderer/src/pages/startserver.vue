@@ -127,7 +127,7 @@
 
             <div v-if="advanced" class="input-group mb-1" style="max-width: fit-content">  
                 <span id="backupdir" class="input-group-text col-2 grayback"  style="width:170px;">{{$t("startserver.backupfolder")}}</span>
-                <span class="form-control " style="width:360px;  font-size: 0.9em; padding-top: 8px; white-space: pre;">{{ backupdir }}</span>
+                <span class="form-control text-truncate" style="width:360px;  font-size: 0.9em; padding-top: 8px; white-space: pre;">{{ backupdir }}</span>
                 <button @click="setBackupdir()" id="backupdirbutton" class="btn btn-info p-0" style="width:40px;" :title="$t('startserver.backupfolderinfo')" >
                     <img src="/src/assets/img/svg/settings.svg" style="vertical-align: sub;" class="" width="18" height="18" >
                 </button>
