@@ -580,11 +580,17 @@ class WindowHandler {
                 guest.on('new-window', (e, url) => { e.preventDefault() })             // extra safety
                 guest.on('will-navigate', (e, url) => {                                // block external nav
                 
-                    if ( url.includes( serverstatus.examSections[serverstatus.lockedSection].allowedUrl)){
+                    const allowedUrl = serverstatus.examSections[serverstatus.lockedSection].allowedUrl;
+
+                    let cleanedUrl = allowedUrl.replace(/^https?:\/\//, '');  // remove http:// or https://
+
+                  
+                    if ( url.includes( cleanedUrl )){
                         console.log("WebView: url allowed")
                     }
                     else {
                         console.log("WebView: blocked leaving exam mode")
+                        console.log(url)
                         e.preventDefault()
                     }
                 })
