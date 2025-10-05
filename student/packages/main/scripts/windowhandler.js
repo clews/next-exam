@@ -441,8 +441,10 @@ class WindowHandler {
                 this.examwindow.show()
                 this.examwindow.focus()
      
-                if (process.platform ==='darwin') { this.examwindow.setAlwaysOnTop(true, "pop-up-menu", 0)  }  // do not display above popup because of colorpicker in editor (fix that!)
-                else {                              this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) }
+                // if (process.platform ==='darwin') { this.examwindow.setAlwaysOnTop(true, "pop-up-menu", 0)  }  // do not display above popup because of colorpicker in editor (fix that!)
+                // else {                              this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) }
+
+                this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) 
 
                 this.examwindow.focus();
                 this.examwindow.setKiosk(true); 
