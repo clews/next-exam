@@ -16,6 +16,9 @@
  * If not, see <http://www.gnu.org/licenses/>
  */
 
+
+
+
 import { createApp } from 'vue'
 import App from './App.vue'
 import { createRouter } from './router'
@@ -26,10 +29,38 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 import './assets/custom.scss'
 
+// ACHTUNG: Der Import von Swal wird beibehalten, aber wir entfernen den fehlerhaften
+// Swal.defaults Aufruf und verschieben die Konfiguration in die Plugin-Optionen.
+import Swal from 'sweetalert2'; 
+
+// --- START DES BEREINIGTEN CODE ---
+
+// Globale Optionen für das VueSweetalert2 Plugin
 const options = {
     confirmButtonColor: '#198754',
     cancelButtonColor: '#ff7674',
+    
+    // HIER verschieben wir den globalen Hook (als Teil der Standardoptionen)
+    didOpen: (popup) => {
+        // Elemente finden: popup (vom Hook übergeben), Container und Backdrop (über DOM-Query)
+        const elementsToControl = [
+            popup, 
+            document.querySelector('.swal2-container'), 
+        ];
+        
+        // Transitions entfernen, um Flimmern bei schnellen Events (wie Druck) zu verhindern
+        elementsToControl
+            .filter(el => el)
+            .forEach(el => {
+                el.style.transition = 'none';
+                el.style.animation = 'none';
+                el.style.webkitAnimation = 'none';
+                el.style.webkitTransition = 'none';
+            });
+    }
 };
+
+// --- ENDE DES BEREINIGTEN CODE ---
 
 const router = createRouter()
 const vApp = createApp(App)
@@ -37,10 +68,10 @@ const vApp = createApp(App)
 
 vApp.use(router)
 vApp.use(i18n)
-vApp.use(VueSweetalert2, options)
-//vApp.config.unwrapInjectedRef = true  // should not be neccecary in future versions (suppress specific warning)
+// Das Plugin wird mit den Optionen installiert, die nun den globalen didOpen Hook enthalten.
+vApp.use(VueSweetalert2, options) 
 
-//console.log(vApp)
+// console.log(vApp)
 
 // wait until router is ready before mounting to ensure hydration match
 router.isReady().then(() => {

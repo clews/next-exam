@@ -386,10 +386,6 @@ import { LTcheckAllWords, LTfindWordPositions, LThighlightWords, LTdisable, LTha
 import {getExamMaterials, loadPDF, loadHTML, loadDOCX, loadImage, playAudio} from '../utils/filehandler.js'
 import { gracefullyExit } from '../utils/commonMethods.js'
 
-
-
-
-
 export default {
     components: {
         EditorContent,
@@ -589,6 +585,7 @@ export default {
 
 
         loadBase64file(file){
+        
             this.webviewVisible = false
             if (file.filetype == 'pdf'){
                 this.loadPDF(file, true)
@@ -903,6 +900,7 @@ export default {
             if (why === "manual"){
                 await this.$swal({
                     title: this.$t("math.filename") ,
+                    icon: "question",
                     input: 'text',
                     inputPlaceholder: 'Type here...',
                     showCancelButton: true,
@@ -945,18 +943,36 @@ export default {
                     console.log('editor @ savecontent: Fehler beim Kopieren des Textes: ', err.message);
                 });
             }
-           
+      
+
+
+
+            // Klasse entfernen: Verhindert, dass die Keyframe-Animation beim printToPDF neu startet
+            const previewElement = document.querySelector("#preview");
+            if (previewElement && previewElement.classList.contains('fadeinfast')) {
+                previewElement.classList.remove('fadeinfast');
+            }
+
 
             // SAVE AS PDF - inform mainprocess to save webcontent as pdf (see @media css query for adjustments for pdf)
             // printPDF will trigger a reload of the filelist if finished and send files to teacher if reason (why) is "teacherrequest"
             ipcRenderer.send('printpdf', {filename: filename, landscape: false, servername: this.servername, clientname: this.clientname, reason: why })  
             
+
+
+
+
             // SAVE AS HTML (bak) - also save editorcontent as *html file - used to re-populate the editor window in case something went completely wrong
             let editorcontent = this.editor.getHTML(); 
             ipcRenderer.send('storeHTML', {filename: filename, editorcontent: editorcontent })
             
-      
+
         },
+
+
+
+
+
 
         // send direct print request to teacher and append current document as base64
         printBase64(printrequest=false){        
@@ -1366,9 +1382,6 @@ export default {
         this.loadBackupFile()
 
 
-
-
-
         ipcRenderer.on('getmaterials', (event) => {  //trigger document save by signal "save" sent from sendExamtoteacher in communication handler
             console.log("editor @ getmaterials: get materials request received")
             this.getExamMaterials() 
@@ -1433,6 +1446,7 @@ export default {
             this.style.display = 'none';
             this.setAttribute("src", "about:blank");
             URL.revokeObjectURL(this.currentpreview);
+            this.classList.add('fadeinfast');  // wird entfernt sobald pdf sichtbar ist um flickering zu vermeiden und hier wieder hinzugefügt
         });
 
         document.querySelector("#mugshotpreview").addEventListener("click", function() {  
@@ -1457,7 +1471,7 @@ export default {
         this.fetchinfointerval.start();
 
         this.saveContentCallback = () => this.saveContent(true, 'auto');  // wegs 2 parameter muss dieser umweg genommen werden sonst kann ich den eventlistener nicht mehr entfernen
-        this.saveinterval = new SchedulerService(20000);
+        this.saveinterval = new SchedulerService(4000);
         this.saveinterval.addEventListener('action', this.saveContentCallback );  // Event-Listener hinzufügen, der auf das 'action'-Event reagiert (reagiert nur auf 'action' von dieser instanz und interferiert nicht)
         this.saveinterval.start();
 
@@ -1573,6 +1587,8 @@ export default {
 <style lang="scss">
 
 @media print {  //this controls how the editor view is printed (to pdf)
+
+
     #editortoolbar,#webview, #mugshotpreview, #apphead, #editselected, #editselectedtext, #focuswarning, .focus-container, #specialcharsdiv, #aplayer,  span.NXTEhighlight::after, #highlight-layer, #languagetool, .split-view-container, #preview, #pdfembed  {
         display: none !important;
     }
