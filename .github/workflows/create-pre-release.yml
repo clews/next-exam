@@ -34,6 +34,8 @@ jobs:
     secrets: inherit
     with:
       prerelease: true
+
+
   release:
     needs: [linux, macos-arm64, macos-x64, windows-msi, windows-portable]
     runs-on: ubuntu-latest
@@ -61,8 +63,8 @@ jobs:
           # Installiere yq (ein Kommandozeilen-YAML-Prozessor)
           sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
           
-          # Lese die buildVersion aus der Datei
-          VERSION=$(yq e '.buildVersion' electron-builder.yml)
+          # Lese die buildVersion aus der /student/electron-builder.yml
+          VERSION=$(yq e '.buildVersion' student/electron-builder.yml)
           echo "Gelesene Version: $VERSION"
           
           # Erstelle den neuen Pre-Release-Tag
@@ -84,8 +86,6 @@ jobs:
           git tag ${{ steps.version_reader.outputs.new_prerelease_tag }}
           git push origin ${{ steps.version_reader.outputs.new_prerelease_tag }}
         env:
-          # Das GITHUB_TOKEN funktioniert hier nicht für Push-Events.
-          # Dein PAT ist hier korrekt.
           GITHUB_TOKEN: ${{ secrets.PAT_BiP_ORG_NEXT_EXAM }}
 
       - name: Generate changelog
