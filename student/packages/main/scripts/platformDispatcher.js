@@ -188,7 +188,7 @@ class PlatformDispatcher {
   }
 
   _getWorkerFileName() {
-    return this._platform === 'linux' ? 'imageWorkerLinux.mjs' : 'imageWorkerSharp.js';
+    return this._platform === 'linux' ? 'imageWorkerLinux.mjs' : 'imageWorkerSharp.mjs';
   }
 
   _getWorkerURL() {
