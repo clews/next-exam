@@ -356,22 +356,6 @@ export default {
             }  
         },
 
-        //checks if arraybuffer contains a valid pdf file
-        isValidPdf(data) {
-            const header = new Uint8Array(data, 0, 5); // Lese die ersten 5 Bytes für "%PDF-"
-            // Umwandlung der Bytes in Hexadezimalwerte für den Vergleich
-            const pdfHeader = [0x25, 0x50, 0x44, 0x46, 0x2D]; // "%PDF-" in Hex
-            for (let i = 0; i < pdfHeader.length; i++) {
-                if (header[i] !== pdfHeader[i]) {
-                    return false; // Früher Abbruch, wenn ein Byte nicht übereinstimmt
-                }
-            }
-            return true; // Alle Bytes stimmen mit dem PDF-Header überein
-        },
-
-
-
-
 
 
         async loadFilelist(){
@@ -523,14 +507,6 @@ iframe{
     background-position: center;
 }
 
-.embed-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  margin-top: 30px;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: flex-start;
-}
+
 
 </style>

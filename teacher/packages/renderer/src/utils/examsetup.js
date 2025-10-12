@@ -510,9 +510,9 @@ function isValidMoodleDomainName(url) {
 
 function isValidFullDomainName(str) {
     try {
-        // Füge https:// hinzu, wenn kein Protokoll angegeben ist
-        const urlString = str.includes('://') ? str : 'https://' + str;
-        const url = new URL(urlString);
+        // const urlString = str.includes('://') ? str : 'https://' + str; // Entfernt: Kein automatisches Hinzufügen von https://
+        const urlString = str; // Nutzt den String direkt
+        const url = new URL(urlString); // Erzeugt einen Fehler, wenn das Protokoll fehlt
         
         // Prüfe ob Protokoll korrekt ist
         if (url.protocol !== 'http:' && url.protocol !== 'https:') {
@@ -539,6 +539,7 @@ function isValidFullDomainName(str) {
         );
 
     } catch (e) {
+        // Fängt den Fehler der new URL(urlString) ab, wenn das Protokoll fehlt (z.B. bei 'classtime.com')
         return false;
     }
 }
