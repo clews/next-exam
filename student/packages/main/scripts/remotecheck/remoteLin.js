@@ -9,7 +9,7 @@ const suspiciousKeywords = [
 
 
 const suspiciousPorts = [
-  53, 443, 2002, 5222, 5650, 5900, 5901, 5902, 5938,
+  53, 2002, 5222, 5650, 5900, 5901, 5902, 5938,
   7070, 6783, 6784, 6785, 8040, 8041, 8042, 21115, 21116
 ];
 
@@ -29,7 +29,10 @@ function checkProcesses() {
 function checkPorts() {
   try {
     const out = execSync('lsof -i -n -P', { encoding: 'utf8' }).toLowerCase()
-    return suspiciousPorts.some(p => out.includes(`:${p}`))
+  
+    const correctlyFormattedPorts = suspiciousPorts.map(p => `:${p} `);
+    return correctlyFormattedPorts.some(p => out.includes(p));
+
   } catch {
     return false
   }
