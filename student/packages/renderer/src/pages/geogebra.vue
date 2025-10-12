@@ -185,8 +185,8 @@ export default {
             wlanInfo: null,
             hostip: null,
             examMaterials: [],
-            webviewVisible: false,
-            hidepreview: false,
+            webviewVisible: false
+        
         }
     }, 
     components: { ExamHeader, WebviewPane  },  
@@ -281,6 +281,14 @@ export default {
 
         // from commonMethods.js
         gracefullyExit:gracefullyExit,
+
+
+        hidepreview(){
+            let preview = document.querySelector("#preview")
+            preview.style.display = 'none';
+            preview.setAttribute("src", "about:blank");
+            URL.revokeObjectURL(this.currentpreview);
+        },
 
 
         loadBase64file(file){

@@ -583,11 +583,9 @@ class WindowHandler {
                 guest.on('will-navigate', (e, url) => {                                // block external nav
                 
                     const allowedUrl = serverstatus.examSections[serverstatus.lockedSection].allowedUrl;
+                    //  cleanedUrl = allowedUrl.replace(/^https?:\/\//, '');  // remove http:// or https://
 
-                    let cleanedUrl = allowedUrl.replace(/^https?:\/\//, '');  // remove http:// or https://
-
-                  
-                    if ( url.includes( cleanedUrl )){
+                    if ( url.includes( allowedUrl )){
                         console.log("WebView: url allowed")
                     }
                     else {
