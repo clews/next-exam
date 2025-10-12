@@ -1873,7 +1873,8 @@ computed: {
     position: absolute;
     top:78px;
     left:0;
-    background-color: #1aa179;
+    background-color: #b96118;
+    color:white;
     font-size: 0.7em;
     padding: 2px;
     padding-left: 4px;
