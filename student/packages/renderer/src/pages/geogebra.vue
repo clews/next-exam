@@ -518,6 +518,7 @@ export default {
             .then((result) => {
                 if (result.isConfirmed) { 
                     ggbApplet.reset()
+                    ggbApplet.newConstruction(); // start a new empty construction (if supported)
                 }
                 else {return; }
             });
