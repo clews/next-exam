@@ -29,7 +29,7 @@ import {disableRestrictions} from './platformrestrictions.js';
 import mammoth from 'mammoth';
 import wifi from 'node-wifi';
 import languageToolServer from './lt-server';
-
+import { updateSystemTray } from './traymenu.js';
 
 
 
@@ -57,6 +57,15 @@ class IpcHandler {
         wifi.init({
             iface: null // Standard: null, damit das Standardinterface des Systems verwendet wird
         });
+
+
+
+
+        ipcMain.on('set-new-locale', (event, locale) => {
+            log.info(`ipchandler @ set-new-locale: setting new locale to ${locale}`)
+            i18n.locale = locale
+            updateSystemTray(i18n.locale);
+        })
 
 
         ipcMain.handle('getExamMaterials', async (event) => { 

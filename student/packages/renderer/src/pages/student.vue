@@ -211,10 +211,13 @@ export default {
 
 
     methods: {
+        
         toggleLocale() {
         // Umschalte zwischen 'de' und 'en'
          this.$i18n.locale = this.$i18n.locale === 'de' ? 'en' : 'de';
+         ipcRenderer.send('set-new-locale', this.$i18n.locale);
         },
+
         async loginBiP(){
             if (this.config.bipDemo){   // skip bip logon and fake bip info
                 this.bipUsername = "Robert Schrenk"

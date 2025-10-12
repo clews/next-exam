@@ -38,6 +38,8 @@ import CommHandler from './scripts/communicationhandler.js'
 import IpcHandler from './scripts/ipchandler.js'
 
 
+import { updateSystemTray } from './scripts/traymenu.js'
+
 import JreHandler from './scripts/jre-handler.js';
 JreHandler.init()
 
@@ -99,7 +101,6 @@ app.on('second-instance', () => {
  * additional config settings and path checks
  */
 
-let tray = null;
 const __dirname = import.meta.dirname;
 config.electron = true
 
@@ -229,30 +230,11 @@ app.whenReady()
     WindowHandler.createMainWindow()
 
     if (!config.development){
-        // Create tray icon
-        const iconPath = path.join(__dirname, '../../public/icons','icon24x24.png'); // Path to the app icon
-        tray = new Tray(iconPath);
-        const contextMenu = Menu.buildFromTemplate([ 
-            { label: 'Restore', click: function () { WindowHandler.mainwindow.show(); }   },
-            { label: 'Disconnect', click: function () {
-                log.info("main @ systemtray: removing registration ")
-                CommHandler.resetConnection();
-            }   },
-            { label: 'Exit', click: function () {
-                log.warn("main @ systemtray: Closing Next-Exam" )
-                log.warn(`main @ systemtray: ----------------------------------------`)
-                WindowHandler.mainwindow.allowexit = true; app.quit(); 
-            }   }
-        ]);
 
-        tray.setToolTip('Next-Exam Student');
-        tray.setContextMenu(contextMenu);
 
-        // Click on the tray icon shows the window
-        tray.on('click', () => {
-            WindowHandler.mainwindow.isVisible() ?  WindowHandler.mainwindow.hide() :  WindowHandler.mainwindow.show();
-        });
-    
+
+        updateSystemTray('de');
+        
 
         // this checks if the app was started from within a browser (directly after download)
         const runCheckParentInWorker = () => {

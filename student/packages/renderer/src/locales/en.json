@@ -1,4 +1,11 @@
 { 
+    "main": {
+        "tray": {
+            "restore": "Restore",
+            "disconnect": "Disconnect",
+            "exit": "Exit"
+        }
+    },
     "student" : {
         "exams": "Exams",
         "username": "Username",

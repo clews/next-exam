@@ -1,4 +1,11 @@
 { 
+    "main": {
+        "tray": {
+            "restore": "Wiederherstellen",
+            "disconnect": "Verbindung trennen",
+            "exit": "Beenden"
+        }
+    },
     "student" : {
         "exams": "Prüfungen",
         "username": "Benutzername",
