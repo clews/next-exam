@@ -202,18 +202,18 @@
             <embed src="" id="pdfembed"></embed>
             <div style="display:block">
                  <div class="btn btn-warning shadow " id="insert-button" @click="insertImage(selectedFile)" :title="$t('editor.insert')">
-                    <img src="/src/assets/img/svg/edit-download.svg" class="white" width="22" height="32">
+                    <img src="/src/assets/img/svg/edit-download.svg" class="white" >
                 </div>
                 <br>
                 <div class="btn btn-warning shadow " id="print-button" @click="printBase64(true)" :title="$t('editor.print')">
-                    <img src="/src/assets/img/svg/print.svg" class="white" width="22" height="32">
+                    <img src="/src/assets/img/svg/print.svg" class="white" >
                 </div>
                 <div class="btn btn-warning shadow " id="send-button" @click="printBase64()" :title="$t('editor.send')">
-                    <img src="/src/assets/img/svg/games-solve.svg" class="white" width="22" height="32">
+                    <img src="/src/assets/img/svg/document-send.svg" class="white">
                 </div>
                 <div id="pdfZoom" style="display:none; position: relative; top:20px; left: 0px;">
-                    <button class="btn btn-warning btn-small  splitzoomin" style="width:38px !important; height: 38px !important; " id="zoomIn"> </button><br>
-                    <button class="btn btn-warning btn-small splitzoomout" style="width:38px !important; height: 38px !important;" id="zoomOut"></button>
+                    <div class="btn btn-warning  labelbutton shadow" style=" " id="zoomIn">  <img src="/src/assets/img/svg/zoom-in.svg" class="" ></div>
+                    <div class="btn btn-warning  labelbutton shadow" style=" " id="zoomOut"> <img src="/src/assets/img/svg/zoom-out.svg" class="" ></div>
                 </div>
             </div>
         </div>
@@ -1870,7 +1870,7 @@ Other Styles
 }
 
 #insert-button img {
-  width: 22px;
+  width: 32px;
   height: 52px;
 }
 
@@ -1890,7 +1890,7 @@ Other Styles
 }
 
 #print-button img {
-  width: 22px;
+  width: 32px;
   height: 52px;
 }
 
@@ -1910,9 +1910,41 @@ Other Styles
 }
 
 #send-button img {
-  width: 22px;
+  width: 32px;
   height: 52px;
 }
+
+
+.labelbutton {
+    border: none !important;
+    border-radius: 0px !important;
+    border-top-right-radius: 6px !important;
+    border-bottom-right-radius: 6px !important;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+    padding: 10px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    margin-top: 10px !important;
+}
+.labelbutton img {
+  width: 32px !important;
+  height: 52px !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 /* Basic editor styles */
 
 .ProseMirror {
@@ -2210,7 +2242,7 @@ Other Styles
     background-image: url('/src/assets/img/svg/print.svg');
 }
 .splitsend {
-    background-image: url('/src/assets/img/svg/games-solve.svg');
+    background-image: url('/src/assets/img/svg/document-send.svg');
 }
 
 #languagetool .ltscrollarea {
