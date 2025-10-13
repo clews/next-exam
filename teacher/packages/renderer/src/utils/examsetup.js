@@ -30,7 +30,7 @@ function getTestURL(){
         this.serverstatus.examSections[this.serverstatus.activeSection].domainname = isValidFullDomainName(  domainname ) ? domainname : null
 
         if (!this.serverstatus.examSections[this.serverstatus.activeSection].domainname) { this.serverstatus.examSections[this.serverstatus.activeSection].examtype = "math"}
-        else { this.abgabeinterval.stop(); this.autoabgabe = false;}  // no autoabgabe in this exam mode
+        else { this.backupinterval.stop(); this.autobackup = false;}  // no auto backup in this exam mode
         //console.log( this.serverstatus.domainname )
         this.setServerStatus()
     })  
@@ -84,8 +84,8 @@ async function getTestID(){
         this.serverstatus.examSections[this.serverstatus.activeSection].moodleDomain = moodledomain
         this.serverstatus.examSections[this.serverstatus.activeSection].moodleURL = input.value
 
-        this.abgabeinterval.stop(); 
-        this.autoabgabe = false;  // no autoabgabe in this exam mode
+        this.backupinterval.stop(); 
+        this.autobackup = false;  // no auto backup in this exam mode
         this.setServerStatus()
     })  
 }
@@ -122,8 +122,8 @@ async function getFormsID(){
         if (!input.value) { this.serverstatus.examSections[this.serverstatus.activeSection].examtype = "math"}
         else {
             this.serverstatus.examSections[this.serverstatus.activeSection].gformsTestId = input.value
-            this.abgabeinterval.stop();
-            this.autoabgabe = false;
+            this.backupinterval.stop();
+            this.autobackup = false;
         }
         this.setServerStatus()
     })  

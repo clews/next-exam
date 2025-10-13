@@ -2,7 +2,7 @@
     "general": {
         "startserver":"Start Exam",
         "slist": "Aktive Exams",
-        "ok": "ok",
+        "ok": "OK",
         "offline": "No Network Connection"
     },
     "serverlist" : {
@@ -88,7 +88,7 @@
         "delsingle": "clean remote workfolder",
         "delsinglesure": "Delete contents of the students workfolder",
         "attention": "Attention!",
-        "abgaberequest": "Requesting files from all students",
+        "backuprequest": "Requesting files from all students",
         "showworkfolder": "Show Workfolder",
         "workfolder": "Show Workfolder",
         "shownewestfolder": "Show newest Workfolder",
@@ -126,9 +126,9 @@
         "fr":"French",
         "it":"Italian",
         "sl":"Slovenian",
-        "abgabeauto":"Automatic Retreival",
-        "abgabeautoquestion":"Please set the interval for automatic retreival?",
-        "abgabeautohint":"(Timeframe in minutes)",
+        "backupauto":"Automatic Retreival",
+        "backupautoquestion":"Please set the interval for automatic retreival?",
+        "backupautohint":"(Timeframe in minutes)",
         "eduvidualid": "Eduvidual / Moodle",
         "eduvidualidhint": "Please enter a valid test URL!",
         "gformshint": "Please enter a valid Google Forms ID!",

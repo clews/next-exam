@@ -237,15 +237,15 @@
             <!-- <div class="swal2-icon swal2-question swal2-icon-show" style="display: flex;"><div class="swal2-icon-content">?</div></div> -->
             <div class="mb-3"><h5 style="display: inline">{{ $t('dashboard.extendedsettings') }}</h5></div>
             <div class="m-1 mb-2">
-                <label for="abgabeintervalSlider" class="form-check-label"> {{$t('dashboard.autoget')}} </label>
-                <span v-if="serverstatus.abgabeintervalPause > 0" class="ms-2 text-black-50">| {{serverstatus.abgabeintervalPause}}min </span>
+                <label for="backupintervalSlider" class="form-check-label"> {{$t('dashboard.autoget')}} </label>
+                <span v-if="serverstatus.backupintervalPause > 0" class="ms-2 text-black-50">| {{serverstatus.backupintervalPause}}min </span>
                 <span v-else class="ms-2 text-black-50">| {{$t('dashboard.disabled')}}</span>
-                <input id="abgabeintervalSlider" type="range" 
-                    v-model="serverstatus.abgabeintervalPause" 
-                    :title="$t('dashboard.abgabeautoquestion')"
+                <input id="backupintervalSlider" type="range" 
+                    v-model="serverstatus.backupintervalPause" 
+                    :title="$t('dashboard.backupautoquestion')"
                     :min="0" :max="20" step="1" 
                     class="form-range custom-slider" 
-                    @input="updateAbgabeInterval">
+                    @input="updateBackupInterval">
             </div>
             <div class="m-1 mb-2">
                 <label for="screenshotIntervalSlider" class="form-check-label"> {{$t('dashboard.screenshot')}} </label>
@@ -500,7 +500,7 @@ export default {
             info: config.info,
             title: document.title,
             fetchinterval: null,
-            abgabeinterval: null,
+            backupinterval: null,
             
             studentlist: [],
             workdirectory: `${this.$route.params.workdirectory}/${this.$route.params.servername}`,
@@ -517,7 +517,7 @@ export default {
             hostip: this.$route.params.config.hostip,
             now : null,
             files: null,
-            autoabgabe: true,
+            autobackup: true,
             autoscreenshot: true,
             activestudent: null,
             localfiles: null,
@@ -566,7 +566,7 @@ export default {
                 exammode: false,
                 delfolderonexit: true,
                 screenshotinterval: 4,
-                abgabeintervalPause:6,
+                backupintervalPause:6,
                 screenslocked: false,
                 screenshotocr: false,
                 examTeachers: [],
@@ -760,7 +760,7 @@ computed: {
         endExam:endExam,                             // disable exammode 
         kick: kick,                                  //remove student from exam
         restore: restore,                            //restore focus state for specific student -- we tell the client that his status is restored which will then (on the next update) update it's focus state on the server 
-        getFiles:getFiles,                           // get finished exams (ABGABE) from students
+        getFiles:getFiles,                           // get backup from students
         lockscreens:lockscreens,                     // temporarily lock screens
         sendFiles:sendFiles,                         //upload files to all students
         stopserver:stopserver,                       //Stop and Exit Exam Server Instance
@@ -983,19 +983,19 @@ computed: {
         },
 
         /**
-         * triggered when abgabe slider is used in settings dialog
+         * triggered when backup slider is used in settings dialog
          * starts or stops the autofetch feature
          */
-        updateAbgabeInterval() {
-            const interval = parseInt(this.serverstatus.abgabeintervalPause, 10); // Ensure it's an integer
+        updateBackupInterval() {
+            const interval = parseInt(this.serverstatus.backupintervalPause, 10); // Ensure it's an integer
             if (interval === 0) {
-                console.info("dashboard @ updateAbgabeInterval: stopping submission interval");
-                this.abgabeinterval.stop();
+                console.info("dashboard @ updateBackupInterval: stopping backup interval");
+                this.backupinterval.stop();
             } else {
-                console.info("dashboard @ updateAbgabeInterval: setting submission interval to", interval);
-                this.abgabeinterval.stop(); // Stop any ongoing interval
-                this.abgabeinterval.interval = 60000 * interval; // Convert minutes to milliseconds
-                this.abgabeinterval.start();
+                console.info("dashboard @ updateBackupInterval: setting backup interval to", interval);
+                this.backupinterval.stop(); // Stop any ongoing interval
+                this.backupinterval.interval = 60000 * interval; // Convert minutes to milliseconds
+                this.backupinterval.start();
             }
             this.setServerStatus();
         },
@@ -1453,12 +1453,12 @@ computed: {
             this.fetchinterval.addEventListener('action',  this.fetchInfo);  // Event-Listener hinzufügen, der auf das 'action'-Event reagiert (reagiert nur auf 'action' von dieser instanz und interferiert nicht)
             this.fetchinterval.start();
 
-            this.abgabeCallback = () => this.getFiles('all');  //selbst wenn 'all' default ist.. über den eventlistener wird das erste attribut zu "event"
-            this.abgabeinterval = new SchedulerService(60000 * this.serverstatus.abgabeintervalPause);
-            this.abgabeinterval.addEventListener('action',  this.abgabeCallback);  // Event-Listener hinzufügen, der auf das 'action'-Event reagiert (reagiert nur auf 'action' von dieser instanz und interferiert nicht)
-            this.abgabeinterval.start();
+            this.backupintervalCallback = () => this.getFiles('all');  //selbst wenn 'all' default ist.. über den eventlistener wird das erste attribut zu "event"
+            this.backupinterval = new SchedulerService(60000 * this.serverstatus.backupintervalPause);
+            this.backupinterval.addEventListener('action',  this.backupintervalCallback);  // Event-Listener hinzufügen, der auf das 'action'-Event reagiert (reagiert nur auf 'action' von dieser instanz und interferiert nicht)
+            this.backupinterval.start();
 
-            if (this.abgabeintervalPause == 0 ) { this.abgabeinterval.stop() }
+            if (this.backupintervalPause == 0 ) { this.backupinterval.stop() }
 
             this.pdfPreviewEventlisterenCallback = () => { document.querySelector("#pdfpreview").style.display = 'none';  document.querySelector("#pdfembed").setAttribute("src", "about:blank"); URL.revokeObjectURL(this.currentpreview);  } //unload pdf
             this.fileBrowserEventlistenerCallback = () => { document.querySelector("#preview").style.display = "none"; }
@@ -1508,8 +1508,8 @@ computed: {
     beforeUnmount() {  //when leaving
         this.fetchinterval.removeEventListener('action', this.fetchInfo);
         this.fetchinterval.stop() 
-        this.abgabeinterval.removeEventListener('action', this.abgabeCallback);
-        this.abgabeinterval.stop() 
+        this.backupinterval.removeEventListener('action', this.backupintervalCallback);
+        this.backupinterval.stop() 
         document.querySelector("#pdfpreview").removeEventListener("click", this.pdfPreviewEventlisterenCallback);
         document.querySelector("#closefilebrowser").removeEventListener("click", this.fileBrowserEventlistenerCallback);
     }

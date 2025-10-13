@@ -156,7 +156,7 @@ let studentInfo = {
             exammode: true,       // clients werden sofort abgesichert true/false
             delfolderonexit: false,  // ordner der clients beim beenden des abgesicherten modus löschen (am client)
             screenshotinterval: 4,  // in welchem intervall sollen die screenshots der clients aktualisiert werden (overhead beachten)
-            abgabeintervalPause: 6, // in welchem intervall sollen die abgaben von den clients gesichert werden
+            backupintervalPause: 6, // in welchem intervall sollen die arbeiten von den clients gesichert werden
             screenslocked: false, // sind die client screens abgesperrt (abgedunkelt)
             screenshotocr: false,   // soll als zusätzliche sicherheit im screenshot der clients nach dem exam pin gesucht werden
 
@@ -363,7 +363,7 @@ let studentInfo = {
             exammode: true,       // clients werden sofort abgesichert true/false
             delfolderonexit: false,  // ordner der clients beim beenden des abgesicherten modus löschen (am client)
             screenshotinterval: 4,  // in welchem intervall sollen die screenshots der clients aktualisiert werden (overhead beachten)
-            abgabeintervalPause: 6, // in welchem intervall sollen die abgaben von den clients gesichert werden
+            backupintervalPause: 6, // in welchem intervall sollen die abgaben von den clients gesichert werden
             screenslocked: false, // sind die client screens abgesperrt (abgedunkelt)
             screenshotocr: false,   // soll als zusätzliche sicherheit im screenshot der clients nach dem exam pin gesucht werden
             examTeachers: [

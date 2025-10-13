@@ -262,7 +262,7 @@ function sendFiles(who) {
         input: 'file',
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true,
+        reverseButtons: false,
         inputAttributes: {
             type: "file",
             name:"files",
