@@ -56,6 +56,7 @@ async function checkPasswd(to){
         to.params.pin = res.data.pin; 
         to.params.servertoken = res.data.servertoken; 
         to.params.serverip = res.data.serverip; 
+        to.params.id = res.data.id
         //console.log("router @ checkPasswd: password ok"); 
         return true 
     }

@@ -562,7 +562,7 @@ export default {
 
             serverstatus:{   // this object contains all neccessary information for students about the current exam settings
                 bip: false,
-                id: "1234",
+                id: this.$route.params.id,
                 nextexamVersion: this.$route.params.version,
                 examName: this.$route.params.servername,
                 examPassword: this.$route.params.passwd,

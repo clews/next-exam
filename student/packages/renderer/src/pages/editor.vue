@@ -167,7 +167,7 @@
             <div class="mb-3 row">
                 <div class="mb-3 "> {{$t('editor.leftkiosk')}} <br> {{$t('editor.tellsomeone')}} </div>
                 <img src="/src/assets/img/svg/eye-slash-fill.svg" class=" me-2" width="32" height="32" >
-                <div class="mt-3"> {{ formatTime(entrytime) }}</div>
+                <div class="mt-3"> {{timesinceentry}}</div>
             </div>
         </div>
     </div>
@@ -663,7 +663,7 @@ export default {
            
            // console.log(this.serverstatus)
             if (this.pincode !== "0000"){this.localLockdown = false}  // pingcode is 0000 only in localmode
-            if (!this.focus){  this.entrytime = new Date().getTime()}
+           
             if (this.clientinfo && this.clientinfo.token){  this.online = true  } else { this.online = false  }
 
             this.battery = await navigator.getBattery().then(battery => { return battery }).catch(error => { console.error("Error accessing the Battery API:", error);  });
@@ -1202,9 +1202,14 @@ export default {
                 this.sendFocuslost();
             }
         },
+
+
         formatTime(unixTime) {
             const date = new Date(unixTime * 1000); // Convert Unix time to milliseconds
-            return date.toLocaleTimeString('en-US', { hour12: false }); // Adjust locale and options as needed
+            const hours = String(date.getHours()).padStart(2, '0'); // Get hours and pad with leading zero
+            const minutes = String(date.getMinutes()).padStart(2, '0'); // Get minutes and pad with leading zero
+            const seconds = String(date.getSeconds()).padStart(2, '0'); // Get seconds and pad with leading zero
+            return `${hours}:${minutes}:${seconds}`; // Return as HH:MM:SS
         },
         
         async startLanguageTool(){

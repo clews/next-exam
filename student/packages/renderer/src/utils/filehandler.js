@@ -164,6 +164,7 @@ function processNode(node) {
 
 // get file from local examdirectory and replace editor content with it
 export async function loadHTML(file){
+    let data = await ipcRenderer.invoke('getfilesasync', file )
     this.LTdisable()
     this.$swal.fire({
         title: this.$t("editor.replace"),
@@ -175,7 +176,7 @@ export async function loadHTML(file){
     })
     .then(async (result) => {
         if (result.isConfirmed) {
-            let data = await ipcRenderer.invoke('getfilesasync', file )
+            
             this.editor.commands.clearContent(true)
             this.editor.commands.insertContent(data)  
         } 
