@@ -470,8 +470,7 @@ const __dirname = import.meta.dirname;
             if (serverstatus.lockedSection !== this.multicastClient.clientinfo.lockedSection){
                 log.warn("communicationhandler @ processUpdatedServerstatus: changing section to", serverstatus.lockedSection)
 
-                this.multicastClient.clientinfo.lockedSection = serverstatus.lockedSection
-          
+           
 
                 //save all files from the old section (if exam mode is "editor") and send to teacher - trigger sendToTeacher()
                 if (this.multicastClient.clientinfo.examtype === "editor"){
@@ -492,15 +491,71 @@ const __dirname = import.meta.dirname;
 
                 //wait 1 second and cleanup NEXT-EXAM-STUDENT-WORKDIR
                 await this.sleep(2000)
+  
                 try {
-                    log.warn("communicationhandler @ processUpdatedServerstatus: cleaning exam workfolder")
-                    if (fs.existsSync(this.config.examdirectory)){   // set by server.js (desktop path + examdir)
-                        fs.rmSync(this.config.examdirectory, { recursive: true });
-                        fs.mkdirSync(this.config.examdirectory);
+                    const currentLockedSection = this.multicastClient.clientinfo.lockedSection; // Current section number (source for saving)
+                    const newLockedSection = serverstatus.lockedSection; // New section number (source for loading)
+                    const examDir = this.config.examdirectory;
+                
+                    if (fs.existsSync(examDir) && currentLockedSection) { // Check if main dir exists and a section is currently active
+                        // PART 1: SAVE current examDir FILES to a subdirectory named by the CURRENT locked section
+                        log.warn(`communicationhandler @ processUpdatedServerstatus: Saving content from examDir to section ${currentLockedSection}`);
+                
+                        const savePath = `${examDir}/${currentLockedSection}`;
+                        if (!fs.existsSync(savePath)) {
+                            fs.mkdirSync(savePath, { recursive: true }); // Create save directory if it doesn't exist
+                        }
+                
+                        const files = fs.readdirSync(examDir);
+                        for (const file of files) {
+                            const oldPath = `${examDir}/${file}`;
+                            const stat = fs.statSync(oldPath); // Get file stats
+                            
+                            // Only process actual FILES, not directories (like the section folders themselves)
+                            if (stat.isFile()) {
+                                const newPath = `${savePath}/${file}`;
+                                fs.copyFileSync(oldPath, newPath); // Copy file
+                                fs.unlinkSync(oldPath); // Delete original file from examDir
+                            }
+                        }
                     }
+                
+                    // Update the locked section AFTER saving the old state
+                    this.multicastClient.clientinfo.lockedSection = newLockedSection;
+                
+                    // PART 2: LOAD FILES from the subdirectory named by the NEW locked section to examDir
+                    if (newLockedSection) {
+                        log.warn(`communicationhandler @ processUpdatedServerstatus: Loading content from section ${newLockedSection} to examDir`);
+                
+                        const loadPath = `${examDir}/${newLockedSection}`;
+                        if (fs.existsSync(loadPath)) { // Check if the new section folder exists
+                            const filesToLoad = fs.readdirSync(loadPath);
+                            for (const file of filesToLoad) {
+                                const sourcePath = `${loadPath}/${file}`;
+                                const destPath = `${examDir}/${file}`;
+                                const stat = fs.statSync(sourcePath);
+                                
+                                if (stat.isFile()) { // Ensure only files are copied back
+                                    fs.copyFileSync(sourcePath, destPath); // Copy file to examDir
+                                }
+                            }
+                        } else {
+                             log.info(`communicationhandler @ processUpdatedServerstatus: New locked section directory ${newLockedSection} does not exist. Starting with a clean state.`);
+                        }
+                    }
+                
                 } catch (error) {
-                    log.error(`communicationhandler @ processUpdatedServerstatus: Can not delete directory - ${error} `)
+                    log.error(`communicationhandler @ processUpdatedServerstatus: Error during folder operation - ${error}`);
                 }
+
+
+
+
+
+
+
+
+
                 
                 //close exam window or relead the new exam section in the same window
                 if (WindowHandler.examwindow){

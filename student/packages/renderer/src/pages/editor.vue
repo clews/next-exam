@@ -373,7 +373,7 @@ import WebviewPane from '../components/WebviewPane.vue'
 import {SchedulerService} from '../utils/schedulerservice.js'
 import { LTcheckAllWords, LTfindWordPositions, LThighlightWords, LTdisable, LThandleMisspelled, LTignoreWord, LTresetIgnorelist } from '../utils/languagetool.js'
 import {getExamMaterials, loadPDF, loadHTML, loadDOCX, loadImage, playAudio} from '../utils/filehandler.js'
-import { gracefullyExit } from '../utils/commonMethods.js'
+import { gracefullyExit, reconnect } from '../utils/commonMethods.js'
 
 export default {
     components: {
@@ -496,6 +496,7 @@ export default {
 
         // from commonMethods.js
         gracefullyExit:gracefullyExit,
+        reconnect:reconnect,
 
         // from languagetool.js
         LTcheckAllWords:LTcheckAllWords,
@@ -790,55 +791,6 @@ export default {
         },
 
         
-
-        reconnect() {
-            this.$swal.fire({
-                title: this.$t("editor.reconnect"), // Dialog title
-                icon: 'info', // Info icon
-                showCancelButton: true, // Show cancel button
-                confirmButtonText: "OK", // Confirm button text
-                // Use HTML for multiple inputs
-                html: `
-                    <input id="swal-input-ip" class="swal2-input" type="text" value="${this.serverip}" placeholder="IP-Adresse">
-                    <input id="swal-input-pin" class="swal2-input" type="number" value="${this.pincode}" placeholder="PIN">
-                `,
-                preConfirm: () => {
-                    const ip = document.getElementById('swal-input-ip').value.trim();    // Get IP value
-                    const pin = document.getElementById('swal-input-pin').value.trim(); // Get PIN value
-                    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/; // Simple IP regex
-
-                    if (!ip || !ipRegex.test(ip)) {
-                        this.$swal.showValidationMessage("Ungültige IP-Adresse."); // Show IP error message
-                        return false;
-                    }
-                    if (!pin) {
-                        this.$swal.showValidationMessage(this.$t("student.nopin")); // Show PIN error message
-                        return false;
-                    }
-                    return { ip: ip, pin: pin }; // Return collected values
-                }
-            }).then((result) => {
-                if (!result.isConfirmed) {return} // User cancelled
-
-                this.serverip = result.value.ip; // Set new IP
-                this.pincode = result.value.pin; // Set new PIN
-
-                let IPCresponse = ipcRenderer.sendSync('register', {clientname:this.clientname, servername:this.servername, serverip: this.serverip, pin:this.pincode }); // Send IPC message
-
-                this.token = IPCresponse.token; // set token (used to determine server connection status)
-
-                // Show success or error swal
-                this.$swal.fire({
-                    title: IPCresponse.status === "success" ? "OK" : "Error", // Title based on status
-                    text: IPCresponse.status === "success" ? this.$t("student.registeredinfo") : IPCresponse.message, // Text based on status
-                    icon: IPCresponse.status, // Icon is 'success' or 'error'
-                    showCancelButton: false, // No cancel button
-                });
-            });
-        },
-
-
-
 
 
 
