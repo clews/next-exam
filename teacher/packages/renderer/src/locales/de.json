@@ -59,6 +59,7 @@
         "website": "Website-URL",
         "autoget": "Backup-Intervall",
         "startexam": "Geräte absichern",
+        "startexamsingle": "Gerät absichern",
         "startexamdesc": "Startet den abgesicherten Prüfungsmodus auf den Geräten der Schüler:innen",
         "sendfile": "Dateien an alle Schüler:innen senden (pdf, jpg, mp3, bak, ggb, png, gif, wav, ogg)",
         "sendfileSingle": "Datei senden",

@@ -60,6 +60,7 @@
         "website": "Website URL",
         "autoget": "Backup interval",
         "startexam": "Secure devices",
+        "startexamsingle": "Secure device",
         "startexamdesc": "This starts the Exam Mode for all students",
         "sendfile": "Send Files to all students",
         "sendfileSingle": "Send Files",
