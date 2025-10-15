@@ -407,7 +407,7 @@ class WindowHandler {
             // modal: true,  // this blocks the main window on windows while the exam window is open
             // closable: false,  // if we can't define 'parent' this window has to be closable - why?
             //alwaysOnTop: true,
-            opacity: 0,
+            opacity: 1,
             skipTaskbar:true,
             autoHideMenuBar: true,
             minimizable: false,
@@ -415,7 +415,7 @@ class WindowHandler {
             visibleOnAllWorkspaces: true,
             kiosk: true,
             show: false,
-            //transparent: true,
+            transparent: false,
             icon: join(__dirname, '../../public/icons/icon.png'),
             webPreferences: {
                 preload: join(__dirname, '../preload/preload.cjs'),
