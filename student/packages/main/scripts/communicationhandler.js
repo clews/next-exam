@@ -485,20 +485,27 @@ const __dirname = import.meta.dirname;
                 this.sendToTeacher() //backup local files and send to teacher (archive with timestamp)
 
 
-                // update examtype in clientinfo
-                this.multicastClient.clientinfo.examtype = serverstatus.examSections[serverstatus.lockedSection].examtype
-           
+             
 
                 //wait 1 second and cleanup NEXT-EXAM-STUDENT-WORKDIR
                 await this.sleep(2000)
   
-                try {
-                    const currentLockedSection = this.multicastClient.clientinfo.lockedSection; // Current section number (source for saving)
-                    const newLockedSection = serverstatus.lockedSection; // New section number (source for loading)
-                    const examDir = this.config.examdirectory;
+                const currentLockedSection = this.multicastClient.clientinfo.lockedSection; // Current section number (source for saving)
+                const newLockedSection = serverstatus.lockedSection; // New section number (source for loading)
+                const examDir = this.config.examdirectory;
                 
+                // update examtype in clientinfo
+                this.multicastClient.clientinfo.examtype = serverstatus.examSections[serverstatus.lockedSection].examtype
+                // Update the locked section AFTER saving the old state
+                this.multicastClient.clientinfo.lockedSection = newLockedSection;
+
+
+
+                // MOVE Section Files to a subdirectory named by the CURRENT locked section
+                try {
+                    // PART 1: SAVE CURRENT EXAMDIR FILES to a subdirectory named by the CURRENT locked section
                     if (fs.existsSync(examDir) && currentLockedSection) { // Check if main dir exists and a section is currently active
-                        // PART 1: SAVE current examDir FILES to a subdirectory named by the CURRENT locked section
+                        
                         log.warn(`communicationhandler @ processUpdatedServerstatus: Saving content from examDir to section ${currentLockedSection}`);
                 
                         const savePath = `${examDir}/${currentLockedSection}`;
@@ -520,9 +527,6 @@ const __dirname = import.meta.dirname;
                         }
                     }
                 
-                    // Update the locked section AFTER saving the old state
-                    this.multicastClient.clientinfo.lockedSection = newLockedSection;
-                
                     // PART 2: LOAD FILES from the subdirectory named by the NEW locked section to examDir
                     if (newLockedSection) {
                         log.warn(`communicationhandler @ processUpdatedServerstatus: Loading content from section ${newLockedSection} to examDir`);
@@ -543,7 +547,6 @@ const __dirname = import.meta.dirname;
                              log.info(`communicationhandler @ processUpdatedServerstatus: New locked section directory ${newLockedSection} does not exist. Starting with a clean state.`);
                         }
                     }
-                
                 } catch (error) {
                     log.error(`communicationhandler @ processUpdatedServerstatus: Error during folder operation - ${error}`);
                 }
@@ -556,7 +559,9 @@ const __dirname = import.meta.dirname;
 
 
 
-                
+                /**
+                 *  Actually SWITCH EXAM SECTION
+                 */
                 //close exam window or relead the new exam section in the same window
                 if (WindowHandler.examwindow){
                     if ( serverstatus.examSections[serverstatus.lockedSection].examtype === "microsoft365"){
@@ -581,7 +586,9 @@ const __dirname = import.meta.dirname;
                     }
                 }
 
-
+                /**
+                 * RE-SET NEW LISTENERS FOR EXAM WINDOW (if needed)
+                 */
                 if (WindowHandler.examwindow){ 
                     await this.sleep(1000) // wait for the examwindow to be loaded
                     WindowHandler.examwindow.serverstatus = serverstatus   // overwrite serverstatus in examwindow

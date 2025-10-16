@@ -777,6 +777,94 @@ class WindowHandler {
             }
         })
 
+
+            this.mainwindow.once('ready-to-show', () => {
+            // this.splashwin.close()
+                this.mainwindow.show()
+                
+                this.mainwindow.setVisibleOnAllWorkspaces(true); // put the window on all virtual workspaces
+                this.mainwindow.focus();
+                this.mainwindow.moveTop();
+
+                if (process.platform == 'darwin'){
+                    // check permissions to handle settings in macos
+
+                    //childProcess.exec('tccutil reset AppleEvents com.nextexam-student.app')   //reset permission settings - ask gain next time!
+                    //childProcess.exec('tccutil reset Accessibility com.nextexam-student.app') 
+                    //childProcess.exec('tccutil reset AppleEvents com.vscodium') // apple events können resetted werde da macos immerwieder danach fragt
+                    //childProcess.exec('tccutil reset Accessibility com.vscodium')  //accessibility wird nur einmal gefragt, danach muss der user es manuell aktivieren
+                                
+                    // let settingsScriptfile = join(__dirname, '../../public/opensettings.applescript')
+                    // if (app.isPackaged) {
+                    //     settingsScriptfile = join(process.resourcesPath, 'app.asar.unpacked', 'public/opensettings.applescript')
+                    // }
+            
+                    // let accessScriptfile = join(__dirname, '../../public/access.applescript')
+                    // if (app.isPackaged) {
+                    //     accessScriptfile = join(process.resourcesPath, 'app.asar.unpacked', 'public/access.applescript')
+                    // }
+
+                    // let spacesScriptfile = join(__dirname, '../../public/spaces.applescript')
+                    // if (app.isPackaged) {
+                    //     spacesScriptfile = join(process.resourcesPath, 'app.asar.unpacked', 'public/spaces.applescript')
+                    // }
+
+                    // childProcess.execFile('osascript', [accessScriptfile], (error, stdout, stderr) => {
+                    //     if (stderr) { 
+                    //         log.info(stderr) 
+                    //         if (stderr.includes("Berechtigung") || stderr.includes("authorized")|| stderr.includes("berechtigt")){
+                    //             log.error("no accessibility permissions granted")
+                            
+                    //             let message = "Sie müssen die Berechtigungen für den Hilfszugriff (Bedienungshilfen) erteilen!"
+                                
+                    //                 childProcess.execFile('osascript', [settingsScriptfile], (error, stdout, stderr) => {
+                    //                     if (stderr) { 
+                    //                         log.info(stderr) 
+                    //                     }
+                    //                 })
+
+                    //            //this.showExitWarning(message)  //show warning and quit app
+                    //         }
+                    //     }
+                        // else {  // accessibility rights should be set
+                        //     childProcess.execFile('osascript', [spacesScriptfile], (error, stdout, stderr) => {
+                        //         if (stderr) { 
+                        //             log.info(stderr) 
+                        //             if (stderr.includes("Berechtigung") || stderr.includes("authorized")){
+                        //                 log.error("no Systemsettings permissions granted")
+                        //                 let message = "Sie müssen die Berechtigungen zur Automation erteilen!"
+                        //                 if (stderr.includes("Hilfszugriff") || stderr.includes("Accessibility")){
+                        //                     message = "Sie müssen die Berechtigungen für den Hilfszugriff (Bedienungshilfen) erteilen!"
+                        //                 }
+                        //             this.showExitWarning(message)  //show warning and quit app
+                        //             }
+                        //         }
+                        //     })
+                        // }
+                    // })
+
+                
+                    
+
+                    // attention ! das neue macos erlaubt auch ohne berechtiung screenshots aber diese beinhalten dann keine apps (sind quasi nur der background)
+                    // screenshot()   //grab "screenshot" with screenshot node module 
+                    // .then( (res) => { 
+                    //     log.info("screenshot allowed") 
+                    //  })
+                    // .catch((err) => {   
+                    //     log.error(`requestUpdate Screenshot: ${err}`) 
+                    //     let message = "Sie müssen die Berechtigungen zur Bildschirmaufnahme erteilen!"
+                    //     //childProcess.exec('tccutil reset ScreenCapture com.nextexam-student.app') 
+                    //     //childProcess.exec('tccutil reset ScreenCapture com.vscodium') 
+                    //     this.showExitWarning(message) 
+                    // });
+                }
+            })
+
+
+
+
+
         if (app.isPackaged || process.env["DEBUG"]) {
             this.mainwindow.removeMenu() 
             this.mainwindow.loadFile(join(__dirname, '../renderer/index.html'))
@@ -810,88 +898,7 @@ class WindowHandler {
      
         });
         
-        this.mainwindow.once('ready-to-show', () => {
-           // this.splashwin.close()
-            this.mainwindow.show()
-            
-            this.mainwindow.setVisibleOnAllWorkspaces(true); // put the window on all virtual workspaces
-            this.mainwindow.focus();
-            this.mainwindow.moveTop();
-
-            if (process.platform == 'darwin'){
-                // check permissions to handle settings in macos
-
-                //childProcess.exec('tccutil reset AppleEvents com.nextexam-student.app')   //reset permission settings - ask gain next time!
-                //childProcess.exec('tccutil reset Accessibility com.nextexam-student.app') 
-                //childProcess.exec('tccutil reset AppleEvents com.vscodium') // apple events können resetted werde da macos immerwieder danach fragt
-                //childProcess.exec('tccutil reset Accessibility com.vscodium')  //accessibility wird nur einmal gefragt, danach muss der user es manuell aktivieren
-                            
-                // let settingsScriptfile = join(__dirname, '../../public/opensettings.applescript')
-                // if (app.isPackaged) {
-                //     settingsScriptfile = join(process.resourcesPath, 'app.asar.unpacked', 'public/opensettings.applescript')
-                // }
-         
-                // let accessScriptfile = join(__dirname, '../../public/access.applescript')
-                // if (app.isPackaged) {
-                //     accessScriptfile = join(process.resourcesPath, 'app.asar.unpacked', 'public/access.applescript')
-                // }
-
-                // let spacesScriptfile = join(__dirname, '../../public/spaces.applescript')
-                // if (app.isPackaged) {
-                //     spacesScriptfile = join(process.resourcesPath, 'app.asar.unpacked', 'public/spaces.applescript')
-                // }
-
-                // childProcess.execFile('osascript', [accessScriptfile], (error, stdout, stderr) => {
-                //     if (stderr) { 
-                //         log.info(stderr) 
-                //         if (stderr.includes("Berechtigung") || stderr.includes("authorized")|| stderr.includes("berechtigt")){
-                //             log.error("no accessibility permissions granted")
-                         
-                //             let message = "Sie müssen die Berechtigungen für den Hilfszugriff (Bedienungshilfen) erteilen!"
-                            
-                //                 childProcess.execFile('osascript', [settingsScriptfile], (error, stdout, stderr) => {
-                //                     if (stderr) { 
-                //                         log.info(stderr) 
-                //                     }
-                //                 })
-
-                //            //this.showExitWarning(message)  //show warning and quit app
-                //         }
-                //     }
-                    // else {  // accessibility rights should be set
-                    //     childProcess.execFile('osascript', [spacesScriptfile], (error, stdout, stderr) => {
-                    //         if (stderr) { 
-                    //             log.info(stderr) 
-                    //             if (stderr.includes("Berechtigung") || stderr.includes("authorized")){
-                    //                 log.error("no Systemsettings permissions granted")
-                    //                 let message = "Sie müssen die Berechtigungen zur Automation erteilen!"
-                    //                 if (stderr.includes("Hilfszugriff") || stderr.includes("Accessibility")){
-                    //                     message = "Sie müssen die Berechtigungen für den Hilfszugriff (Bedienungshilfen) erteilen!"
-                    //                 }
-                    //             this.showExitWarning(message)  //show warning and quit app
-                    //             }
-                    //         }
-                    //     })
-                    // }
-                // })
-
-            
-                
-
-                // attention ! das neue macos erlaubt auch ohne berechtiung screenshots aber diese beinhalten dann keine apps (sind quasi nur der background)
-                // screenshot()   //grab "screenshot" with screenshot node module 
-                // .then( (res) => { 
-                //     log.info("screenshot allowed") 
-                //  })
-                // .catch((err) => {   
-                //     log.error(`requestUpdate Screenshot: ${err}`) 
-                //     let message = "Sie müssen die Berechtigungen zur Bildschirmaufnahme erteilen!"
-                //     //childProcess.exec('tccutil reset ScreenCapture com.nextexam-student.app') 
-                //     //childProcess.exec('tccutil reset ScreenCapture com.vscodium') 
-                //     this.showExitWarning(message) 
-                // });
-            }
-        })
+        
     }
 
 
