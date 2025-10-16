@@ -137,48 +137,30 @@ function enableRestrictions(winhandler){
                 }
                 configStore.linux.numberOfDesktops = stdout.trim();
             });
-            //disable META Key for Launchermenu
-            childProcess.execFile('kwriteconfig5', ['--file', `${config.homedirectory}/.config/kwinrc`,'--group', 'ModifierOnlyShortcuts','--key','Meta','""']) 
-            childProcess.execFile('kwriteconfig5', ['--file', `${config.homedirectory}/.config/kwinrc`,'--group', 'org.kde.kglobalaccel.Component.kwin', '--key', 'Switch Window', 'none']) // disables Alt+Tab
-              
-            childProcess.execFile('kwriteconfig5', ['--file',`kwinrc`,'--group','Desktops','--key','Number','1'])  //remove virtual desktops
-            childProcess.execFile('qdbus', ['org.kde.KWin','/KWin','setCurrentDesktop','1'])
-           
-         
+            //disable META Key for Launchermenu 
 
-            childProcess.execFile('qdbus', ['org.kde.kglobalaccel' ,'/kglobalaccel', 'org.kde.KGlobalAccel.blockGlobalShortcuts', 'true']) // Temporarily deactivate ALL global keyboardshortcuts 
-            childProcess.execFile('qdbus', ['org.kde.klipper' ,'/klipper', 'org.kde.klipper.klipper.clearClipboardHistory']) // Clear Clipboard history 
-            childProcess.execFile('kquitapp5', ['kglobalaccel'])  // quitapp nees kglobalaccel while startapp needs kglobalaccel5
-
-    
-            log.info(`platformrestrictions @ enableRestrictions: reconfiguring kwin`); // log success
-            childProcess.execFile('qdbus', ['org.kde.KWin','/KWin','reconfigure'])   
-             
-            // childProcess.execFile('killall', ['plasmashell'])          
-
-
-            const sh = (cmd, args=[]) => childProcess.execFileSync(cmd, args, { encoding: 'utf8' }).trim(); // run shell cmd
-            log.info(`platformrestrictions @ enableRestrictions: disabling effects`  )
-            sh('qdbus', ['org.kde.KWin','/Effects','org.kde.kwin.Effects.unloadEffect', 'desktopgrid']);
-            sh('qdbus', ['org.kde.KWin','/Effects','org.kde.kwin.Effects.unloadEffect', 'screenedge']);
-            sh('qdbus', ['org.kde.KWin','/Effects','org.kde.kwin.Effects.unloadEffect', 'overview']);
-
-
-            // 1) list currently loaded effects
-            // const out = sh('qdbus', ['org.kde.KWin','/Effects','org.kde.kwin.Effects.loadedEffects']); // get loaded effects
-            // const effects = out.split(/\s+|\n+/).filter(Boolean); // split into effect IDs
+            log.info(`platformrestrictions @ enableRestrictions: reconfiguring kwin`); 
             
-            // log.info(`platformrestrictions @ enableRestrictions: disabling effects`  )
-            // // 2) deactivate each effect
-            // for (const eff of effects) {
-            //   try {
-            //     sh('qdbus', ['org.kde.KWin','/Effects','org.kde.kwin.Effects.unloadEffect', eff]); // deactivate effect
-            //     log.info(`platformrestrictions @ enableRestrictions: deactivated: ${eff}`); // log success
-            //   } catch (e) {
-            //     log.warn(`platformrestrictions @ enableRestrictions: skip: ${eff}`); // some effects may not support deactivation
-            //   }
-            // }
+            childProcess.execFile('kwriteconfig5', ['--file', `${config.homedirectory}/.config/kwinrc`,'--group', 'ModifierOnlyShortcuts','--key','Meta','""'])              
+            childProcess.execFile('kwriteconfig5', ['--file',`kwinrc`,'--group','Desktops','--key','Number','1'])  //remove virtual desktops
+            childProcess.execFile('qdbus', ['org.kde.KWin','/KWin','reconfigure'])   // das reloaded alle configs und würde auch andere settings neu laden so wie kgloalaccel und kliper
+            childProcess.execFile('qdbus', ['org.kde.KWin','/KWin','setCurrentDesktop','1'])  // setzt die aktuelle desktop auf 1
+           
+           
+            log.info(`platformrestrictions @ enableRestrictions: disabling effects`  )
+            childProcess.execFile('qdbus', ['org.kde.KWin','/Effects','org.kde.kwin.Effects.unloadEffect', 'desktopgrid']);
+            childProcess.execFile('qdbus', ['org.kde.KWin','/Effects','org.kde.kwin.Effects.unloadEffect', 'screenedge']);
+            childProcess.execFile('qdbus', ['org.kde.KWin','/Effects','org.kde.kwin.Effects.unloadEffect', 'overview']);
 
+
+            log.info(`platformrestrictions @ enableRestrictions: clearing clipboard history`  )
+            childProcess.execFile('qdbus', ['org.kde.klipper' ,'/klipper', 'org.kde.klipper.klipper.clearClipboardHistory']) // Clear Clipboard history 
+            
+            setTimeout( () => {  //needs timeout otherwise kwin /reconfigure will reset it
+                log.info(`platformrestrictions @ enableRestrictions: disabling global keyboardshortcuts`  )
+                childProcess.execFile('qdbus', ['org.kde.kglobalaccel' ,'/kglobalaccel', 'org.kde.KGlobalAccel.blockGlobalShortcuts', 'true']) // Temporarily deactivate ALL global keyboardshortcuts 
+            }, 2000)
+            
         }
   
         
