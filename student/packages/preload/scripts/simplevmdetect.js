@@ -15,7 +15,8 @@ if (gl) {
             'vmware', 'virtualbox', 'parallels', 'solarwinds', 
             'qemu', 'hyper-v', 'bootcamp', 'xen', 
             'citrix', 'kvm', 'wsl', 'docker', 'cloud',
-            'llvmpipe', 'microsoft basic render driver', 'basic render'
+            'llvmpipe', 'microsoft basic render driver', 'basic render',
+            'virgl', 'virtio', 'spice', 'qxl'
         ];
 
         // Zusätzliche Checks für indirekte VM-Indikatoren

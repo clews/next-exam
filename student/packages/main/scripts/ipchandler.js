@@ -863,7 +863,7 @@ class IpcHandler {
     }
 
     isVirtualMachine() {
-        const VENDORS = /(oracle|virtualbox|vmware|kvm|qemu|xen|innotek|parallels|microsoft|hyper-v|bhyve)/i // common VM ids
+        const VENDORS = /(oracle|virtualbox|vmware|kvm|qemu|xen|innotek|parallels|microsoft|hyper-v|bhyve|red hat|redhat|bochs|bhyve|openstack|cloud|amazon|google|azure)/i // common VM ids
 
         // ---------- Linux ----------
         if (process.platform === 'linux') {
@@ -889,6 +889,31 @@ class IpcHandler {
             execSync('systemd-detect-virt -q', { stdio: 'ignore' })    // exit 0 => VM
             return true
           } catch {}
+
+          // Zusätzliche QEMU-spezifische Erkennung
+          try {
+            // Prüfe auf QEMU-spezifische Geräte
+            const qemuDevices = [
+              '/dev/kvm',
+              '/dev/vhost-net',
+              '/dev/vhost-vsock'
+            ]
+            for (const device of qemuDevices) {
+              try {
+                if (require('fs').existsSync(device)) {
+                  return true
+                }
+              } catch {}
+            }
+          } catch {}
+
+          // Prüfe auf QEMU-Prozesse
+          try {
+            const ps = execSync('ps aux | grep -i qemu', { encoding: 'utf8' })
+            if (ps.includes('qemu') && !ps.includes('grep')) {
+              return true
+            }
+          } catch {}
         }
 
         // ---------- Windows ----------
@@ -910,6 +935,12 @@ class IpcHandler {
                 'Write-Output (($o -join \' \').Trim())"'
             const robust = execSync(psRobust, { encoding: 'utf8' }).trim()
             if (VENDORS.test(robust)) return true
+            } catch {}
+
+            // Zusätzliche QEMU-Erkennung für Windows
+            try {
+                const qemuProcesses = execSync('tasklist /FI "IMAGENAME eq qemu*"', { encoding: 'utf8' })
+                if (qemuProcesses.includes('qemu')) return true
             } catch {}
         }
 
