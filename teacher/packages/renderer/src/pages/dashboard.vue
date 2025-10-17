@@ -55,8 +55,8 @@
             <div class="ms-0 mb-3"><strong>{{currentdirectory}}</strong>  </div> 
             <div class="btn btn-dark pe-3 ps-3 me-1 mb-3 btn-sm" @click="loadFilelist(workdirectory) "><img src="/src/assets/img/svg/go-home.svg" class="" width="22" height="22" > </div>
             
-            <div v-if="submissions.length == 0" class="btn btn-warning pe-3 ps-3 me-1 mb-3 btn-sm" style="float: right;" @click="fetchSubmissions(true)"><img src="/src/assets/img/svg/eye-fill.svg" class="white" width="22" height="22" > {{ $t('control.submissions') }}: {{submissions.length}} / {{ numberOfConnections }}</div>
-            <div v-if="submissions.length > 0" class="btn btn-success pe-3 ps-3 me-1 mb-3 btn-sm" style="float: right;" @click="fetchSubmissions(true)"><img src="/src/assets/img/svg/eye-fill.svg" class="white" width="22" height="22" > {{ $t('control.submissions') }}: {{submissions.length}} / {{ numberOfConnections }}</div>
+            <div v-if="submissionsNumber == 0" class="btn btn-warning pe-3 ps-3 me-1 mb-3 btn-sm" style="float: right;" @click="fetchSubmissions(true)"><img src="/src/assets/img/svg/eye-fill.svg" class="white" width="22" height="22" > {{ $t('control.submissions') }}: {{submissionsNumber}} / {{ submissions.length }}</div>
+            <div v-if="submissionsNumber > 0" class="btn btn-success pe-3 ps-3 me-1 mb-3 btn-sm" style="float: right;" @click="fetchSubmissions(true)"><img src="/src/assets/img/svg/eye-fill.svg" class="white" width="22" height="22" > {{ $t('control.submissions') }}: {{submissionsNumber}} / {{ submissions.length }}</div>
 
 
             <div :class="lockPdfSummary ? 'disabledexam':''" class="btn btn-primary pe-3 ps-3 me-1 mb-3 btn-sm" style="float: right;" :title="$t('dashboard.summarizepdf')" @click="getLatest() "><img src="/src/assets/img/svg/edit-copy.svg" class="" width="22" height="22" >{{$t('dashboard.summarizepdfshort')}}</div>
@@ -1446,13 +1446,18 @@ computed: {
         async fetchSubmissions(show = false){
             let submissions = await ipcRenderer.invoke('getSumbissions', this.servername)
             this.submissions = submissions
-            console.log(this.submissions)
+            this.submissionsNumber = 0
+            for (let submission of submissions){
+                if (submission.submissionDate){
+                    this.submissionsNumber++
+                }
+            }
 
             if (show){
                 this.$swal.fire({
                     title: this.$t("control.submissions"),
                     text: `${submissions.length} / ${this.numberOfConnections}`,
-                    width: '800px',
+                    width: '80%',
                     html: `
                     <div style="font-size:0.9em; text-align:left">
                         <table style="width: 100%; border-collapse: collapse;">
