@@ -54,7 +54,13 @@
             <h4>{{$t('dashboard.filesfolder')}}: </h4> 
             <div class="ms-0 mb-3"><strong>{{currentdirectory}}</strong>  </div> 
             <div class="btn btn-dark pe-3 ps-3 me-1 mb-3 btn-sm" @click="loadFilelist(workdirectory) "><img src="/src/assets/img/svg/go-home.svg" class="" width="22" height="22" > </div>
+            
+            <div v-if="submissions.length == 0" class="btn btn-warning pe-3 ps-3 me-1 mb-3 btn-sm" style="float: right;" @click="fetchSubmissions(true)"><img src="/src/assets/img/svg/eye-fill.svg" class="white" width="22" height="22" > {{ $t('control.submissions') }}: {{submissions.length}} / {{ numberOfConnections }}</div>
+            <div v-if="submissions.length > 0" class="btn btn-success pe-3 ps-3 me-1 mb-3 btn-sm" style="float: right;" @click="fetchSubmissions(true)"><img src="/src/assets/img/svg/eye-fill.svg" class="white" width="22" height="22" > {{ $t('control.submissions') }}: {{submissions.length}} / {{ numberOfConnections }}</div>
+
+
             <div :class="lockPdfSummary ? 'disabledexam':''" class="btn btn-primary pe-3 ps-3 me-1 mb-3 btn-sm" style="float: right;" :title="$t('dashboard.summarizepdf')" @click="getLatest() "><img src="/src/assets/img/svg/edit-copy.svg" class="" width="22" height="22" >{{$t('dashboard.summarizepdfshort')}}</div>
+            
             <div  v-if="(currentdirectory !== workdirectory)" class="btn btn-dark pe-3 ps-3 me-1 mb-3 btn-sm" @click="loadFilelist(currentdirectoryparent) "><img src="/src/assets/img/svg/edit-undo.svg" class="" width="22" height="22" >up </div>
             <div :key="3" style="height: 76vh; overflow-y:auto;">
                 <div v-for="file in localfiles" :key="file.path" class="d-inline">
@@ -339,11 +345,11 @@
             <div style="display:inline-block; margin-top:4px; margin-left:4px; width:70px; font-size:0.8em;">{{numberOfConnections}} {{$t('dashboard.startexam')}}</div>
         </div>
 
-        <div class="btn btn-cyan m-1 mt-0 text-start ms-0" @click="getFiles('all', true);hideDescription();"  @mouseover="showDescription($t('dashboard.getfile'))" @mouseout="hideDescription"  :class="lockDownload ? 'disabledexam':''"  style="width:128px; height:62px;display:inline-flex" >
+        <div class="btn btn-cyan m-1 mt-0 text-start ms-0" @click=" getFiles('all', true); hideDescription();"  @mouseover="showDescription($t('dashboard.getfile'))" @mouseout="hideDescription"  :class="lockDownload ? 'disabledexam':''"  style="width:128px; height:62px;display:inline-flex" >
             <img src="/src/assets/img/svg/edit-download.svg" class="mt-2" width="32" height="32" style="vertical-align: top;">
             <div style="display:inline-block; margin-top:4px; margin-left:4px; width:70px; font-size:0.8em;">{{$t('dashboard.getfiles')}}</div>
         </div>
-        <div class="btn btn-cyan m-1 mt-0 text-start ms-0" @click="loadFilelist(workdirectory);hideDescription();"  @mouseover="showDescription($t('dashboard.showworkfolder'))" @mouseout="hideDescription"  style="width: 128px; height:62px; display:inline-flex">
+        <div class="btn btn-cyan m-1 mt-0 text-start ms-0" @click="fetchSubmissions(); loadFilelist(workdirectory);hideDescription();"  @mouseover="showDescription($t('dashboard.showworkfolder'))" @mouseout="hideDescription"  style="width: 128px; height:62px; display:inline-flex">
             <img src="/src/assets/img/svg/folder-open.svg" class="mt-2" width="32" height="32" style="vertical-align: top;" >
             <div style="display:inline-block; margin-top:4px; margin-left:4px; width:70px; font-size:0.8em;">{{$t('dashboard.workfolder')}}</div>
         </div>
@@ -384,9 +390,6 @@
                 <img src="/src/assets/img/svg/edit-delete.svg" width="24" height="24">
             </div>
         </div>
-
-
-
         <!-- CONTROL BUTTONS END -->
 
 
@@ -549,7 +552,7 @@ export default {
             audioSource:'',
             audioFilename: '',
             muteAudio: false,
-
+            submissions: [],
 
             serverlog: [],
             serverlogActive: false,
@@ -1437,6 +1440,42 @@ computed: {
                 }
                 });
 
+            }
+        },
+
+        async fetchSubmissions(show = false){
+            let submissions = await ipcRenderer.invoke('getSumbissions', this.servername)
+            this.submissions = submissions
+            console.log(this.submissions)
+
+            if (show){
+                this.$swal.fire({
+                    title: this.$t("control.submissions"),
+                    text: `${submissions.length} / ${this.numberOfConnections}`,
+                    width: '800px',
+                    html: `
+                    <div style="font-size:0.9em; text-align:left">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #ddd;">
+                                    <th style="text-align: left; padding: 8px; white-space: nowrap;">Student</th>
+                                    <th style="text-align: left; padding: 8px;">Datei</th>
+                                    <th style="text-align: left; padding: 8px; white-space: nowrap;">Datum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${submissions.map(submission => `
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 6px; white-space: nowrap; font-size: 0.9em;"><b>${submission.studentName}</b></td>
+                                        <td style="padding: 6px; word-break: break-word; font-size: 0.9em;">${submission.latestFileName}</td>
+                                        <td style="padding: 6px; white-space: nowrap; font-size: 0.9em;">${submission.submissionDate ? new Date(submission.submissionDate).toLocaleString('de-DE') : ''}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    `
+                })
             }
         },
 

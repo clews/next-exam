@@ -224,7 +224,8 @@
         "versionmismatch": "Die Programmversionen stimmen nicht überein",
         "examrequest": "Sicherungen wurden angefordert",
         "biprequired": "Dies erzwingt die Authentifizierung der Schüler:innen durch das Bildungsportal.",
-        "submissionfailed": "Abgabe fehlgeschlagen!"
+        "submissionfailed": "Abgabe fehlgeschlagen!",
+        "submissions": "Abgaben"
 
     },  
     "data": {

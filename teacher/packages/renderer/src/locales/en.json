@@ -225,7 +225,8 @@
         "versionmismatch": "Application versions mismatch",
         "examrequest": "Exams requested",
         "biprequired": "Bildungsportal authentification mandatory!",
-        "submissionfailed": "Submission failed!"
+        "submissionfailed": "Submission failed!",
+        "submissions": "Submissions"
     },  
     "data": {
         "tokennotvalid": "the token is not valid",

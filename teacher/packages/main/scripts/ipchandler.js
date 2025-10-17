@@ -340,7 +340,63 @@ class IpcHandler {
             return examdir
         })
 
+       /**
+         * get number of submissions
+         */
+       ipcMain.handle('getSumbissions', async (event, servername) => {
+            const mcServer = this.config.examServerList[servername]
+            if (!mcServer) { return { sender: "server", message:"notfound", status: "error", submissions: [] } }
+            let submissions = []
+            let dir =  join( config.workdirectory, mcServer.serverinfo.servername);
+            if (fs.existsSync(dir)) { // check if base dir exists
+                const folders = fs.readdirSync(dir, { withFileTypes: true })
+                    .filter(dirent => dirent.isDirectory())
+                    .map(dirent => dirent.name)
 
+                for (const studentName of folders) { // iterate over directory names
+                    let latestPDFpath = null
+                    let selectedFile = '';
+                    let submissionMtime = null;
+                    let submissionDir = join(dir, studentName, "ABGABE")
+                    if (fs.existsSync(submissionDir)) {
+                        let submissionFiles = fs.readdirSync(submissionDir)
+                        if (submissionFiles.length > 0) {
+                            let latestSubmission = submissionFiles
+                                .map(file => {
+                                    let filePath = join(submissionDir, file)
+                                    return { file, mtime: fs.statSync(filePath).mtime }
+                                })
+                                .sort((a, b) => b.mtime - a.mtime)[0]
+                    
+                            latestPDFpath = join(submissionDir, latestSubmission.file)
+                            selectedFile = latestSubmission.file
+                            submissionMtime = latestSubmission.mtime
+                        }
+                    }
+                    else {
+                        if (studentName.toUpperCase() !== 'UPLOADS') {
+                            submissions.push({ 
+                                studentName: studentName, 
+                                latestFilePath: null, 
+                                latestFileName: "",
+                                submissionDate: false 
+                            })
+                        }
+                    }
+                    
+                  
+                    if (fs.existsSync(latestPDFpath)) { 
+                        submissions.push({ 
+                            studentName: studentName, 
+                            latestFilePath: latestPDFpath, 
+                            latestFileName: selectedFile,
+                            submissionDate: submissionMtime 
+                        })
+                    }
+                }
+            }
+            return submissions
+    })
 
 
         /**
