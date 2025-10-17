@@ -2,18 +2,17 @@
 // ES module: import { gracefullyExit } from 'commonMethods.js'
 
 export function gracefullyExit() {
-    console.log("gracefullyExit")
+    console.log("commonMethods.js @ gracefullyExit: gracefully exiting")
 
     const needsPw = !!(this.localLockdown || (this.serverstatus?.examPassword ?? "") !== ""); // is password needed
     const expected = this.localLockdown ? (this.serverstatus?.password ?? "") : (this.serverstatus?.examPassword ?? ""); // expected password
   
-    return this.$swal.fire({
+    this.$swal.fire({
       title: this.$t("editor.exit"),                             // title
       text: this.$t("editor.exitkiosk"),                         // text
       icon: "question",                                    // icon
       showCancelButton: true,                              // show cancel button
       cancelButtonText: this.$t("editor.cancel"),                // cancel button text
-      reverseButtons: true,                                // reverse buttons
       html: needsPw ? `
         <div class="m-2 mt-4">
           <div class="input-group m-1 mb-1">
@@ -22,7 +21,24 @@ export function gracefullyExit() {
           </div>
         </div>
       ` : "",
-      didOpen: () => document.getElementById('localpassword')?.focus(), // focus on password input
+      didOpen: (popup) => {
+        document.getElementById('localpassword')?.focus(); // focus on password input
+        
+        // Transitions deaktivieren (wie im globalen Hook)
+        const elementsToControl = [
+          popup,
+          document.querySelector('.swal2-container'),
+        ];
+        
+        elementsToControl
+          .filter(el => el)
+          .forEach(el => {
+            el.style.transition = 'none';
+            el.style.animation = 'none';
+            el.style.webkitAnimation = 'none';
+            el.style.webkitTransition = 'none';
+          });
+      },
       preConfirm: () => {
         if (!needsPw) { ipcRenderer.send('gracefullyexit'); return; }    // no password needed
         const value = document.getElementById('localpassword')?.value || ""; // entered password
