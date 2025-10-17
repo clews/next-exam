@@ -39,6 +39,7 @@ import IpcHandler from './scripts/ipchandler.js'
 
 
 import { updateSystemTray } from './scripts/traymenu.js'
+import { ensureNetworkOrReset } from './scripts/testpermissionsMac.js'
 
 import JreHandler from './scripts/jre-handler.js';
 JreHandler.init()
@@ -243,6 +244,11 @@ app.on('activate', () => {
 
 app.whenReady()
 .then(async ()=>{
+
+    const BUNDLE_ID = 'com.nextexam.student'
+    if (process.platform === "darwin"){    await ensureNetworkOrReset(BUNDLE_ID, { autoReset: true });  }
+
+    
     nativeTheme.themeSource = 'light'  // prevent theme settings from being adopted from windows
     session.defaultSession.setUserAgent(`Next-Exam/${config.version} (${config.info}) ${process.platform}`);
 
@@ -299,8 +305,15 @@ app.whenReady()
     }
 
     const usesRemoteAssistant = runRemoteCheck(process.platform)
+
     if (usesRemoteAssistant) {
         log.warn('main @ ready: Possible remote assistance detected');
+        for (const keyword of usesRemoteAssistant.keywords) {
+            log.warn(`main @ ready: Keyword ${keyword} detected`);
+        }
+        for (const port of usesRemoteAssistant.ports) {
+            log.warn(`main @ ready: Port ${port} detected`);
+        }
         WindowHandler.multicastClient.clientinfo.remoteassistant = true
     }
 
