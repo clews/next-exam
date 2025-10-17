@@ -245,8 +245,10 @@ app.on('activate', () => {
 app.whenReady()
 .then(async ()=>{
 
-  
-    if (process.platform === "darwin"){    await ensureNetworkOrReset();  }
+    if (process.platform === "darwin"){    
+        let response = await ensureNetworkOrReset(); 
+        if (response) { app.quit() }
+    }
 
     
     nativeTheme.themeSource = 'light'  // prevent theme settings from being adopted from windows

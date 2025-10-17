@@ -51,7 +51,7 @@ export async function ensureNetworkOrReset() { // check or reset
     const ok = await testNetworkPermission()
     if (ok) {
             log.info(`testpermissionsMac @ ensureNetworkOrReset: Network access is allowed`);
-            return true
+            return false
     }
     log.warn(`testpermissionsMac @ ensureNetworkOrReset: No HTTP requests allowed!` )
 
@@ -59,11 +59,10 @@ export async function ensureNetworkOrReset() { // check or reset
         await resetTCC()
         await dialog.showMessageBox({
             type: 'info',
-            message: 'Permissions reset',
+            message: 'Berechtigungen zurücksetzen',
             detail: 'Berechtigungen wurden zurückgesetzt. Bitte starten sie Next-Exam neu!',
             buttons: ['OK'],
-        }).then(({ response }) => {
-           
+        }).then(() => {
             app.quit()
         })
         return true
@@ -71,7 +70,7 @@ export async function ensureNetworkOrReset() { // check or reset
     catch (e) {
         await dialog.showMessageBox({
             type: 'error',
-            message: 'Failed to reset permissions',
+            message: 'Fehler beim Zurücksetzen der Berechtigungen',
             detail: String(e.err || e),
         })
         return false
