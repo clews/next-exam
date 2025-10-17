@@ -114,7 +114,8 @@ let studentInfo = {
         examTeachers: [
             { 
                 teacherID: 92136, // BiP-ID der Lehrperson
-                teacherIP: null // automatisch gesetzt sobald der Lehrer eine Prüfung im BiP startet. 
+                teacherIP: null,// automatisch gesetzt sobald der Lehrer eine Prüfung im BiP startet. 
+                manager: true // first to connect sets this to true - gains ability to switch to another teacher if available
             }
         ]
     },
@@ -128,7 +129,8 @@ let studentInfo = {
         examTeachers: [
             { 
                 teacherID: 22136, // BiP-ID der Lehrperson
-                teacherIP: null // automatisch gesetzt sobald der Lehrer eine Prüfung im BiP startet. 
+                teacherIP: null, // automatisch gesetzt sobald der Lehrer eine Prüfung im BiP startet. 
+                manager: true
             }
         ]
     },
@@ -176,7 +178,8 @@ let studentInfo = {
             examTeachers: [
                 { 
                     teacherID: 92136, // BiP-ID der Lehrperson
-                    teacherIP: "" // automatisch gesetzt sobald der Lehrer eine Prüfung im BiP startet. 
+                    teacherIP: "", // automatisch gesetzt sobald der Lehrer eine Prüfung im BiP startet. 
+                    manager: true
                 }
             ],
             examSecurityKey: "oI9xGzHkUFe7Lg2iTXHkYp4pDab3Nvj4kFEOqA93cZE=",   // symmetrisch, für mathe matura falls dateien verschlüsselt übertragen werden - soll erst zu schülern übertragen werden wenn die prüfung startet
@@ -369,7 +372,8 @@ let studentInfo = {
             examTeachers: [
                 { 
                     teacherID: 92136, // BiP-ID der Lehrperson
-                    teacherIP: "" // automatisch gesetzt sobald der Lehrer eine Prüfung im BiP startet. 
+                    teacherIP: "", // automatisch gesetzt sobald der Lehrer eine Prüfung im BiP startet. 
+                    manager: true 
                 }
             ],
             examSecurityKey: "oI9xGzHkUoe4eoiUEI34p4pDab3Nvj4kFEOqA93cZE=",   // symmetrisch, für mathe matura falls dateien verschlüsselt übertragen werden - soll erst zu schülern übertragen werden wenn die prüfung startet
