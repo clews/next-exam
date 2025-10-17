@@ -59,7 +59,7 @@ export async function ensureNetworkOrReset() { // check or reset
         await resetTCC()
         await dialog.showMessageBox({
             type: 'info',
-            message: 'Berechtigungen zurücksetzen',
+            message: 'Berechtigungen',
             detail: 'Berechtigungen wurden zurückgesetzt. Bitte starten sie Next-Exam neu!',
             buttons: ['OK'],
         }).then(() => {

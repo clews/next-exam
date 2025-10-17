@@ -247,7 +247,7 @@ app.whenReady()
 
     if (process.platform === "darwin"){    
         let response = await ensureNetworkOrReset(); 
-        if (response) { app.quit() }
+        if (response) { app.quit(); return; }
     }
 
     
