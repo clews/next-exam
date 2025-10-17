@@ -63,7 +63,7 @@
             <button :title="$t('editor.left')" @click="editor.chain().focus().setTextAlign('left').run()" :class="{ 'is-active': editor.isActive({ textAlign: 'left' }) }" class="invisible-button btn btn-outline-info  p-1 me-0 mb-1 btn-sm"><img src="/src/assets/img/svg/format-justify-left.svg" class="white" width="22" height="22" ></button> 
             <button :title="$t('editor.center')" @click="editor.chain().focus().setTextAlign('center').run()" :class="{ 'is-active': editor.isActive({ textAlign: 'center' }) }" class="invisible-button btn btn-outline-info p-1 me-0 mb-1 btn-sm "><img src="/src/assets/img/svg/format-justify-center.svg" class="white" width="22" height="22" ></button>
             <button :title="$t('editor.right')" @click="editor.chain().focus().setTextAlign('right').run()" :class="{ 'is-active': editor.isActive({ textAlign: 'right' }) }" class="invisible-button btn btn-outline-info p-1 me-2 mb-1 btn-sm"><img src="/src/assets/img/svg/format-justify-right.svg" class="white" width="22" height="22" ></button>
-            <input :title="$t('editor.textcolor')" type="color" @input="handleColorInput" :value="getHexColor || '#000000'" class="invisible-button btn btn-outline-info p-2 me-2 mb-1 btn-sm" style="height: 33.25px; width:32px">
+            <input v-if="!isMac" :title="$t('editor.textcolor')" type="color" @input="handleColorInput" :value="getHexColor || '#000000'" class="invisible-button btn btn-outline-info p-2 me-2 mb-1 btn-sm" style="height: 33.25px; width:32px">
             
        
             <button :title="$t('editor.specialchar')"  @click="showInsertSpecial();this.LTdisable()" class="invisible-button btn btn-outline-warning p-1 me-0 mb-1 btn-sm"><img src="/src/assets/img/svg/sign.svg" class="" width="22" height="22" ></button>
@@ -455,6 +455,7 @@ export default {
             submissionnumber: 0,
             webviewVisible: false,
             showfileerror: true,
+            isMac: false,
         }
     },
     computed: {
@@ -1313,6 +1314,9 @@ export default {
 
 
     mounted() {
+        // Detect platform
+        this.isMac = process.platform === 'darwin';
+        
         switch (this.cmargin.size) {
             case 5:       this.proseMirrorMargin = '50mm'; this.editorWidth = '160mm'; break;
             case 4.5:     this.proseMirrorMargin = '45mm'; this.editorWidth = '165mm'; break;
