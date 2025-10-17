@@ -50,10 +50,10 @@ export async function resetTCC() {      // reset TCC permissions
 export async function ensureNetworkOrReset() { // check or reset
     const ok = await testNetworkPermission()
     if (ok) {
-            log.info(`ensureNetworkOrReset @ ensureNetworkOrReset: Network access is allowed`);
+            log.info(`testpermissionsMac @ ensureNetworkOrReset: Network access is allowed`);
             return true
     }
-    log.warn(`ensureNetworkOrReset @ ensureNetworkOrReset: No HTTP requests allowed!` )
+    log.warn(`testpermissionsMac @ ensureNetworkOrReset: No HTTP requests allowed!` )
 
     if (!autoReset) {
         await dialog.showMessageBox({
@@ -69,7 +69,7 @@ export async function ensureNetworkOrReset() { // check or reset
         await dialog.showMessageBox({
             type: 'info',
             message: 'Permissions reset',
-            detail: 'Permissions were reset. Restart the app now to re-trigger macOS prompts.',
+            detail: 'Berechtigungen wurden zurückgesetzt. Bitte starten sie Next-Exam neu!',
             buttons: ['OK'],
         }).then(({ response }) => {
             app.quit()
