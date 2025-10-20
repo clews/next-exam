@@ -113,10 +113,14 @@
 
 
             
-            <div v-if="allowedUrlObject" class="btn btn-outline-success p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="showUrl(allowedUrlObject.full)">
-                <img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{allowedUrlObject.domain}} 
+            <div v-if="allowedUrls.length !== 0"  v-for="allowedUrl in allowedUrls  " class="btn btn-outline-success p-0 pe-2 ps-1 me-1 mb-0 btn-sm allowed-url-button" :title="allowedUrl" @click="showUrl(allowedUrl)">
+                <img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{allowedUrl}} 
             </div>
            
+
+
+
+
             <div class="disabled-btn invisible-button btn btn-outline-cyan p-0  pe-2 ps-1 me-1 mb-0 btn-sm text-muted"><img src="/src/assets/img/svg/edit-copy.svg" class="" width="22" height="22" style="vertical-align: top;"> {{ $t('editor.localfiles') }} </div>
            
            
@@ -192,9 +196,9 @@
     <div v-if="!splitview" id="preview" class=" p-4">
         <WebviewPane
             id="webview"
-            :src="allowedUrlObject?.full || ''"
+            :src="urlForWebview"
             :visible="webviewVisible"
-            :allowed-url="allowedUrlObject?.full"
+            :allowed-url="urlForWebview"
             :block-external="true"
             @close="hidepreview"
         />
@@ -227,9 +231,9 @@
         <div id="preview" class="fadeinfast splitback" style="background-repeat: no-repeat; background-position: center; flex-grow: 1 !important; display: block !important; position: static !important; top: 0 !important; left: auto !important; width: auto !important; height: auto !important; background-color: transparent !important; z-index: auto !important; backdrop-filter: none !important;"> 
             <WebviewPane
                 id="webview"
-                :src="allowedUrlObject?.full || ''"
+                :src="urlForWebview"
                 :visible="webviewVisible"
-                :allowed-url="allowedUrlObject?.full"
+                :allowed-url="urlForWebview"
                 :block-external="true"
             />
             <div class="embed-container" style="position: relative !important; top: 0 !important; left: 0 !important; transform: none !important; display: block !important; height:100% !important; margin-top:0;">
@@ -448,8 +452,10 @@ export default {
             examMaterials: [],
             submissionnumber: 0,
             webviewVisible: false,
+            urlForWebview: null,
             showfileerror: true,
             isMac: false,
+            allowedUrls: []
         }
     },
     computed: {
@@ -457,26 +463,6 @@ export default {
             const rgbColor = this.editor?.getAttributes('textStyle')?.color || '';
             return rgbColor.startsWith('rgb') ? this.rgbToHex(rgbColor) : rgbColor;
         },
-
-        allowedUrlObject() {
-            if (!this.serverstatus.examSections[this.serverstatus.activeSection].allowedUrl) { return null; }
-
-            const fullUrl = this.serverstatus.examSections[this.serverstatus.activeSection].allowedUrl;
-
-
-            if (!this.isValidFullDomainName(fullUrl)) { 
-                this.serverstatus.examSections[this.serverstatus.activeSection].allowedUrl = null
-                return
-            }
-            let domain = '';
-            try {
-                domain = new URL(fullUrl).hostname; // extrahiert den Domainnamen
-            } catch (e) {
-                console.error('Ungültige URL', e);
-            }
-            return { full: fullUrl, domain }; // gibt ein Objekt mit voller URL und Domain zurück
-        }
-
     },
 
 
@@ -622,6 +608,7 @@ export default {
 
         showUrl(url){
             this.webviewVisible = true
+            this.urlForWebview = url;
 
             const webview = document.querySelector("#webview");
             //console.log(webview)
@@ -1341,6 +1328,7 @@ export default {
         this.createEditor(); // this initializes the editor
         this.zoomin()
         this.getExamMaterials()
+
         this.loadBackupFile()
 
 
@@ -1454,6 +1442,11 @@ export default {
        
     
 
+
+
+
+
+     
         // update LThighlights positions on scroll
         document.getElementById('editormaincontainer').addEventListener('scroll', this.LTupdateHighlights, { passive: true });
 
@@ -1503,6 +1496,32 @@ export default {
         document.getElementById('editormaincontainer').removeEventListener('scroll', this.LTupdateHighlights, { passive: true });
 
         this.saveinterval.removeEventListener('action', this.saveContentCallback);
+        
+        // Clean up preview click listeners
+        const preview = document.querySelector("#preview");
+        if (preview) {
+            preview.removeEventListener("click", this.hidepreview);
+        }
+        
+        const mugshotPreview = document.querySelector("#mugshotpreview");
+        if (mugshotPreview) {
+            mugshotPreview.removeEventListener("click", function() {  
+                this.style.display = 'none';
+            });
+        }
+        
+        const audioClose = document.querySelector("#audioclose");
+        if (audioClose) {
+            audioClose.removeEventListener("click", function(e) {
+                audioPlayer.pause();
+                console.log('editor @ audioclose: Playback stopped');
+            });
+        }
+        
+        const audioPlayer = document.getElementById('audioPlayer');
+        if (audioPlayer) {
+            audioPlayer.removeEventListener('contextmenu', (e) => { e.preventDefault(); });
+        }
         this.saveinterval.stop() 
 
         this.fetchinfointerval.removeEventListener('action', this.fetchInfo);
@@ -2282,7 +2301,12 @@ Other Styles
     filter: invert(92%) ;
 }
 
-
+.allowed-url-button {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 
 </style>

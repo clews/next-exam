@@ -117,6 +117,11 @@ export default {
             wlanInfo: null,
             hostip: null,
             examMaterials: [],
+            
+            // Event listener references for cleanup
+            _onDomReady: null,
+            _onWillNavigate: null,
+            _onPreviewClick: null,
         }
     }, 
     components: { ExamHeader, PdfviewPane },  
@@ -151,7 +156,7 @@ export default {
             const iframe = shadowRoot.querySelector('iframe');
             if (iframe) { iframe.style.height = '100%'; }  // for some reason iframe height is only 200px
              
-            webview.addEventListener('dom-ready', () => {
+            this._onDomReady = () => {
                 if (config.showdevtools){ webview.openDevTools();   }
                 webview.executeJavaScript(`
                     (() => {  // Anonyme Funktion für eigenen Scope sonst wird beim reload der page (absenden der form ) die variable erneut deklariert und failed
@@ -164,10 +169,11 @@ export default {
                         if (element2) { element2.style.display = 'none'; }
                     })();  // Sofortige Ausführung der anonymen Funktion
                 `);
-            });
+            };
+            webview.addEventListener('dom-ready', this._onDomReady);
 
             // Event abfangen, wenn eine Navigation beginnt
-            webview.addEventListener('will-navigate', (event) => {
+            this._onWillNavigate = (event) => {
                 if (!event.url.includes(this.serverstatus.gformsTestId)){   //we block everything except pages that contain the following keyword-combinations
                     console.log(event.url)
                     //check if this an exception (login, init) - if URL doesn't include either of these combinations - block! EXPLICIT is easier to read ;-)
@@ -179,15 +185,17 @@ export default {
                     }
                 }
                 else {console.log("entered valid test environment")  }
-            });
+            };
+            webview.addEventListener('will-navigate', this._onWillNavigate);
 
 
             // add some eventlisteners once
-            document.querySelector("#preview").addEventListener("click", function() {  
+            this._onPreviewClick = function() {  
                 this.style.display = 'none';
                 this.setAttribute("src", "about:blank");
                 URL.revokeObjectURL(this.currentpreview);
-            });
+            };
+            document.querySelector("#preview").addEventListener("click", this._onPreviewClick);
 
 
 
@@ -336,6 +344,23 @@ export default {
         this.clockinterval.removeEventListener('action', this.clock);
         this.clockinterval.stop() 
         document.body.removeEventListener('mouseleave', this.sendFocuslost);
+        
+        // Clean up webview event listeners
+        const webview = document.getElementById('gformswebview');
+        if (webview) {
+            if (this._onDomReady) {
+                webview.removeEventListener('dom-ready', this._onDomReady);
+            }
+            if (this._onWillNavigate) {
+                webview.removeEventListener('will-navigate', this._onWillNavigate);
+            }
+        }
+        
+        // Clean up preview click listener
+        const preview = document.querySelector("#preview");
+        if (preview && this._onPreviewClick) {
+            preview.removeEventListener("click", this._onPreviewClick);
+        }
     },
 }
 </script>

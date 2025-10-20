@@ -4,40 +4,61 @@
         <template v-if="examSection.groups">
             <!-- Gruppe A -->
             <div class="group-section">
-            <div class="group-label">{{$t('dashboard.groupA')}}</div>
-            <div v-for="(file, index) in examSection.groupA.examInstructionFiles" :key="'A' + index" class="input-group"  style="">
-                <div class="btn btn-sm btn-secondary mt-1" @click="removeFile('A', index)" style="padding:4px 8px;">x</div>
-                
-                <div v-if="file.filetype == 'pdf'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64FilePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>   
-                <div v-else-if="file.filetype == 'image'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64ImagePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
-                <div v-else-if="file.filetype == 'audio'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="playAudioFile(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
-                <div v-else-if="file.filetype == 'ggb'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div> 
-                <div v-else-if="file.filetype == 'docx'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div>
-                <div v-else-if="file.filetype == 'bak'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div>
+              <div class="group-label">{{$t('dashboard.groupA')}}</div>
+              <div v-for="(file, index) in examSection.groupA.examInstructionFiles" :key="'A' + index" class="input-group"  style="">
+                  <div class="btn btn-sm btn-secondary mt-1" @click="removeFile('A', index)" style="padding:4px 8px;">x</div>
+                  
+                  <div v-if="file.filetype == 'pdf'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64FilePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>   
+                  <div v-else-if="file.filetype == 'image'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64ImagePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
+                  <div v-else-if="file.filetype == 'audio'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="playAudioFile(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
+                  <div v-else-if="file.filetype == 'ggb'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div> 
+                  <div v-else-if="file.filetype == 'docx'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div>
+                  <div v-else-if="file.filetype == 'bak'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div>
 
-                <div class="btn btn-sm btn-teal mt-1 extension-button"> 
-                  <div class="vertical-text">{{ getFileExtension(file.filename) }}</div>
-                </div>
-            </div>
+                  <div class="btn btn-sm btn-teal mt-1 extension-button"> 
+                    <div class="vertical-text">{{ getFileExtension(file.filename) }}</div>
+                  </div>
+              </div>
+
+              <div v-for="(allowedUrl, index) in examSection.groupA.allowedUrls" :key="'allowedUrl' + index" class="input-group" style="">
+                  <div class="btn btn-sm btn-secondary mt-1" @click="removeAllowedUrl('A', index)" style="padding:4px 8px;">x</div>
+                  <div class="btn btn-sm btn-cyan mt-1 filename-button" :title="allowedUrl" @click="openAllowedUrl(allowedUrl)"> {{ allowedUrl }} </div>
+                  <div class="btn btn-sm btn-teal mt-1 extension-button"> 
+                      <div class="vertical-text">URL</div>
+                  </div>
+              </div>
+
+
             </div>
     
             <!-- Gruppe B -->
             <div class="group-section">
-            <div class="group-label">{{$t('dashboard.groupB')}}</div>
-            <div v-for="(file, index) in examSection.groupB.examInstructionFiles" :key="'B' + index" class="input-group" style="">
-                <div class="btn btn-sm btn-secondary mt-1" @click="removeFile('B', index)" style="padding:4px 8px;">x</div>
+              <div class="group-label">{{$t('dashboard.groupB')}}</div>
+              <div v-for="(file, index) in examSection.groupB.examInstructionFiles" :key="'B' + index" class="input-group" style="">
+                  <div class="btn btn-sm btn-secondary mt-1" @click="removeFile('B', index)" style="padding:4px 8px;">x</div>
 
-                <div v-if="file.filetype == 'pdf'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64FilePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>   
-                <div v-else-if="file.filetype == 'image'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64ImagePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
-                <div v-else-if="file.filetype == 'audio'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="playAudioFile(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
-                <div v-else-if="file.filetype == 'ggb'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div> 
-                <div v-else-if="file.filetype == 'docx'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div>
-                <div v-else-if="file.filetype == 'bak'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div>
-                
-                <div class="btn btn-sm btn-teal mt-1 extension-button"> 
-                  <div class="vertical-text">{{ getFileExtension(file.filename) }}</div>
-                </div>
-            </div>
+                  <div v-if="file.filetype == 'pdf'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64FilePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>   
+                  <div v-else-if="file.filetype == 'image'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64ImagePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
+                  <div v-else-if="file.filetype == 'audio'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="playAudioFile(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
+                  <div v-else-if="file.filetype == 'ggb'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div> 
+                  <div v-else-if="file.filetype == 'docx'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div>
+                  <div v-else-if="file.filetype == 'bak'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div>
+                  
+                  <div class="btn btn-sm btn-teal mt-1 extension-button"> 
+                    <div class="vertical-text">{{ getFileExtension(file.filename) }}</div>
+                  </div>
+              </div>
+
+              <div v-for="(allowedUrl, index) in examSection.groupB.allowedUrls" :key="'allowedUrl' + index" class="input-group" style="">
+                  <div class="btn btn-sm btn-secondary mt-1" @click="removeAllowedUrl('B', index)" style="padding:4px 8px;">x</div>
+                  <div class="btn btn-sm btn-cyan mt-1 filename-button" :title="allowedUrl" @click="openAllowedUrl(allowedUrl)"> {{ allowedUrl }} </div>
+                  <div class="btn btn-sm btn-teal mt-1 extension-button"> 
+                      <div class="vertical-text">URL</div>
+                  </div>
+              </div>
+
+
+
             </div>
         </template>
     
@@ -59,8 +80,8 @@
             </div>
 
 
-            <div v-for="(allowedUrl, index) in examSection.allowedUrls" :key="'allowedUrl' + index" class="input-group" style="">
-                <div class="btn btn-sm btn-secondary mt-1" @click="removeAllowedUrl(index)" style="padding:4px 8px;">x</div>
+            <div v-for="(allowedUrl, index) in examSection.groupA.allowedUrls" :key="'allowedUrl' + index" class="input-group" style="">
+                <div class="btn btn-sm btn-secondary mt-1" @click="removeAllowedUrl('A', index)" style="padding:4px 8px;">x</div>
                 <div class="btn btn-sm btn-cyan mt-1 filename-button" :title="allowedUrl" @click="openAllowedUrl(allowedUrl)"> {{ allowedUrl }} </div>
                 <div class="btn btn-sm btn-teal mt-1 extension-button"> 
                     <div class="vertical-text">URL</div>

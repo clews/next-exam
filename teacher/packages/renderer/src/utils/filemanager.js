@@ -361,7 +361,7 @@ function showBase64FilePreview(base64, filename){
     document.querySelector("#openPDF").style.display = 'none';
     document.querySelector("#downloadPDF").style.display = 'none';
     document.querySelector("#pdfembed").style.display = 'block';
-    document.querySelector("#printPDF").style.display = 'block';
+    document.querySelector("#printPDF").style.display = 'none';
     document.querySelector("#closePDF").style.display = 'block';
 }
 
@@ -409,7 +409,7 @@ function showBase64ImagePreview(base64, filename){
     document.querySelector("#pdfpreview").style.display = 'block';
     document.querySelector("#openPDF").style.display = 'none';
     document.querySelector("#downloadPDF").style.display = 'none';
-    document.querySelector("#printPDF").style.display = 'block';
+    document.querySelector("#printPDF").style.display = 'none';
     document.querySelector("#closePDF").style.display = 'block';
 }
 

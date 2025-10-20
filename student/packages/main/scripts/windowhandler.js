@@ -570,53 +570,37 @@ class WindowHandler {
         }
 
 
-
-        /**
-         * Math, Editor
-         * affects only the Webview components for allowedUrl
-         * blocks external navigation and new windows
+        /***************************
+         *  Moodle / Eduvidual
          ***************************/
-        if (examtype === "editor" || examtype === "math" ){
-            this.examwindow.webContents.on('did-attach-webview', (event, guest) => {      // hook into the webview's guest
-                guest.setWindowOpenHandler(() => ({ action: 'deny' }))                 // block window.open / target=_blank / Shift-Klick
-                guest.on('new-window', (e, url) => { e.preventDefault() })             // extra safety
-                guest.on('will-navigate', (e, url) => {                                // block external nav
-                
-                    const allowedUrl = serverstatus.examSections[serverstatus.lockedSection].allowedUrl;
-                    //  cleanedUrl = allowedUrl.replace(/^https?:\/\//, '');  // remove http:// or https://
+        if (serverstatus.examSections[serverstatus.lockedSection].examtype === "eduvidual" ){  
+            
+            this.examwindow.webContents.on('will-navigate', (event, url) => {    // a pdf could contain a link - ATTENTION: only works for editor mode and the webview component ignores that
+                event.preventDefault()
+            })  //Prevent navigation away from the editor
 
-                    if ( url.includes( allowedUrl )){
-                        console.log("WebView: url allowed")
-                    }
-                    else {
-                        console.log("WebView: blocked leaving exam mode")
-                        console.log(url)
-                        e.preventDefault()
-                    }
-                })
-                // guest.session.webRequest.onBeforeRequest((details, cb) => {            // hard block all external requests for THIS guest
-                //   if (details.webContentsId === guest.id &&  !details.url.includes( serverstatus.examSections[serverstatus.lockedSection].allowedUrl  ) ) return cb({ cancel: true })
-                //   cb({})                                                                // allow
-                // })
-            })
+            // if a new window should open triggered by window.open()
+            this.examwindow.webContents.on('new-window', (event, url) => { 
+                console.log("new-window", url)
+                event.preventDefault();   
+            }); // Prevent the new window from opening
+     
+            // if a new window should open triggered by target="_blank"
+            this.examwindow.webContents.setWindowOpenHandler(({ url }) => { 
+                console.log("setWindowOpenHandler", url)
+                return { action: 'deny' };   
+            }); // Prevent the new window from opening
         }
-
 
 
 
         /***************************
          *  Texteditor
          ***************************/
-        if (serverstatus.examSections[serverstatus.lockedSection].examtype === "editor" ){  // do not under any circumstances allow navigation away from the editor
+        if (serverstatus.examSections[serverstatus.lockedSection].examtype === "editor" ){  // do not under any circumstances allow navigation away from the editor by clicking on linxs in pdfs
             
             this.examwindow.webContents.on('will-navigate', (event, url) => {    // a pdf could contain a link - ATTENTION: only works for editor mode and the webview component ignores that
-                if ( url.includes( serverstatus.examSections[serverstatus.lockedSection].allowedUrl)){
-                    console.log("url allowed")
-                }
-                else {
-                    console.log("blocked leaving exam mode")
-                    event.preventDefault()
-                }
+                event.preventDefault()
             })  //Prevent navigation away from the editor
 
             // if a new window should open triggered by window.open()

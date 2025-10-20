@@ -468,7 +468,7 @@ const __dirname = import.meta.dirname;
 
             //check if the current active section is the same as the one in the serverstatus - if not change to the new section
             if (serverstatus.lockedSection !== this.multicastClient.clientinfo.lockedSection){
-                log.warn("communicationhandler @ processUpdatedServerstatus: changing section to", serverstatus.lockedSection)
+                log.warn(`communicationhandler @ processUpdatedServerstatus: changing section to ${serverstatus.lockedSection} ${serverstatus.examSections[serverstatus.lockedSection].sectionname} , Examtype: ${serverstatus.examSections[serverstatus.lockedSection].examtype}` )
 
            
 
@@ -564,59 +564,25 @@ const __dirname = import.meta.dirname;
                  */
                 //close exam window or relead the new exam section in the same window
                 if (WindowHandler.examwindow){
-                    if ( serverstatus.examSections[serverstatus.lockedSection].examtype === "microsoft365"){
+
+
+                            // destroy devtools window - if you don't next-exam will crash silently on reload and section switch
+                        if (this.config.development){
+                            webContents.getAllWebContents().forEach(wc => {                        // alle WebViews des Childs
+                                if (wc.hostWebContents?.id === WindowHandler.examwindow.webContents.id && wc.isDevToolsOpened?.()){
+                                    log.info("communicationhandler @ endExam: destroying devtools window")
+                                    wc.closeDevTools()                                                 // DT des WebViews schließen (auch detached)
+                                }
+                            })
+                        } 
                         //close exam window and reopen it with the new exam section
+                        WindowHandler.examwindow.once('closed', () => {
+                            WindowHandler.examwindow = null;
+                            this.startExam(serverstatus);
+                        });
                         WindowHandler.examwindow.close();
                         WindowHandler.examwindow.destroy();
-                        WindowHandler.examwindow = null;
-                        this.startExam(serverstatus)
-                    }
-                    else {   // just switch exam mode in active window
-                        let url = serverstatus.examSections[serverstatus.lockedSection].examtype   // editor || math || tbd.
-                        let token = this.multicastClient.clientinfo.token
-                         
-                        if (app.isPackaged) {
-                            let path = join(__dirname, `../renderer/index.html`)
-                            WindowHandler.examwindow.loadFile(path, {hash: `#/${url}/${token}`})
-                        } 
-                        else {
-                            url = `http://${process.env['VITE_DEV_SERVER_HOST']}:${process.env['VITE_DEV_SERVER_PORT']}/#/${url}/${token}/`
-                            WindowHandler.examwindow.loadURL(url)
-                        }
-                    }
-                }
 
-                /**
-                 * RE-SET NEW LISTENERS FOR EXAM WINDOW (if needed)
-                 */
-                if (WindowHandler.examwindow){ 
-                    await this.sleep(1000) // wait for the examwindow to be loaded
-                    WindowHandler.examwindow.serverstatus = serverstatus   // overwrite serverstatus in examwindow
-
-                    const webContents = WindowHandler.examwindow.webContents;
-                    // Remove any existing 'will-navigate' listeners
-                    webContents.removeAllListeners('will-navigate');
-                    webContents.removeAllListeners('new-window');
-                    webContents.removeAllListeners('setWindowOpenHandler');
-
-                    // Set new listener for "editor" examtype
-                    if (serverstatus.examSections[serverstatus.lockedSection].examtype === "editor" ){  // do not under any circumstances allow navigation away from the editor
-                        webContents.on('will-navigate', (event, url) => {    // a pdf could contain a link - ATTENTION: also set in windowhandler.js (or direct to a common function)
-                            if ( url.includes( serverstatus.examSections[serverstatus.lockedSection].allowedUrl)){
-                                console.log("url allowed")
-                            }
-                            else {
-                                console.log("blocked leaving exam mode")
-                                event.preventDefault()
-                            }
-                        })
-                    }
-
-                    // if a new window should open triggered by window.open()
-                    webContents.on('new-window', (event, url) => { event.preventDefault();   }); // Prevent the new window from opening
-                    // if a new window should open triggered by target="_blank"
-                    webContents.setWindowOpenHandler(({ url }) => { return { action: 'deny' };   }); // Prevent the new window from opening
-            
                 }
             }
         }

@@ -209,7 +209,6 @@ let studentInfo = {
                     fontsize: "12pt",
                     audioRepeat: 0, // wie oft dürfen die teilnehmenden eine audio datei abspielen 0 - unlimited
                     domainname: false,  //zieldomain für den exam mode "webseite"
-                    allowedUrl: null,    // url die der client besuchen darf während der prüfung
                     rdpConfig: null,   // config für den rdp server { "username": "user", "password": "pass", "domain": "domain", "port": 3389 , "ip": "192.168.1.1"}
                     groups: true,   // sollen die clients in 2 gruppen A / B aufgeteilt werden
                     groupA: {
@@ -224,7 +223,8 @@ let studentInfo = {
                                 filecontent: "data:application/pdf;base64,JVBERi0xLjIgCjkgMCBvYmoKPDwKPj4Kc3RyZWFtCkJULyA5IFRmKFRlc3QpJyBFVAplbmRzdHJlYW0KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCA1IDAgUgovQ29udGVudHMgOSAwIFIKPj4KZW5kb2JqCjUgMCBvYmoKPDwKL0tpZHMgWzQgMCBSIF0KL0NvdW50IDEKL1R5cGUgL1BhZ2VzCi9NZWRpYUJveCBbIDAgMCA5OSA5IF0KPj4KZW5kb2JqCjMgMCBvYmoKPDwKL1BhZ2VzIDUgMCBSCi9UeXBlIC9DYXRhbG9nCj4+CmVuZG9iagp0cmFpbGVyCjw8Ci9Sb290IDMgMCBSCj4+CiUlRU9G",
                                 checksum: "098f6bcd4621d373cade4e832627b4f6"
                             }
-                        ]
+                        ],
+                        allowedUrls:["https://next-exam.at", "https://chatgpt.com"] // urls die der client besuchen darf während der prüfung
                     },
                     groupB: { 
                         users: [
@@ -238,7 +238,8 @@ let studentInfo = {
                                 filecontent: "data:application/pdf;base64,JVBERi0xLjIgCjkgMCBvYmoKPDwKPj4Kc3RyZWFtCkJULyA5IFRmKFRlc3QpJyBFVAplbmRzdHJlYW0KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCA1IDAgUgovQ29udGVudHMgOSAwIFIKPj4KZW5kb2JqCjUgMCBvYmoKPDwKL0tpZHMgWzQgMCBSIF0KL0NvdW50IDEKL1R5cGUgL1BhZ2VzCi9NZWRpYUJveCBbIDAgMCA5OSA5IF0KPj4KZW5kb2JqCjMgMCBvYmoKPDwKL1BhZ2VzIDUgMCBSCi9UeXBlIC9DYXRhbG9nCj4+CmVuZG9iagp0cmFpbGVyCjw8Ci9Sb290IDMgMCBSCj4+CiUlRU9G",
                                 checksum: "6f1ed002ab5595859014ebf0951522d9"
                             }
-                        ]
+                        ],
+                        allowedUrls:["https://next-exam.at", "https://chatgpt.com"] // urls die der client besuchen darf während der prüfung
                     },
                 },    
                 2: {  
@@ -263,7 +264,6 @@ let studentInfo = {
                     fontsize: "12pt",
                     audioRepeat: 0, // wie oft dürfen die teilnehmenden eine audio datei abspielen 0 - unlimited
                     domainname: false,  //zieldomain für den exam mode "webseite"
-                    allowedUrl: null,    // url die der client besuchen darf während der prüfung
                     groups: false,   // sollen die clients in 2 gruppen A / B aufgeteilt werden
                     groupA: {
                         users : [],
@@ -272,11 +272,14 @@ let studentInfo = {
                             filetype: "audio",
                             filecontent: "data:audio/mp3;base64,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",
                             checksum: "6f1ed002oeii595859014ebf0951522d9"
-                        }]
+                        }],
+                        allowedUrls:["https://next-exam.at", "https://chatgpt.com"] // urls die der client besuchen darf während der prüfung
+
                     },
                     groupB: { 
                         users: [],
-                        examInstructionFiles: []
+                        examInstructionFiles: [],
+                        allowedUrls:[] // urls die der client besuchen darf während der prüfung
                     },
                 },
                 3: {  
@@ -301,7 +304,6 @@ let studentInfo = {
                     fontsize: "12pt",
                     audioRepeat: 0, // wie oft dürfen die teilnehmenden eine audio datei abspielen 0 - unlimited
                     domainname: false,  //zieldomain für den exam mode "webseite"
-                    allowedUrl: null,    // url die der client besuchen darf während der prüfung
                     groups: false,   // sollen die clients in 2 gruppen A / B aufgeteilt werden
                     groupA: {
                         users : [],
@@ -310,11 +312,13 @@ let studentInfo = {
                             filetype: "image",
                             filecontent: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAUADIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//9k=",
                             checksum: "6f1ed002oeii59585aoeiaoei0951522d9"
-                        }]
+                        }],
+                        allowedUrls:["https://next-exam.at", "https://chatgpt.com"] // urls die der client besuchen darf während der prüfung
                     },
                     groupB: { 
                         users: [],
-                        examInstructionFiles: []
+                        examInstructionFiles: [],
+                        allowedUrls:[] // urls die der client besuchen darf während der prüfung
                     },
                 },
                 4: {  
@@ -339,15 +343,16 @@ let studentInfo = {
                     fontsize: "12pt",
                     audioRepeat: 0, // wie oft dürfen die teilnehmenden eine audio datei abspielen 0 - unlimited
                     domainname: false,  //zieldomain für den exam mode "webseite"
-                    allowedUrl: null,    // url die der client besuchen darf während der prüfung
                     groups: false,   // sollen die clients in 2 gruppen A / B aufgeteilt werden
                     groupA: {
                         users : [],
-                        examInstructionFiles: []
+                        examInstructionFiles: [],
+                        allowedUrls:[] // urls die der client besuchen darf während der prüfung
                     },
                     groupB: { 
                         users: [],
-                        examInstructionFiles: []
+                        examInstructionFiles: [],
+                        allowedUrls:[] // urls die der client besuchen darf während der prüfung
                     },
                 }
             }
@@ -403,15 +408,16 @@ let studentInfo = {
                     fontsize: "12pt",
                     audioRepeat: 0, // wie oft dürfen die teilnehmenden eine audio datei abspielen 0 - unlimited
                     domainname: null,  //zieldomain für den exam mode "webseite"
-                    allowedUrl: null,    // url die der client besuchen darf während der prüfung
                     groups: false,   // sollen die clients in 2 gruppen A / B aufgeteilt werden
                     groupA: {
                         users : [],
-                        examInstructionFiles: []
+                        examInstructionFiles: [],
+                        allowedUrls: []
                     },
                     groupB: { 
                         users: [],
-                        examInstructionFiles: []
+                        examInstructionFiles: [],
+                        allowedUrls: []
                     },
                 }
             }

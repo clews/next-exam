@@ -96,9 +96,9 @@
 
         <WebviewPane
             id="webview"
-            :src="allowedUrlObject?.full || ''"
+            :src="urlForWebview"
             :visible="webviewVisible"
-            :allowed-url="allowedUrlObject?.full"
+            :allowed-url="urlForWebview"
             :block-external="true"
             @close="hidepreview"
         />
@@ -633,12 +633,11 @@ export default {
                         fontsize: '12pt',
                         audioRepeat: 0,
                         domainname: false,
-                        allowedUrls: [],
                         rdpConfig: null,
 
                         groups: false, 
-                        groupA: { users: [], examInstructionFiles: [] }, 
-                        groupB: { users: [], examInstructionFiles: [] }
+                        groupA: { users: [], examInstructionFiles: [], allowedUrls: [] }, 
+                        groupB: { users: [], examInstructionFiles: [], allowedUrls: [] }
                     },
                     2: {
                         examtype: 'math',   
@@ -661,12 +660,11 @@ export default {
                         fontsize: '12pt',
                         audioRepeat: 0,
                         domainname: false,
-                        allowedUrls: [],
                         rdpConfig: null,
 
                         groups: false, 
-                        groupA: { users: [], examInstructionFiles: [] }, 
-                        groupB: { users: [], examInstructionFiles: [] }
+                        groupA: { users: [], examInstructionFiles: [], allowedUrls: [] }, 
+                        groupB: { users: [], examInstructionFiles: [], allowedUrls: [] }
                     },
                     3: {
                         examtype: 'math',   
@@ -689,12 +687,11 @@ export default {
                         fontsize: '12pt',
                         audioRepeat: 0,
                         domainname: false,  
-                        allowedUrls: [],
                         rdpConfig: null,
 
                         groups: false, 
-                        groupA: { users: [], examInstructionFiles: [] }, 
-                        groupB: { users: [], examInstructionFiles: [] }
+                        groupA: { users: [], examInstructionFiles: [], allowedUrls: [] }, 
+                        groupB: { users: [], examInstructionFiles: [], allowedUrls: [] }
                     },
                     4: {
                         examtype: 'math',   
@@ -717,11 +714,11 @@ export default {
                         fontsize: '12pt',
                         audioRepeat: 0,
                         domainname: false,  
-                        allowedUrls: [],   
+                       
                         rdpConfig: null,
                         groups: false, 
-                        groupA: { users: [], examInstructionFiles: [] }, 
-                        groupB: { users: [], examInstructionFiles: [] }
+                        groupA: { users: [], examInstructionFiles: [], allowedUrls: [] }, 
+                        groupB: { users: [], examInstructionFiles: [], allowedUrls: [] }
                     }
                 },                
             }
@@ -1033,6 +1030,17 @@ computed: {
                         Object.values(this.serverstatus.examSections).forEach(section => {   section.locked = false    })
                         this.serverstatus.examSections[this.serverstatus.activeSection].locked = true
                         this.serverstatus.lockedSection = section
+
+                        //check if groups are activated and if NOT put every student into group a
+                        if (!this.serverstatus.examSections[this.serverstatus.activeSection].groups) {  
+                            // prepopulate group A on the server
+                            this.serverstatus.examSections[this.serverstatus.activeSection].groupA.users = this.studentlist.map(student => student.clientname)
+                            // set studentstatus for every student to group a for the clients
+                            this.setStudentStatus({group:"a"}, 'all')
+                        }
+                      
+                        
+
                         this.setServerStatus()
                     }
                 })    

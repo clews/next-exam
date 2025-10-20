@@ -590,15 +590,18 @@ router.post('/getexammaterials/:servername/:token', async (req, res, next) => {
         let groupB = examSection.groupB
     
         let materials = []
+        let allowedUrls = []
         if (group === "a") {
             materials = groupA.examInstructionFiles
+            allowedUrls = groupA.allowedUrls
         }
         else if (group === "b") {
             materials = groupB.examInstructionFiles
+            allowedUrls = groupB.allowedUrls
         }
 
 
-        res.json({ status:"success", sender: "server", materials: materials  })
+        res.json({ status:"success", sender: "server", materials: materials, allowedUrls: allowedUrls  })
     } 
     else {
         res.json({ status:"error", sender: "server", message:t("data.tokennotvalid")  })

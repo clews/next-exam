@@ -21,9 +21,12 @@ function getTestURL(){
         cancelButtonText: this.$t("dashboard.cancel"),
         html: `
             <div class="my-content">                   
-                zB.: https://classtime.com
+                zB.: https://www.classtime.com
             </div>
             `,  
+        didOpen: () => {
+        document.getElementsByClassName('my-custom-input')[0].value = this.serverstatus.examSections[this.serverstatus.activeSection].domainname
+        },
         inputValidator: (value) => {
             if (!isValidFullDomainName(value)) {return 'Ungültige Domain!'}
         }  
@@ -649,14 +652,25 @@ function defineMaterials(who) {
 
         const allowedUrl = document.getElementById('allowedURL').value;
         if (allowedUrl) {
-            this.serverstatus.examSections[this.serverstatus.activeSection].allowedUrls.push(allowedUrl);
+            //this.serverstatus.examSections[this.serverstatus.activeSection].allowedUrls.push(allowedUrl);
+
+
+            if (activeGroup === "a" || activeGroup === "all") {
+                //TODO:  check if file already exists and ask to overwrite
+                this.serverstatus.examSections[this.serverstatus.activeSection].groupA.allowedUrls.push(allowedUrl);
+            }
+            if (activeGroup === "b" || activeGroup === "all") {
+                //TODO:  check if file already exists and ask to overwrite
+                this.serverstatus.examSections[this.serverstatus.activeSection].groupB.allowedUrls.push(allowedUrl);
+            }
+
+
+
             this.setServerStatus()
         }
         console.log("input:", input)
 
-        if (!input.value) { 
-            this.status(this.$t("dashboard.nofiles")); 
-            return;   } // no further processing if no files are selected
+        if (!input.value) {   return;   } // no further processing if no files are selected
 
         this.status(this.$t("dashboard.processingfiles"));
         const files = input.value;
@@ -731,8 +745,12 @@ async function calculateMD5(file) {
 
 
 
-function handleAllowedUrlRemove(index){
-    this.serverstatus.examSections[this.serverstatus.activeSection].allowedUrls.splice(index, 1);
+function handleAllowedUrlRemove(group, index){
+    if (group === "A") {
+        this.serverstatus.examSections[this.serverstatus.activeSection].groupA.allowedUrls.splice(index, 1);
+    } else {
+        this.serverstatus.examSections[this.serverstatus.activeSection].groupB.allowedUrls.splice(index, 1);
+    }
     this.setServerStatus()
 }
 

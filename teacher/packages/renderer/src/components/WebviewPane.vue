@@ -75,51 +75,41 @@
       return {
         canGoBack: false,            // nav state
         canGoForward: false,         // nav state
-        homeUrl: '',                 // initial URL
         lastAllowedUrl: '',          // track last allowedUrl
         disableNavigation: false     // flag to keep buttons disabled
       }
     },
     mounted() {
       this.wv = this.$refs.wv                                         // webview ref
-      this.homeUrl = this.allowedUrl || this.src || ''                // set home
-      this.lastAllowedUrl = this.allowedUrl || ''                     // store initial allowedUrl
+      this.lastAllowedUrl = this.allowedUrl                     // store initial allowedUrl
     
       const updateNav = () => {                                       // refresh nav state
         if (this.lastAllowedUrl !== this.allowedUrl ) {                                 // keep disabled if flag set
           this.canGoBack = false
           this.canGoForward = false
+          this.wv.clearHistory()
           this.lastAllowedUrl = this.allowedUrl
-          this.homeUrl = this.allowedUrl
         } 
         else {
           this.canGoBack = this.wv?.canGoBack?.() || false            // can go back?
           this.canGoForward = this.wv?.canGoForward?.() || false      // can go forward?
-          this.homeUrl = this.allowedUrl
+         
         }
       }
 
-      this._onDomReady = () => { updateNav() }                        // after ready
-      this._onDidNav = () => { updateNav() }                          // after navigation
+
       this._onDidStop = () => { updateNav() }                         // after stop loading
-  
-      this.wv.addEventListener('dom-ready', this._onDomReady)         // bind
-      // this.wv.addEventListener('did-navigate', this._onDidNav)
-      // this.wv.addEventListener('did-navigate-in-page', this._onDidNav)
-      // this.wv.addEventListener('did-stop-loading', this._onDidStop)
+      this.wv.addEventListener('did-stop-loading', this._onDidStop)
     },
     unmounted() {
       if (!this.wv) return                                            // guard
-      this.wv.removeEventListener('dom-ready', this._onDomReady)      // unbind
-      // this.wv.removeEventListener('did-navigate', this._onDidNav)
-      // this.wv.removeEventListener('did-navigate-in-page', this._onDidNav)
-      // this.wv.removeEventListener('did-stop-loading', this._onDidStop)
+      this.wv.removeEventListener('did-stop-loading', this._onDidStop)
     },
     watch: {
     
     },
     methods: {
-      goHome() { if (this.homeUrl) this.wv.loadURL(this.homeUrl) },   // go to home URL
+      goHome() { if (this.allowedUrl) this.wv.loadURL(this.allowedUrl) },   // go to home URL
       goBack() { if (this.wv?.canGoBack?.()) this.wv.goBack() },      // history back
       goForward() { if (this.wv?.canGoForward?.()) this.wv.goForward() }, // history forward
       closePane() { this.$emit('close'); }                                // send 'close' Event

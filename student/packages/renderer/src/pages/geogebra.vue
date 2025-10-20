@@ -48,10 +48,8 @@
         </div>
         
 
-        <div v-if="allowedUrlObject" class="btn btn-outline-success p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="showUrl(allowedUrlObject.full)">
-            <img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{allowedUrlObject.domain}} 
-        </div>
-
+    
+ 
 
 
         <!-- exam materials start - these are base64 encoded files fetched on examstart or section start-->
@@ -63,8 +61,16 @@
             <div v-if="(file.filetype == 'pdf')" class="btn btn-outline-cyan p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="selectedFile=file.filename; loadBase64file(file)"><img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{file.filename}} </div>
             <div v-if="(file.filetype == 'audio')" class="btn btn-outline-cyan p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="loadBase64file(file)"><img src="/src/assets/img/svg/im-google-talk.svg" class="" width="22" height="22" style="vertical-align: top;"> {{file.filename}} </div>
             <div v-if="(file.filetype == 'image')" class="btn btn-outline-cyan p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="selectedFile=file.filename; loadBase64file(file)"><img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{file.filename}} </div>
+        </div>       
+        
+        <div v-if="allowedUrls.length !== 0"  v-for="allowedUrl in allowedUrls  " class="btn btn-outline-success p-0 pe-2 ps-1 me-1 mb-0 btn-sm allowed-url-button" :title="allowedUrl" @click="showUrl(allowedUrl)">
+            <img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{allowedUrl}} 
         </div>
         <!-- exam materials end -->
+
+
+
+
 
         <!-- local files start -->
         <div class="white text-muted me-2 ms-2 small d-inline-block mb-0" style="vertical-align: middle;">{{ $t('editor.localfiles') }} </div>
@@ -86,25 +92,20 @@
 
     <!-- angabe/pdf preview start -->
     <div id="preview" class="fadeinfast p-4">
-
         <WebviewPane
             id="webview"
-            :src="allowedUrlObject?.full || ''"
+            :src="urlForWebview || ''"
             :visible="webviewVisible"
-            :allowed-url="allowedUrlObject?.full"
+            :allowed-url="urlForWebview"
             :block-external="true"
             @close="hidepreview"
         />
-
-
-
         <PdfviewPane
             :src=currentpreview
             :localLockdown=localLockdown
             :examtype=examtype
             @close="hidepreview"
         />
-
     </div>
     <!-- angabe/pdf preview end -->
 
@@ -143,7 +144,7 @@ import PdfviewPane from '../components/PdfviewPane.vue'
 import {SchedulerService} from '../utils/schedulerservice.js'
 
 import { getExamMaterials, loadPDF, loadImage, loadGGB} from '../utils/filehandler.js'
-import { gracefullyExit } from '../utils/commonMethods.js'
+import { gracefullyExit, showUrl } from '../utils/commonMethods.js'
 
 
 
@@ -186,31 +187,16 @@ export default {
             wlanInfo: null,
             hostip: null,
             examMaterials: [],
-            webviewVisible: false
-        
+            allowedUrls: [],
+            webviewVisible: false,
+            urlForWebview: null,
+            
+            // Event listener references for cleanup
+            _onPreviewClick: null,
         }
     }, 
     components: { ExamHeader, WebviewPane, PdfviewPane  },  
     computed: {
-
-        allowedUrlObject() {
-            if (!this.serverstatus.examSections[this.serverstatus.activeSection].allowedUrl) { return null; }
-
-            const fullUrl = this.serverstatus.examSections[this.serverstatus.activeSection].allowedUrl;
-
-
-            if (!this.isValidFullDomainName(fullUrl)) { 
-                this.serverstatus.examSections[this.serverstatus.activeSection].allowedUrl = null
-                return
-            }
-            let domain = '';
-            try {
-                domain = new URL(fullUrl).hostname; // extrahiert den Domainnamen
-            } catch (e) {
-                console.error('Ungültige URL', e);
-            }
-            return { full: fullUrl, domain }; // gibt ein Objekt mit voller URL und Domain zurück
-        }
 
     },
     mounted() {
@@ -265,11 +251,12 @@ export default {
             this.getExamMaterials()
 
             // add some eventlisteners once
-            document.querySelector("#preview").addEventListener("click", function() {  
+            this._onPreviewClick = function() {  
                 this.style.display = 'none';
                 this.setAttribute("src", "about:blank");
                 URL.revokeObjectURL(this.currentpreview);
-            });
+            };
+            document.querySelector("#preview").addEventListener("click", this._onPreviewClick);
         })
     },
     methods: { 
@@ -282,7 +269,7 @@ export default {
 
         // from commonMethods.js
         gracefullyExit:gracefullyExit,
-
+        showUrl:showUrl,
 
         hidepreview(){
             let preview = document.querySelector("#preview")
@@ -345,29 +332,6 @@ export default {
             }
         },
 
-        showUrl(url){
-            this.webviewVisible = true
-
-            const webview = document.querySelector("#webview");
-            if (!this.splitview){
-                webview.style.height = "80vh";
-                webview.style.width = "80vw";
-                webview.style.position = "relative";
-                webview.style.top = "10%";
-            }
-            else {
-                webview.style.height = "100%";
-                webview.style.width = "100%";
-                webview.style.position = "relative";
-                webview.style.top = "0%";
-            }
-
-
-
-            const embedcontainer = document.querySelector(".embed-container");
-            embedcontainer.style.display = 'none';
-            document.querySelector("#preview").style.display = 'block'; 
-        },
 
         redefineConsole(){
             const ggbIframe = document.getElementById('geogebraframe');
@@ -601,7 +565,12 @@ export default {
         ipcRenderer.removeAllListeners('getmaterials')
         ipcRenderer.removeAllListeners('fileerror')
         ipcRenderer.removeAllListeners('save')
-
+        
+        // Clean up preview click listener
+        const preview = document.querySelector("#preview");
+        if (preview && this._onPreviewClick) {
+            preview.removeEventListener("click", this._onPreviewClick);
+        }
     },
 }
 

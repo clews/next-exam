@@ -154,5 +154,8 @@
         "error": "Fehler",
         "nopdf": "Keine gültige PDF Datei",
         "wrongpassword": "Falsches Passwort"
+    },
+    "website": {
+        "reloadwebview": "Webview neu laden"
     }
 }

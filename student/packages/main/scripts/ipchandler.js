@@ -21,7 +21,7 @@ import fs from 'fs'
 import ip from 'ip'
 import i18n from '../../renderer/src/locales/locales.js'
 const {t} = i18n.global
-import{ipcMain, clipboard,app} from 'electron'
+import{ipcMain, clipboard,app, webContents} from 'electron'
 import { gateway4sync } from 'default-gateway';
 import os from 'os'
 import log from 'electron-log';
@@ -74,8 +74,7 @@ class IpcHandler {
             let servername = clientinfo.servername
             let serverip = clientinfo.serverip
             let token = clientinfo.token
-            
-
+           
             let payload = { 
                 group: clientinfo.group,
             }
@@ -105,12 +104,28 @@ class IpcHandler {
         }) 
 
 
-
-
-    
-        
-        
-
+        ipcMain.handle('start-blocking-for-webview', (event, { guestId, allowedUrls }) => {
+            const guest = webContents.fromId(Number(guestId));
+            if (!guest || guest.isDestroyed?.()) return false;
+          
+            // Entferne alte Listener, um Doppel-Registrierungen zu vermeiden
+            guest.removeAllListeners('will-navigate');
+       
+            const allow = allowedUrls.map(s => String(s).toLowerCase());
+            guest.setWindowOpenHandler(({ url }) => {
+                const urlStr = String(url || '').toLowerCase();
+                if (allow.some(u => urlStr.includes(u))) { guest.loadURL(url); log.warn("ipchandler @ start-blocking-for-webview: allowed navigation to", url) }
+                else return { action: 'deny' };
+            });
+            
+            guest.on('will-navigate', (e, url) => {
+                const urlStr = String(url || '').toLowerCase();
+                if (!allow.some(u => urlStr.includes(u))) { e.preventDefault(); log.warn("ipchandler @ start-blocking-for-webview: blocked navigation to", url) }
+            });
+              
+        return true;
+    });
+          
 
 
 

@@ -24,6 +24,8 @@
 
     <!-- filelist start - show local files from workfolder (pdf and gbb only)-->
     <div id="toolbar" class="d-inline p-1 pt-0">  
+        <!-- reload webview button -->
+        <button class="btn btn-primary p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="reloadWebview" :title="$t('website.reloadwebview')"> <img src="/src/assets/img/svg/edit-redo.svg" class="" width="22" height="20" >{{moodleDomain}}</button>
 
         <!-- exam materials start - these are base64 encoded files fetched on examstart or section start-->
         <div id="getmaterialsbutton" class="invisible-button btn btn-outline-cyan p-0  pe-2 ps-1 me-1 mb-0 btn-sm" @click="getExamMaterials()" :title="$t('editor.getmaterials')"><img src="/src/assets/img/svg/games-solve.svg" class="" width="22" height="22" style="vertical-align: top;"> {{ $t('editor.materials') }}</div>
@@ -35,13 +37,22 @@
             <div v-if="(file.filetype == 'audio')" class="btn btn-outline-cyan p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="loadBase64file(file)"><img src="/src/assets/img/svg/im-google-talk.svg" class="" width="22" height="22" style="vertical-align: top;"> {{file.filename}} </div>
             <div v-if="(file.filetype == 'image')" class="btn btn-outline-cyan p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="selectedFile=file.filename; loadBase64file(file)"><img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{file.filename}} </div>
         </div>
+
+        <div v-if="allowedUrls.length !== 0"  v-for="allowedUrl in allowedUrls  " class="btn btn-outline-success p-0 pe-2 ps-1 me-1 mb-0 btn-sm allowed-url-button" :title="allowedUrl" @click="showUrl(allowedUrl)">
+            <img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{allowedUrl}} 
+        </div>
+
         <!-- exam materials end -->
 
-
-        <div v-for="file in localfiles" class="d-inline">
-            <div v-if="(file.type == 'pdf')" class="btn btn-secondary  p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="selectedFile=file.name; loadPDF(file.name)"><img src="/src/assets/img/svg/document-replace.svg" class="" width="22" height="20" > {{file.name}} </div>
-            <div v-if="(file.type == 'image')" class="btn btn-info p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="loadImage(file.name)"><img src="/src/assets/img/svg/eye-fill.svg" class="white" width="22" height="22" style="vertical-align: top;"> {{file.name}} </div>
+        <!-- local files start -->
+        <div class="white text-muted me-2 ms-2 small d-inline-block mb-0" style="vertical-align: middle;">{{ $t('editor.localfiles') }} </div>
+        <div v-for="file in localfiles" class="d-inline mb-0">
+            <div v-if="(file.type == 'pdf')"   class="btn btn-info p-0 pe-2 ps-1 ms-1 mb-0 btn-sm" @click="selectedFile=file.name; loadPDF(file.name)"><img src="/src/assets/img/svg/document-replace.svg" class="" width="20" height="20" > {{file.name}} </div>
+            <div v-if="(file.type == 'image')" class="btn btn-info p-0 pe-2 ps-1 ms-1 mb-0 btn-sm" @click="loadImage(file.name)"><img src="/src/assets/img/svg/eye-fill.svg" class="white" width="22" height="22" style="vertical-align: top;"> {{file.name}} </div>
         </div>
+        <!-- local files end -->
+
+
     </div>
     <!-- filelist end -->
     
@@ -49,7 +60,14 @@
     <!-- angabe/pdf preview start -->
 
     <div id="preview" class="fadeinfast p-4">
-       
+        <WebviewPane
+            id="webview"
+            :src="urlForWebview || ''"
+            :visible="webviewVisible"
+            :allowed-url="urlForWebview"
+            :block-external="true"
+            @close="hidepreview"
+        />
         <PdfviewPane
             :src="currentpreview"
             :localLockdown="localLockdown"
@@ -79,7 +97,7 @@
         <p>Loading...</p>
     </div>
 
-    <webview id="webview" autosize="on" :src="url" :style="{ visibility: isLoading ? 'hidden' : 'visible' }"></webview>
+    <webview id="webviewmain" autosize="on" :src="url" :style="{ visibility: isLoading ? 'hidden' : 'visible' }"></webview>
 
 
 </template>
@@ -89,10 +107,11 @@
 import moment from 'moment-timezone';
 import ExamHeader from '../components/ExamHeader.vue';
 import {SchedulerService} from '../utils/schedulerservice.js'
-import { gracefullyExit } from '../utils/commonMethods.js'
+import { gracefullyExit, showUrl } from '../utils/commonMethods.js'
 
 import { getExamMaterials, loadPDF, loadImage} from '../utils/filehandler.js'
 import PdfviewPane from '../components/PdfviewPane.vue'
+import WebviewPane from '../components/WebviewPane.vue';
 
 export default {
     data() {
@@ -120,7 +139,7 @@ export default {
 
             activeSection: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.activeSection],
             lockedSection: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection],
-            serverstatus: this.$route.params.serverstatus[this.$route.params.serverstatus.lockedSection],
+            serverstatus: this.$route.params.serverstatus,
             url: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection].moodleURL,
             moodleDomain: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection].moodleDomain,
             moodleTestType: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection].moodleTestType,
@@ -144,28 +163,33 @@ export default {
             hostip: null,
 
             examMaterials: [],
+            urlForWebview: null,
+            allowedUrls: [],
+            webviewVisible: false,
+            
+            // Event listener references for cleanup
+            _onWillNavigate: null,
+            _onDidFinishLoad: null,
+            _onDidStartLoading: null,
+            _onDidStopLoading: null,
+            _onPreviewClick: null,
         }
     }, 
-    components: { ExamHeader, PdfviewPane },  
+    components: { ExamHeader, PdfviewPane, WebviewPane },  
     mounted() {
 
-        ipcRenderer.on('getmaterials', (event) => {  //trigger document save by signal "save" sent from sendExamtoteacher in communication handler
-            console.log("geogebra @ getmaterials: get materials request received")
+        ipcRenderer.on('getmaterials', (event) => { 
+            console.log("eduvidual @ getmaterials: get materials request received")
             this.getExamMaterials() 
         });
  
-        // if (this.serverstatus.moodleDomain === "eduvidual.at"){
-        //     this.url =`https://eduvidual.at/mod/${this.serverstatus.moodleTestType}/view.php?id=${this.serverstatus.moodleTestId}`    // https://www.eduvidual.at/mod/quiz/view.php?id=4172287   
-        // }
-        // else {
-        //     this.url =`https://${this.serverstatus.moodleDomain}/mod/${this.serverstatus.moodleTestType}/view.php?id=${this.serverstatus.moodleTestId}`    // https://www.eduvidual.at/mod/quiz/view.php?id=4172287  
-        // }
-
         this.currentFile = this.clientname
         this.entrytime = new Date().getTime()  
          
-        console.log(this.url)
-
+        // console.log(this.serverstatus.lockedSection)
+        // console.log(this.serverstatus.examSections[this.serverstatus.lockedSection].moodleURL)
+        // console.log(this.serverstatus.examSections[this.serverstatus.lockedSection].moodleDomain)
+        // console.log(this.serverstatus.examSections[this.serverstatus.lockedSection].moodleTestId)
 
         this.$nextTick(() => { // Code that will run only after the entire view has been rendered
                   
@@ -189,26 +213,26 @@ export default {
             this.loadFilelist()
             this.getExamMaterials()
 
-            const webview = document.getElementById('webview');
-            const shadowRoot = webview.shadowRoot;
-            const iframe = shadowRoot.querySelector('iframe');
-            if (iframe) { iframe.style.height = '100%'; } 
-
-         
-
             // add some eventlisteners once
-            document.querySelector("#preview").addEventListener("click", function() {  
+            this._onPreviewClick = function() {  
                 this.style.display = 'none';
                 this.setAttribute("src", "about:blank");
                 URL.revokeObjectURL(this.currentpreview);
-            });
+            };
+            document.querySelector("#preview").addEventListener("click", this._onPreviewClick);
 
- 
 
-            webview.addEventListener('did-finish-load', () => {
+            // fetches shadow root of webview and sets height to 100% 
+            const webview = document.getElementById('webviewmain');
+            if (webview) { 
+                const shadowRoot = webview.shadowRoot;
+                const iframe = shadowRoot.querySelector('iframe');
+                if (iframe) { iframe.style.height = '100%'; } 
+            }
+            
+            this._onDidFinishLoad = () => {
 
                 if (this.config.showdevtools) {webview.openDevTools();  }
-
                 const preloadScriptContent = `
                     (function() {
                         const css = \`
@@ -216,7 +240,7 @@ export default {
                         .branding { display: none !important; }
                         #header { display: none !important; }
                         .drawer-left-toggle { display: none !important; }
-                       .drawer.drawer-right { top:0 !important; height: 100% !important;}
+                    .drawer.drawer-right { top:0 !important; height: 100% !important;}
                         #page-footer { display: none !important; }
                         #theme_boost-drawers-courseindex { display: none !important; }
                         #page.drawers {margin-top:0px !important;}
@@ -238,18 +262,21 @@ export default {
                 webview.executeJavaScript(preloadScriptContent)
                 .then(() => {     this.isLoading = false;  })  // Verberge das Overlay und zeige den Webview-Inhalt
                 .catch((err) => { this.isLoading = false;  })
-            });
+            };
+            webview.addEventListener('did-finish-load', this._onDidFinishLoad);
             
             
-            webview.addEventListener('did-start-loading', () => { this.isLoading = true;   }); // Zeige das Overlay während des Ladens
-            webview.addEventListener('did-stop-loading', () => {   this.isLoading = false;  });           // Verberge das Overlay, wenn das Laden gestoppt ist
+            this._onDidStartLoading = () => { this.isLoading = true;   }; // Zeige das Overlay während des Ladens
+            this._onDidStopLoading = () => {   this.isLoading = false;  };           // Verberge das Overlay, wenn das Laden gestoppt ist
+            webview.addEventListener('did-start-loading', this._onDidStartLoading);
+            webview.addEventListener('did-stop-loading', this._onDidStopLoading);
             
             
             // Event abfangen, wenn eine Navigation beginnt
-            webview.addEventListener('will-navigate', (event) => {
+            this._onWillNavigate = (event) => {
                 //console.log(event.url)
                 if (!event.url.includes(this.moodleTestId)){  //we block everything whithout testID except pages that contain the following keyword-combinations
-                    //console.log(event.url)
+                    console.log("checkung url: "+event.url)
                     //check if this an exception (login, init) - if URL doesn't include either of these combinations - block! EXPLICIT is easier to read ;-)
                     if ( event.url.includes("startattempt.php") && event.url.includes(this.moodleDomain) )        { console.log(" url allowed") }  // moodledomain ohne testid
                     else if ( event.url.includes("processattempt.php") && event.url.includes(this.moodleDomain) ) { console.log(" url allowed") }  // moodledomain ohne testid
@@ -270,25 +297,22 @@ export default {
                     else if ( event.url.includes("auth") && event.url.includes(this.moodleDomain) )               { console.log(" url allowed") }
                     else if ( event.url.includes("bildung.gv.at") && event.url.includes("SAML2") )                { console.log(" url allowed") }
                     else if ( event.url.includes("id-austria.gv.at") && event.url.includes("authHandler") )       { console.log(" url allowed") }
-
-                    
-
                     else {
                         console.log("webview @ will-navigate: blocked leaving exam mode")
                         webview.stop()
                     }
                 }
                 else { console.log("webview @ will-navigate: entered valid test environment")  }
-            });
+            };
+            webview.addEventListener('will-navigate', this._onWillNavigate);
         });
     },
     methods: { 
 
-     // from filehandler.js
+        // from filehandler.js
         getExamMaterials:getExamMaterials,
         loadPDF:loadPDF,
         loadImage:loadImage,
-
 
         loadBase64file(file){
             this.webviewVisible = false
@@ -300,13 +324,11 @@ export default {
                 this.loadImage(file, true)
                 return
             }
-  
         },
 
-
-  
         // from commonMethods.js
         gracefullyExit:gracefullyExit,
+        showUrl:showUrl,
 
         
         hidepreview(){
@@ -316,7 +338,10 @@ export default {
             URL.revokeObjectURL(this.currentpreview);
         },
 
-
+        reloadWebview(){
+            const webview = document.getElementById('webviewmain');
+            webview.setAttribute("src", this.url);
+        },
 
         reconnect(){
             this.$swal.fire({
@@ -411,6 +436,29 @@ export default {
         this.loadfilelistinterval.stop() 
 
         document.body.removeEventListener('mouseleave', this.sendFocuslost);
+        
+        // Clean up webview event listeners
+        const webview = document.getElementById('webviewmain');
+        if (webview) {
+            if (this._onWillNavigate) {
+                webview.removeEventListener('will-navigate', this._onWillNavigate);
+            }
+            if (this._onDidFinishLoad) {
+                webview.removeEventListener('did-finish-load', this._onDidFinishLoad);
+            }
+            if (this._onDidStartLoading) {
+                webview.removeEventListener('did-start-loading', this._onDidStartLoading);
+            }
+            if (this._onDidStopLoading) {
+                webview.removeEventListener('did-stop-loading', this._onDidStopLoading);
+            }
+        }
+        
+        // Clean up preview click listener
+        const preview = document.querySelector("#preview");
+        if (preview && this._onPreviewClick) {
+            preview.removeEventListener("click", this._onPreviewClick);
+        }
     },
 
 }
@@ -451,7 +499,7 @@ export default {
   100% { transform: rotate(360deg); }
 }
 
-#webview{
+#webviewmain{
     height: 100% !important;
     width: 100% !important;
     display: block;

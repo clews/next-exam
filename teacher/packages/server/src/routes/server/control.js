@@ -717,6 +717,7 @@ router.post('/setstudentstatus/:servername/:csrfservertoken/:studenttoken', func
         if (studenttoken === "all"){
             for (let student of mcServer.studentList){ 
                 if (delfolder)  { student.status.delfolder = true   } // on the next update cycle the student gets informed to delete workfolder
+                if (group) {student.status.group = group; }
             }
         }
         else {

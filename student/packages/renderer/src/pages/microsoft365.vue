@@ -400,6 +400,15 @@ export default {
         this.clockinterval.stop() 
         
         document.body.removeEventListener('mouseleave', this.sendFocuslost);
+        
+        // Clean up preview click listener
+        const preview = document.querySelector("#preview");
+        if (preview) {
+            preview.removeEventListener("click", function() {
+                this.style.display = 'none';
+                this.setAttribute("src", "about:blank");
+            });
+        }
     },
 }
 </script>

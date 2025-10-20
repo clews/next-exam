@@ -163,9 +163,11 @@ process.on('uncaughtException', (err) => {
         log.transports.console.level = false;
         log.warn('main @ uncaughtException: EPIPE Error: The stdout stream of the ElectronLogger will be disabled.');
     } 
+
+    else if (err.message?.includes('Render frame was disposed')) return;
     else {  log.error('main @ uncaughtException:', err.message); }  // Log or display other errors
 });
-
+ 
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
