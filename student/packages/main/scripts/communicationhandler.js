@@ -551,14 +551,6 @@ const __dirname = import.meta.dirname;
                     log.error(`communicationhandler @ processUpdatedServerstatus: Error during folder operation - ${error}`);
                 }
 
-
-
-
-
-
-
-
-
                 /**
                  *  Actually SWITCH EXAM SECTION
                  */
@@ -570,7 +562,7 @@ const __dirname = import.meta.dirname;
                         if (this.config.development){
                             webContents.getAllWebContents().forEach(wc => {                        // alle WebViews des Childs
                                 if (wc.hostWebContents?.id === WindowHandler.examwindow.webContents.id && wc.isDevToolsOpened?.()){
-                                    log.info("communicationhandler @ endExam: destroying devtools window")
+                                    log.info("communicationhandler @ switchExamSection: destroying devtools window")
                                     wc.closeDevTools()                                                 // DT des WebViews schließen (auch detached)
                                 }
                             })

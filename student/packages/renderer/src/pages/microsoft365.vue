@@ -23,13 +23,20 @@
         <!-- HEADER END -->
 
         <!-- filelist start - show local files from workfolder (pdf and gbb only)-->
-        <div id="toolbar" class="p-0 pb-0">  
+        <div id="toolbar" class="p-0 pb-1 ps-2">  
+
+            <button class="btn btn-primary p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="reloadBrowserView" :title="$t('website.reloadwebview')"> <img src="/src/assets/img/svg/edit-redo.svg" class="" width="22" height="20" >Reload MS365</button>
+
+
             <div id="getmaterialsbutton" class="invisible-button btn btn-outline-cyan p-0  pe-2 ps-1 me-1 mb-0 btn-sm" @click="getExamMaterials()" :title="$t('editor.getmaterials')"><img src="/src/assets/img/svg/games-solve.svg" class="white" width="22" height="22" style="vertical-align: top;"> {{ $t('editor.materials') }}</div>
 
                <!-- exam materials start - these are base64 encoded files fetched on examstart or section start-->
                <div v-for="file in examMaterials" :key="file.filename" class="d-inline" style="text-align:left">
                     <div v-if="(file.filetype == 'pdf')" class="btn btn-outline-cyan p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="selectedFile=file.filename; loadBase64file(file)"><img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{file.filename}} </div>
                     <div v-if="(file.filetype == 'image')" class="btn btn-outline-cyan p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="selectedFile=file.filename; loadBase64file(file)"><img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{file.filename}} </div>
+                </div>
+                <div v-if="allowedUrls.length !== 0"  v-for="allowedUrl in allowedUrls  " class="btn btn-outline-success p-0 pe-2 ps-1 me-1 mb-0 btn-sm allowed-url-button" :title="allowedUrl" @click="showUrl(allowedUrl)">
+                    <img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{allowedUrl}} 
                 </div>
                 <!-- exam materials end -->
 
@@ -47,6 +54,14 @@
     <div id="content">
         <!-- angabe/pdf preview start -->
         <div id=preview class="fadeinfast p-4">
+            <WebviewPane
+                id="webview"
+                :src="urlForWebview || ''"
+                :visible="webviewVisible"
+                :allowed-url="urlForWebview"
+                :block-external="true"
+                @close="hidepreview"
+            />
             <PdfviewPane
                 :src="currentpreview"
                 :localLockdown="localLockdown"
@@ -74,7 +89,8 @@
     Javascript into the frame inside a frame like <iframe></iframe> <embed> or chromium <webview></webview>
     The only way to inject JS code is via the backend but only if we open the Microsoft365 page directly in the electron window (no sub-frames whatsoever)
     That's why we use electrons "BrowserView" feature to load 2 pages in 1 window. we present this page as "topmenu" and load the ms editors as "content" below. 
-    This is actually the safest way to do this because of "ContextIsolation" no scripts from the loaded pages can interfere with the rest of the app
+    This is actually the safest way to do this because of "ContextIsolation" no scripts from the loaded pages can interfere with the rest of the app.
+    Unfortunately this means that we need to collapse the browserview when we want to open a file or a url from the next-exam header.
     -->
 
 
@@ -84,9 +100,10 @@
 import moment from 'moment-timezone';
 import ExamHeader from '../components/ExamHeader.vue';
 import {SchedulerService} from '../utils/schedulerservice.js'
-import { gracefullyExit } from '../utils/commonMethods.js'
+import { gracefullyExit, showUrl } from '../utils/commonMethods.js'
 import PdfviewPane from '../components/PdfviewPane.vue'
-import { getExamMaterials, loadPDF, loadImage} from '../utils/filehandler.js'
+import WebviewPane from '../components/WebviewPane.vue'
+import { getExamMaterials, loadPDF, loadImage } from '../utils/filehandler.js'
 
 export default {
     data() {
@@ -125,10 +142,14 @@ export default {
             examtype: this.$route.params.examtype,
             localLockdown: this.$route.params.localLockdown,
             examMaterials: [],
+            urlForWebview: null,
+            allowedUrls: [],
+            webviewVisible: false,
+            microsoft365Domain: this.$route.params.microsoft365Domain,
         }
     }, 
     components: {  
-        ExamHeader, PdfviewPane  
+        ExamHeader, PdfviewPane, WebviewPane  
     },  
     mounted() {
         this.fetchInfo()
@@ -167,17 +188,45 @@ export default {
                 URL.revokeObjectURL(this.currentpreview);
                 ipcRenderer.send('restore-browserview');
             });
+
+            // Update header height after initial render
+            this.updateHeaderHeight();
+
+            // Listen for window resize events to update header height
+            window.addEventListener('resize', this.updateHeaderHeight);
         });
     },
     methods: {
         // from filehandler.js
-         getExamMaterials:getExamMaterials,
+        getExamMaterials: function() {
+            getExamMaterials.call(this);
+            // Update header height after materials are loaded (may change toolbar height)
+            this.updateHeaderHeight();
+        },
         loadPDF:loadPDF,
         loadImage:loadImage,
         
-
         // from commonMethods.js
         gracefullyExit:gracefullyExit,
+        showUrl:showUrl,
+
+        // Update header height and send to backend
+        updateHeaderHeight() {
+            this.$nextTick(() => {
+                const mainMenuBar = document.querySelector('#mainmenubar');
+                if (mainMenuBar) {
+                    const height = mainMenuBar.offsetHeight;
+                    ipcRenderer.send('update-menu-height', height);
+                }
+            });
+        },
+
+        // reload the browser view - this needs to load the ms365 domain again in electron browserview
+        reloadBrowserView(){
+            ipcRenderer.invoke('reload-browser-view', this.microsoft365Domain);
+        },
+
+
 
         loadBase64file(file){
             if (file.filetype == 'pdf'){
@@ -186,10 +235,6 @@ export default {
             }
             else if (file.filetype == 'image'){
                 this.loadImage(file, true)
-                return
-            }
-            else if (file.filetype == 'ggb'){
-                this.loadGGB(file,true)
                 return
             }
         },
@@ -298,56 +343,6 @@ export default {
             return true; // Alle Bytes stimmen mit dem PDF-Header überein
         },
 
-        // fetch file from disc - show preview
-        // async loadPDF(file){
-        //     ipcRenderer.send('collapse-browserview')
-
-        //     let data = await ipcRenderer.invoke('getpdfasync', file )
-
-        //     let isvalid = this.isValidPdf(data)
-        //     if (!isvalid){
-        //         this.$swal.fire({
-        //             title: this.$t("general.error"),
-        //             text: this.$t("general.nopdf"),
-        //             icon: "error",
-        //             timer: 2000,
-        //             showCancelButton: false,
-        //             didOpen: () => { this.$swal.showLoading(); },
-        //         })
-        //         setTimeout( ()=>{ipcRenderer.send('restore-browserview')}, 2400);
-        //         return
-        //     }
-
-        //     this.currentpreview =  URL.createObjectURL(new Blob([data], {type: "application/pdf"})) 
-
-        //     const pdfEmbed = document.querySelector("#pdfembed");
-        //     pdfEmbed.style.backgroundImage = '';
-        //     pdfEmbed.style.height = "96vh";
-        //     pdfEmbed.style.marginTop = "-48vh";
-
-
-        //     document.querySelector("#pdfembed").setAttribute("src", `${this.currentpreview}#toolbar=0&navpanes=0&scrollbar=0`);
-        //     document.querySelector("#preview").style.display = 'block';
-        // },
-
-        // fetch file from disc - show preview
-        // async loadImage(file){
-        //     ipcRenderer.send('collapse-browserview')
-
-        //     let data = await ipcRenderer.invoke('getpdfasync', file )
-        //     this.currentpreview =  URL.createObjectURL(new Blob([data], {type: "image/jpeg"})) 
-        //     const pdfEmbed = document.querySelector("#pdfembed");
-        //     pdfEmbed.style.backgroundImage = `url(${this.currentpreview})`;
-        //     pdfEmbed.style.backgroundSize = 'contain'
-        //     pdfEmbed.style.backgroundRepeat = 'no-repeat'
-        //     pdfEmbed.style.backgroundPosition =  'center'
-        //     pdfEmbed.style.height = "80vh";
-        //     pdfEmbed.style.marginTop = "-40vh";
-        //     pdfEmbed.setAttribute("src", "about:blank");
-        //     document.querySelector("#preview").style.display = 'block';     
-        // },
-
-
 
         async loadFilelist(){
             let filelist = await ipcRenderer.invoke('getfilesasync', null)
@@ -401,6 +396,9 @@ export default {
         
         document.body.removeEventListener('mouseleave', this.sendFocuslost);
         
+        // Remove resize event listener
+        window.removeEventListener('resize', this.updateHeaderHeight);
+        
         // Clean up preview click listener
         const preview = document.querySelector("#preview");
         if (preview) {
@@ -439,9 +437,7 @@ export default {
 }
 
 #mainmenubar {
-    height:94px;
     min-height:94px;
-    max-height:94px;
 }
 
 

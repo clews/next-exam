@@ -99,28 +99,33 @@ export function gracefullyExit() {
 
 
 export function showUrl(url){
-  this.webviewVisible = true
-  this.urlForWebview = url;
+    this.webviewVisible = true
+    this.urlForWebview = url;
 
-  const webview = document.querySelector("#webview");
-  //console.log(webview)
-  if (!this.splitview){
-      webview.style.height = "80vh";
-      webview.style.width = "80vw";
-      webview.style.position = "relative";
-      webview.style.top = "10%";
-  }
-  else {
-      webview.style.height = "100%";
-      webview.style.width = "100%";
-      webview.style.position = "relative";
-      webview.style.top = "0%";
-  }
+    if (this.examtype == 'microsoft365'){
+        ipcRenderer.send('collapse-browserview')
+    }
 
 
+    const webview = document.querySelector("#webview");
+    //console.log(webview)
+    if (!this.splitview){
+        webview.style.height = "80vh";
+        webview.style.width = "80vw";
+        webview.style.position = "relative";
+        webview.style.top = "10%";
+    }
+    else {
+        webview.style.height = "100%";
+        webview.style.width = "100%";
+        webview.style.position = "relative";
+        webview.style.top = "0%";
+    }
 
-  const embedcontainer = document.querySelector(".embed-container");
-  embedcontainer.style.display = 'none';
-  document.querySelector("#preview").style.display = 'block'; 
+
+
+    const embedcontainer = document.querySelector(".embed-container");
+    embedcontainer.style.display = 'none';
+    document.querySelector("#preview").style.display = 'block'; 
 }
   

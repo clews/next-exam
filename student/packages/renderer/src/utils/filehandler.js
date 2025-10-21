@@ -475,30 +475,26 @@ export async function getExamMaterials(){
         // send webview id + allowlist to main process
         console.log("filehandler @ getExamMaterials: received examMaterials")
     
-        const webview = document.querySelector('#webview');  // WebviewPane only
-        if (webview){
-            try {
-                // Check if webview is ready to receive event listeners
-                if (typeof webview.addEventListener === 'function') {
-                    webview.addEventListener('dom-ready', async () => {
-                        try {
-                            const guestId = webview.getWebContentsId();
-                            if (!guestId) {
-                                console.warn("filehandler @ getExamMaterials: webview not ready");
-                                return;
-                            }
-                            await ipcRenderer.invoke('start-blocking-for-webview', { guestId, allowedUrls });
-                            console.log("filehandler @ getExamMaterials: started blocking for webview")
-                        } catch (err) {
-                            console.warn('filehandler @ getExamMaterials: error in dom-ready handler', err);
-                        }
-                    }, { once: true });  // Prevent multiple registrations
+
+
+        // set up webview blocking for the webviewpane
+        const webviewPane = document.getElementById('safebrowser');
+        if (webviewPane) {
+            webviewPane.addEventListener('dom-ready', async () => {  // content id can only be accessed after dom-ready event
+                if (webviewPane.getWebContentsId) {
+                    const guestId = webviewPane.getWebContentsId();
+                    if (guestId) {
+                        await ipcRenderer.invoke('start-blocking-for-webview', { guestId, allowedUrls });
+                        console.log(`filehandler @ getExamMaterials: started blocking for WebviewPane ${guestId}`);
+                    }
                 }
-            } catch (e) {
-                console.warn('filehandler @ getExamMaterials: webview not available', e);
-            }
+            }, { once: true });
+            console.log('filehandler @ getExamMaterials: waiting for WebviewPane dom-ready event');
+        } else {
+            console.log('filehandler @ getExamMaterials: WebviewPane not in DOM');
         }
-    }
+
+    } 
     else{
         this.examMaterials = []
         this.allowedUrls = []

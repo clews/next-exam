@@ -23,6 +23,9 @@
 
     <!-- filelist start - show local files from workfolder (pdf and gbb only)-->
     <div id="toolbar" class="d-inline p-1">  
+        <button class="btn btn-primary p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="reloadWebview" :title="$t('website.reloadwebview')"> <img src="/src/assets/img/svg/edit-redo.svg" class="" width="22" height="20" >{{domain}}</button>
+
+
         <!-- exam materials start - these are base64 encoded files fetched on examstart or section start-->
         <div id="getmaterialsbutton" class="invisible-button btn btn-outline-cyan p-0  pe-2 ps-1 me-1 mb-0 btn-sm" @click="getExamMaterials()" :title="$t('editor.getmaterials')"><img src="/src/assets/img/svg/games-solve.svg" class="" width="22" height="22" style="vertical-align: top;"> {{ $t('editor.materials') }}</div>
 
@@ -33,6 +36,11 @@
             <div v-if="(file.filetype == 'audio')" class="btn btn-outline-cyan p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="loadBase64file(file)"><img src="/src/assets/img/svg/im-google-talk.svg" class="" width="22" height="22" style="vertical-align: top;"> {{file.filename}} </div>
             <div v-if="(file.filetype == 'image')" class="btn btn-outline-cyan p-0 pe-2 ps-1 me-1 mb-0 btn-sm" @click="selectedFile=file.filename; loadBase64file(file)"><img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{file.filename}} </div>
         </div>
+
+        <div v-if="allowedUrls.length !== 0"  v-for="allowedUrl in allowedUrls  " class="btn btn-outline-success p-0 pe-2 ps-1 me-1 mb-0 btn-sm allowed-url-button" :title="allowedUrl" @click="showUrl(allowedUrl)">
+            <img src="/src/assets/img/svg/eye-fill.svg" class="grey" width="22" height="22" style="vertical-align: top;"> {{allowedUrl}} 
+        </div>
+
         <!-- exam materials end -->
         <!-- local files start -->
         <div class="white text-muted me-2 ms-2 small d-inline-block mb-0" style="vertical-align: middle;">{{ $t('editor.localfiles') }} </div>
@@ -47,6 +55,14 @@
     
     <!-- angabe/pdf preview start -->
     <div id=preview class="fadeinfast p-4">
+        <WebviewPane
+            id="webview"
+            :src="urlForWebview || ''"
+            :visible="webviewVisible"
+            :allowed-url="urlForWebview"
+            :block-external="true"
+            @close="hidepreview"
+        />
         <PdfviewPane
             :src="currentpreview"
             :localLockdown="localLockdown"
@@ -77,8 +93,9 @@
 import moment from 'moment-timezone';
 import ExamHeader from '../components/ExamHeader.vue';
 import {SchedulerService} from '../utils/schedulerservice.js'
-import { gracefullyExit } from '../utils/commonMethods.js'
+import { gracefullyExit, showUrl } from '../utils/commonMethods.js'
 import PdfviewPane from '../components/PdfviewPane.vue'
+import WebviewPane from '../components/WebviewPane.vue'
 import { getExamMaterials, loadPDF, loadImage} from '../utils/filehandler.js'
 
 export default {
@@ -124,7 +141,7 @@ export default {
             _onPreviewClick: null,
         }
     }, 
-    components: { ExamHeader, PdfviewPane },  
+    components: { ExamHeader, PdfviewPane, WebviewPane },  
     mounted() {
         this.currentFile = this.clientname
         this.entrytime = new Date().getTime()  
@@ -206,13 +223,18 @@ export default {
     methods: { 
         // from commonMethods.js
         gracefullyExit:gracefullyExit,
+        showUrl:showUrl,
 
         // from filehandler.js
         getExamMaterials:getExamMaterials,
         loadPDF:loadPDF,
         loadImage:loadImage,
 
-        
+
+        reloadWebview(){
+            this.$refs.wvmain.setAttribute("src", this.url);
+        },
+
         hidepreview(){
             let preview = document.querySelector("#preview")
             preview.style.display = 'none';

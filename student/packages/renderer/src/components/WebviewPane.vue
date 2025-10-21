@@ -50,6 +50,7 @@
 
     <webview
       ref="wv"
+      id="safebrowser"
       :src="src || ''"
       class="position-absolute start-0 w-100 "
       style="top:42px; z-index:10000; height:calc(100% - 42px);"

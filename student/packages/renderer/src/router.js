@@ -88,6 +88,7 @@ async function fetchInfo(to, from){
     to.params.pincode = clientinfo.pin
     to.params.cmargin = clientinfo.cmargin
     to.params.localLockdown = clientinfo.localLockdown
+    to.params.microsoft365Domain = clientinfo.msofficeshare
     return true
 }
 

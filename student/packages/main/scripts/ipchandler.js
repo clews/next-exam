@@ -127,8 +127,13 @@ class IpcHandler {
     });
           
 
-
-
+    /**
+     * Reload the browser view
+     */
+    ipcMain.handle('reload-browser-view', (event, url) => {
+        const browserView = this.WindowHandler.examwindow.getBrowserView(0);
+        browserView.webContents.loadURL(url);
+    });
 
 
 
@@ -582,6 +587,29 @@ class IpcHandler {
                 width: newBounds.width, // full width of the mainWindow
                 height: newBounds.height - menuHeight // remaining height after the menu
             });
+        });
+
+        /**
+         * Update menu height dynamically when header content changes
+         */
+        ipcMain.on('update-menu-height', (event, height) => {
+            const mainWindow = this.WindowHandler.examwindow;
+            if (mainWindow && height > 0) {
+                // Update the stored menu height
+                mainWindow.menuHeight = height;
+                
+                // Reposition the browser view with new height
+                const newBounds = mainWindow.getBounds();
+                const contentView = mainWindow.getBrowserView(0);
+                if (contentView) {
+                    contentView.setBounds({
+                        x: 0,
+                        y: height,
+                        width: newBounds.width,
+                        height: newBounds.height - height
+                    });
+                }
+            }
         });
 
 
