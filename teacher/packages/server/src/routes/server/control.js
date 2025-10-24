@@ -921,11 +921,19 @@ router.post('/printrequest/:servername/:studenttoken', async function (req, res,
         student.printrequest = pdfDocument  // we put the base64 string of the document on printrequest which is checked by the frontend on every fetch cycle
     }
 
+    // track student submissions on the server because of possible reconnects and resets on the student side
+    // if (student.submissionnumber === undefined){
+    //     student.submissionnumber = 1    // first submission
+    // }
+    // else {
+    //     student.submissionnumber += 1
+    // }
+
     let safeStudent = student.clientname.replace(/\s+/g, '_')  // replace spaces with "_"
     let now = new Date()
   
-    let timestamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}-${String(now.getSeconds()).padStart(2,'0')}`
-    let filename = `${timestamp}-${safeStudent}.pdf`
+    let timestamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`
+    let filename = `${servername}-${safeStudent}-${submissionnumber}-${timestamp}.pdf`
 
 
    
