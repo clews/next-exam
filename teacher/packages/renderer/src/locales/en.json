@@ -39,6 +39,8 @@
         "selectinterfaceinfo": "Please select a preferred network interface!"
     },
     "dashboard":{
+        "removeURL": "Remove URL",
+        "removeURLconfirm": "Are you sure you want to remove this URL?",
         "remoteassistant": "Remote Assistant",
         "server": "Server",
         "name": "Name",

@@ -708,12 +708,34 @@ async function calculateMD5(file) {
 
 
 function handleAllowedUrlRemove(group, index){
-    if (group === "A") {
-        this.serverstatus.examSections[this.serverstatus.activeSection].groupA.allowedUrls.splice(index, 1);
-    } else {
-        this.serverstatus.examSections[this.serverstatus.activeSection].groupB.allowedUrls.splice(index, 1);
-    }
-    this.setServerStatus()
+
+
+    this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            actions: 'my-swal2-actions',
+            htmlContainer: 'my-content'
+        },
+        title: this.$t("dashboard.removeURL"),
+        text: this.$t("dashboard.removeURLconfirm"),
+        icon: 'warning',
+        showCancelButton: true,
+       
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+
+
+            if (group === "A") {
+                this.serverstatus.examSections[this.serverstatus.activeSection].groupA.allowedUrls.splice(index, 1);
+            } else {
+                this.serverstatus.examSections[this.serverstatus.activeSection].groupB.allowedUrls.splice(index, 1);
+            }
+            this.setServerStatus()
+
+        }
+    })
 }
 
 function openAllowedUrl(allowedUrl){

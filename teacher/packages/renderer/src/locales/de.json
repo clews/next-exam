@@ -38,6 +38,8 @@
         "selectinterfaceinfo": "Bitte wählen Sie eine bevorzugte Netzwerkschnittstelle aus!"
     },
     "dashboard":{
+        "removeURL": "URL entfernen",
+        "removeURLconfirm": "Sind Sie sicher, dass Sie diese URL entfernen möchten?",
         "remoteassistant": "Remote Assistant",
         "server": "Server-Adresse",
         "name": "Prüfungsname",

@@ -1003,7 +1003,7 @@ computed: {
                 text: this.$t("dashboard.removefileconfirm"),
                 icon: 'warning',
                 showCancelButton: true,
-                reverseButtons: true,
+                
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     if (group === 'A') { this.serverstatus.examSections[this.serverstatus.activeSection].groupA.examInstructionFiles.splice(index, 1); } 
