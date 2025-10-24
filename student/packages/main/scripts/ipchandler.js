@@ -30,7 +30,7 @@ import mammoth from 'mammoth';
 import wifi from 'node-wifi';
 import languageToolServer from './lt-server';
 import { updateSystemTray } from './traymenu.js';
-
+import { ensureNetworkOrReset } from './testpermissionsMac.js';
 
 
 
@@ -671,12 +671,27 @@ class IpcHandler {
                     event.returnValue = { status: "error", message: data.message };
                 }
             })
-            .catch(error => {
+            .catch(async error => {
                 // Fehlerbehandlung
                 let errorMessage = error.message;
                 if (error.name === 'AbortError') { errorMessage = "The request timed out";   } // Timeout-Nachricht anpassen 
                 log.error(`ipchandler @ register: ${errorMessage}`);
-                event.returnValue = { sender: "client", message: errorMessage, status: "error" };
+             
+                // on macos the permission settings in rare cases mess up the ability to fetch the teacher api 
+                // check for network permissions on macOS and reset them if needed
+                if (process.platform !== "darwin"){    
+                    let response = await ensureNetworkOrReset(serverip, this.config.serverApiPort); 
+                    if (response && response === "reset") {   // quit the app if the user wants to reset the permissions
+                        app.quit();
+                        return
+                    }
+                }
+                
+                // show warning message if the user does not want to reset the permissions
+                event.returnValue = { sender: "client", message: "Sie haben eventuell ein Problem mit den Netzwerkberechtigungen! Bitte setzen Sie die Berechtigungen und starten Sie Next-Exam neu!", status: "error" };
+                return;  
+                    
+                
             });
         })
 

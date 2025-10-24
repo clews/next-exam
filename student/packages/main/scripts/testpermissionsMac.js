@@ -36,9 +36,9 @@ import log from 'electron-log';
 
 
 
-export async function testNetworkPermission() {                // returns true if fetch works
+export async function testNetworkPermission(serverip, serverApiPort) {                // returns true if fetch works
     try {
-            const res = await fetch('https://example.com', { method: 'GET', cache: 'no-store' }) // test request
+            const res = await fetch(`https://${serverip}:${serverApiPort}/pong`, { method: 'GET', cache: 'no-store' }) // test request
             return res.ok
     } catch {  return false }
 }
@@ -60,32 +60,39 @@ export async function resetTCC() {      // reset TCC permissions
     })
 }
 
-export async function ensureNetworkOrReset() { // check or reset
-    const ok = await testNetworkPermission()
+export async function ensureNetworkOrReset(serverip, serverApiPort) { // check or reset
+    const ok = await testNetworkPermission(serverip, serverApiPort)
     if (ok) {
             log.info(`testpermissionsMac @ ensureNetworkOrReset: Network access is allowed`);
-            return false
+            return "ok";
     }
     log.warn(`testpermissionsMac @ ensureNetworkOrReset: No HTTP requests allowed!` )
 
     try {
-        await resetTCC()
-        await dialog.showMessageBox({
-            type: 'info',
-            message: 'Berechtigungen',
-            detail: 'Berechtigungen wurden zurückgesetzt. Bitte starten sie Next-Exam neu!',
-            buttons: ['OK'],
-        }).then(() => {
-            return true
+
+        // ask the users if they want to reset the permissions and exit the app if they do
+        let choice = await dialog.showMessageBox({
+            type: 'question',
+            message: 'Der Server ist nicht erreichbar. Möchten Sie die Berechtigungen zurücksetzen und Next-Exam manuell neu starten?',
+            buttons: ['OK', 'Abbrechen'],
         })
-        return true
+        if (choice.response === 0) {    // reset permissions and return true to quit the app
+            log.warn(`testpermissionsMac @ ensureNetworkOrReset: Resetting network permissions and quitting app`);
+           // await resetTCC(); 
+            return "reset";
+        }
+        else { 
+            return false 
+        }    // do not quit the app - just show warning message
+ 
     } 
     catch (e) {
+        log.error(`testpermissionsMac @ ensureNetworkOrReset: Error resetting network permissions: ${e}`);
         await dialog.showMessageBox({
             type: 'error',
             message: 'Fehler beim Zurücksetzen der Berechtigungen',
             detail: String(e.err || e),
         })
-        return false
+        return false    // do not quit the app - just show warning message
     }
 }

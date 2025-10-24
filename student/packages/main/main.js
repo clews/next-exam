@@ -39,7 +39,6 @@ import IpcHandler from './scripts/ipchandler.js'
 
 
 import { updateSystemTray } from './scripts/traymenu.js'
-import { ensureNetworkOrReset } from './scripts/testpermissionsMac.js'
 
 import JreHandler from './scripts/jre-handler.js';
 JreHandler.init()
@@ -247,12 +246,6 @@ app.on('activate', () => {
 app.whenReady()
 .then(async ()=>{
 
-    if (process.platform === "darwin"){    
-        let response = await ensureNetworkOrReset(); 
-        if (response) { app.quit(); return; }
-    }
-
-    
     nativeTheme.themeSource = 'light'  // prevent theme settings from being adopted from windows
     session.defaultSession.setUserAgent(`Next-Exam/${config.version} (${config.info}) ${process.platform}`);
 
