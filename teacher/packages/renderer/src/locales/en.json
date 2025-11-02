@@ -104,7 +104,7 @@
         "summarizepdf": "Download newest versions \nas single pdf",
         "summarizepdfshort": "All Exams as PDF",
         "printrequest": "printrequest received",
-        "printrequestshow": "Do you want to open the document?",
+        "printrequestshow": "Do you want to open the document and print it?",
         "download": "download",
         "print": "print",
         "preview": "preview",

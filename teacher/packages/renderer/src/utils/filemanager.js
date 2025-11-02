@@ -146,7 +146,6 @@ function loadPDF(filepath, filename){
 
         const pdfEmbed = document.querySelector("#pdfembed");
         pdfEmbed.style.backgroundImage = '';
-
         pdfEmbed.style.height = "95vh";
         pdfEmbed.style.width = "67vh";
         pdfEmbed.style.display = 'block';
@@ -302,16 +301,24 @@ async function processPrintrequest(student){
 
     //print allowed block others for now
     this.printrequest = student.clientname // we allow it and block others for the time beeing (we store student name to compare in dashboard)
-    log.info("filemanager @ managePrintrequest: print request accepted")
+    log.info(`filemanager @ managePrintrequest: print request from ${student.clientname} accepted`)
     
 
     this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions',
+            htmlContainer: 'my-html-container'
+        },
         title: this.$t("dashboard.printrequest"),
-        html:  `Von:<b> ${student.clientname}</b> <br>${this.$t("dashboard.printrequestshow")}`,
+        html:  `<div class="my-content">Von:<b> ${student.clientname}</b> <br><br>${this.$t("dashboard.printrequestshow")}</div>`,
         icon: "question",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
-        reverseButtons: true
     })
     .then((result) => {
         this.printrequest = false // allow new requests
@@ -320,12 +327,8 @@ async function processPrintrequest(student){
             // show pdf preview
         
             this.currentpreviewBase64 = student.printrequest
-
-
-
             this.currentpreview = `data:application/pdf;base64,${this.currentpreviewBase64}`;
             this.currentpreviewname = `${student.clientname}.pdf`;  // Wird für die Vorschau-Buttons benötigt
-            //this.currentpreviewPath = filepath;
             this.currentpreviewType = "pdf";
             
             // PDF in das Embed-Element laden
@@ -333,13 +336,16 @@ async function processPrintrequest(student){
             pdfEmbed.style.backgroundImage = '';
             pdfEmbed.style.height = "95vh";
             pdfEmbed.style.width = "67vh";
+            pdfEmbed.style.display = 'block';
             
+            this.webviewVisible = false;
+
             pdfEmbed.setAttribute("src", `${this.currentpreview}#toolbar=0&navpanes=0&scrollbar=0`);
             document.querySelector("#pdfpreview").style.display = 'block';
-            document.querySelector("#openPDF").style.display = 'block';
+            document.querySelector("#openPDF").style.display = 'none';
             document.querySelector("#downloadPDF").style.display = 'block';
             document.querySelector("#printPDF").style.display = 'block';
-          
+            document.querySelector("#closePDF").style.display = 'block';
         }
         else {
             this.setStudentStatus({printdenied:true}, student.token)  //inform student that request was denied

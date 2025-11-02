@@ -272,6 +272,7 @@ class WindowHandler {
         //log.info(`windowhandler @ initBlockWindows: found ${displays.length} displays`)
         if (!primary || primary === "" || !primary.id){ primary = displays[0] }       
 
+        
         if (!this.config.development) {  // lock additional screens
             for (let display of displays){
                 if ( display.id !== primary.id ) {
