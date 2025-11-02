@@ -25,7 +25,7 @@ const config = {
     accessToken: false,
     buildforWEB: false,
 
-    version: '1.1.0.5',
+    version: '1.1.0.6',
     info: 'pre-release'
 }
 export default config;
