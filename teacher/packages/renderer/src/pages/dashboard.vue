@@ -479,12 +479,12 @@
                             </button> 
      
                             <div v-cloak :id="student.token" style="position: relative;background-size: cover; height: 132px;" v-bind:style="(student.imageurl && now - 20000 < student.timestamp)? `background-image: url('${student.imageurl}')`:'background-image: url(user-red.svg)'"></div>
-                            <div v-if="student.virtualized && now - 20000 < student.timestamp" class="virtualizedinfo" >{{$t("dashboard.virtualized")}}</div>
-                            <div v-if="!student.focus && now - 20000 < student.timestamp" class="kioskwarning" >{{$t("dashboard.leftkiosk")}}</div>
-                            <div v-if="student.status.sendexam && now - 20000 < student.timestamp" class="examrequest" >{{$t("dashboard.examrequest")}}</div>
-                            <div v-if="student.remoteassistant && now - 20000 < student.timestamp" class="remoteassistant" >{{$t("dashboard.remoteassistant")}}</div>
+                            <div v-if="student.virtualized && now - 20000 < student.timestamp" class="virtualizedinfo" @mouseover="showDescription($t('dashboard.virtualizedinfo'))" @mouseout="hideDescription">{{$t("dashboard.virtualized")}}</div>
+                            <div v-if="!student.focus && now - 20000 < student.timestamp" class="kioskwarning" @mouseover="showDescription($t('dashboard.leftkioskinfo'))" @mouseout="hideDescription">{{$t("dashboard.leftkiosk")}}</div>
+                            <div v-if="student.status.sendexam && now - 20000 < student.timestamp" class="examrequest" @mouseover="showDescription($t('dashboard.examrequestinfo'))" @mouseout="hideDescription">{{$t("dashboard.examrequest")}}</div>
+                            <div v-if="student.remoteassistant && now - 20000 < student.timestamp" class="remoteassistant" @mouseover="showDescription($t('dashboard.remoteassistantinfo'))" @mouseout="hideDescription">{{$t("dashboard.remoteassistant")}}</div>
                             <span>   
-                                <div v-if="now - 20000 < student.timestamp" style="display: inline-block; overflow: hidden; width: 140px; height: 22px" v-bind:title="(student.files) ? 'Documents: '+student.files : ''"> 
+                                <div v-if="now - 20000 < student.timestamp" style="display: inline-block; overflow: hidden; width: 140px; height: 22px" @mouseover="showDescription($t('dashboard.documentsinfo') + student.files)" @mouseout="hideDescription"> 
                                     <img v-for="file in student.files" style="width:22px; margin-left:-4px; position: relative; filter: sepia(10%) hue-rotate(306deg) brightness(0.3) saturate(75);" class="" src="/src/assets/img/svg/document.svg">
                                 </div>
                                 <div v-if="now - 20000 < student.timestamp" style="display: inline-block; margin: 0px; position: absolute; right: 4px;" >
@@ -498,7 +498,7 @@
 
                         <!-- bottom buttons START-->
                         <div class="btn-group pt-0" role="group" style="">
-                            <button v-if="(now - 20000 < student.timestamp)" @click="showStudentview(student)" type="button" class="btn btn-cyan btn-sm " style="border-top:0px; border-top-left-radius:0px; border-top-right-radius:0px; ">
+                            <button v-if="(now - 20000 < student.timestamp)" @click="showStudentview(student)" @mouseover="showDescription($t('dashboard.studentinfo'))" @mouseout="hideDescription" type="button" class="btn btn-cyan btn-sm " style="border-top:0px; border-top-left-radius:0px; border-top-right-radius:0px; ">
                                 <img src="/src/assets/img/svg/eye-fill.svg" class="white" width="18" height="18" >
                             </button>
                             <button v-if="(now - 20000 > student.timestamp)" type="button" class="btn btn-outline-danger btn-sm " style="border-top:0px; border-top-left-radius:0px; border-top-right-radius:0px; ">{{$t('dashboard.offline')}} </button>
@@ -515,11 +515,14 @@
                         </div>
                        
 
-                        <button v-if="submissions.some(s => s.studentName === student.clientname && s.submissionDate)"  @click='getSpecificSubmissionBase64(submissions.find(s => s.studentName === student.clientname && s.submissionDate).latestFilePath)' type="button" 
-                                class="btn btn-teal btn-sm " 
-                                style="float:right; border-top:0px;border-top-left-radius:0px; border-top-right-radius:0px; border-bottom-right-radius:5px; border-bottom-left-radius:5px;"
-                                :title="$t('dashboard.showsubmission')"> 
-                                <img src="/src/assets/img/icons/next-exam.png" class="white-100" width="18" height="18" > 
+                        <button v-if="submissions.some(s => s.studentName === student.clientname && s.submissionDate)"  
+                            @click='getSpecificSubmissionBase64(submissions.find(s => s.studentName === student.clientname && s.submissionDate).latestFilePath)' 
+                            @mouseover="showDescription($t('dashboard.showsubmission'))" 
+                            @mouseout="hideDescription" 
+                            type="button" 
+                            class="btn btn-teal btn-sm " 
+                            style="float:right; border-top:0px;border-top-left-radius:0px; border-top-right-radius:0px; border-bottom-right-radius:5px; border-bottom-left-radius:5px;"> 
+                            <img src="/src/assets/img/icons/next-exam.png" class="white-100" width="18" height="18" > 
                         </button>
                         <!-- bottom buttons END -->
                     </div>

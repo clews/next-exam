@@ -203,7 +203,13 @@
         "rdpconfiginfo": "Bitte geben Sie die Domain(URL) des RDP-Servers ein",
         "muteaudio": "Audio stummschalten",
         "muteaudiointro": "Wenn diese Option aktiviert ist, werden akustische Signale während der Prüfung nicht abgespielt",
-        "showsubmission": "Abgabe anzeigen"
+        "showsubmission": "Abgabe anzeigen",
+        "studentinfo": "Details von Schüler:in anzeigen",
+        "virtualizedinfo": "Die Prüfungsumgebung wird möglicherweise in einer virtuellen Maschine ausgeführt",
+        "leftkioskinfo": "Es wurde versucht den abgesicherten Modus zu verlassen!",
+        "examrequestinfo": "Sicherungen wurden angefordert",
+        "remoteassistantinfo": "Remote Assistant Software läuft möglicherweise am Schüler:innen-Gerät",
+        "documentsinfo": "Dokumente auf dem Schüler:innen-Gerät: "
     },
     "control": {
         "tokennotvalid": "Das Token ist ungültig",

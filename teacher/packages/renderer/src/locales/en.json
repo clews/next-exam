@@ -204,7 +204,13 @@
         "rdpconfiginfo": "Please enter the domain (URL) of the RDP-Server",
         "muteaudio": "Mute audio",
         "muteaudiointro": "If this option is activated, audio signals during the exam will not be played",
-        "showsubmission": "Show submission"
+        "showsubmission": "Show submission",
+        "studentinfo": "Show student details",
+        "virtualizedinfo": "The exam environment is possibly running in a virtual machine",
+        "leftkioskinfo": "The secure mode was left attempt!",
+        "examrequestinfo": "Backup requests were made",
+        "remoteassistantinfo": "Remote Assistant Software is possibly running on the client device",
+        "documentsinfo": "Documents on the client device: "
     },
     "control": {
         "tokennotvalid": "token is not valid",
