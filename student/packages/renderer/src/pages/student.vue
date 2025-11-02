@@ -98,7 +98,7 @@
             <h4 class="mt-3 ms-1">{{ $t("student.exams") }}</h4>
             <div id="list" class="" style="overflow-y:auto; height: 369px; display:flex; flex-wrap: wrap; flex-direction: row; padding-bottom: 10%;">
                 
-                <div v-for="server in serverlist" class="row p-3 m-0 mb-2 border bg-light" style="border-radius: 4px; margin-right: 10px !important; min-height:100px; max-height:100px;  min-width:234px; max-width: 234px;">
+                <div v-for="server in serverlist" :key="server.id || server.servername" class="row p-3 m-0 mb-2 border bg-light" style="border-radius: 4px; margin-right: 10px !important; min-height:100px; max-height:100px;  min-width:234px; max-width: 234px;">
                     
                     <div style="display:flex; flex-direction: row; justify-content: space-between; padding:0px;">
                         <div style="width:130px; display:inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"> {{server.servername}}  </div>  
@@ -113,14 +113,14 @@
                        
                    
                          <div v-if="!token" style="margin-top:2px; padding:0px; ">
-                            <!-- nicht angemeldet, kein bip server -->   <input v-if="!server.bip" style="width:200px;" :id="server.servername" type="button" name="register" class="btn btn-sm btn-info" :value="$t('student.register')" @click="registerClient(server.serverip,server.servername)"> 
-                            <!-- nicht angemeldet, bip server      -->   <input v-if="server.bip"  style="width:200px;" :id="server.servername" type="button" name="register" class="btn btn-sm" :value="server.examStatus ? server.examStatus : 'restricted'" :class="{'btn-teal': server.examStatus == 'open', 'btn-warning': server.examStatus == 'closed' || !server.examStatus, 'btn-secondary': server.examStatus == 'offline' }"/>
+                            <!-- not logged in, no bip server -->   <input v-if="!server.bip" style="width:200px;" :id="server.servername" type="button" name="register" class="btn btn-sm btn-info" :value="$t('student.register')" @click="registerClient(server.serverip,server.servername)"> 
+                            <!-- not logged in, bip server      -->   <input v-if="server.bip"  style="width:200px;" :id="server.servername" type="button" name="register" class="btn btn-sm" :value="server.examStatus ? server.examStatus : 'restricted'" :class="{'btn-teal': server.examStatus == 'open', 'btn-warning': server.examStatus == 'closed' || !server.examStatus, 'btn-secondary': server.examStatus == 'offline' }"/>
                          </div>
                          <div v-if="token" style="margin-top:2px; padding:0px;">
-                            <!-- angemeldet, nicht auf diesem server --> <input v-if="clientinfo.servername !== server.servername && !server.bip" style="width:200px;" :id="server.servername" disabled type="button" name="register" class="btn btn-sm btn-secondary" :value="server.examStatus ? server.examStatus : $t('student.register')" />
-                            <!-- angemeldet, nicht auf diesem server, bip server, restricted --> <input v-if="clientinfo.servername !== server.servername && server.bip && !server.examStatus" style="width:200px;" :id="server.servername" disabled type="button" name="register" class="btn btn-sm btn-secondary" value="restricted" />
-                            <!-- angemeldet, nicht auf diesem server, bip server  --> <input v-if="clientinfo.servername !== server.servername && server.bip && server.examStatus" style="width:200px;" :id="server.servername" disabled type="button" name="register" class="btn btn-sm btn-secondary" :value="server.examStatus" />
-                            <!-- angemeldet, auf diesem server       --> <input v-if="clientinfo.servername === server.servername" style="width:200px;" :id="server.servername" disabled type="button" name="register" class="btn btn-sm btn-success" :value="$t('student.registered')" />
+                            <!-- logged in, not on this server --> <input v-if="clientinfo.servername !== server.servername && !server.bip" style="width:200px;" :id="server.servername" disabled type="button" name="register" class="btn btn-sm btn-secondary" :value="server.examStatus ? server.examStatus : $t('student.register')" />
+                            <!-- logged in, not on this server, bip server, restricted --> <input v-if="clientinfo.servername !== server.servername && server.bip && !server.examStatus" style="width:200px;" :id="server.servername" disabled type="button" name="register" class="btn btn-sm btn-secondary" value="restricted" />
+                            <!-- logged in, not on this server, bip server  --> <input v-if="clientinfo.servername !== server.servername && server.bip && server.examStatus" style="width:200px;" :id="server.servername" disabled type="button" name="register" class="btn btn-sm btn-secondary" :value="server.examStatus" />
+                            <!-- logged in, on this server       --> <input v-if="clientinfo.servername === server.servername" style="width:200px;" :id="server.servername" disabled type="button" name="register" class="btn btn-sm btn-success" :value="$t('student.registered')" />
                         </div>
                     
                     </div>
@@ -160,12 +160,12 @@ import log from 'electron-log/renderer'
 import {SchedulerService} from '../utils/schedulerservice.js'
 
 
-// Erfassen von unhandled promise rejections
+// Capture unhandled promise rejections
 window.addEventListener('unhandledrejection', event => {
-  log.error('Unhandled promise rejection:', event.reason); // Loggen des Fehlers
+  log.error('Unhandled promise rejection:', event.reason); // Log the error
 });
 
-Object.assign(console, log.functions);  //alle console logs durch logger ersetzen
+Object.assign(console, log.functions);  // Replace all console logs with logger
 
 
 export default {
@@ -201,11 +201,12 @@ export default {
             servertimeout: false,
             bipData: null,
             onlineExams: [],
+            validip: true,
       
         };
     },
     computed: {
-        inactivelocale() { // Zeigt aktuellen Sprachcode
+        inactivelocale() { // Display current language code
              return this.$i18n.locale === 'de' ? 'en' : 'de';
         }
     },
@@ -214,7 +215,7 @@ export default {
     methods: {
         
         toggleLocale() {
-        // Umschalte zwischen 'de' und 'en'
+        // Switch between 'de' and 'en'
          this.$i18n.locale = this.$i18n.locale === 'de' ? 'en' : 'de';
          ipcRenderer.send('set-new-locale', this.$i18n.locale);
         },
@@ -258,7 +259,7 @@ export default {
         },
 
         /**
-         * überprüft ob es online exams gibt und versucht diese zu verbinden
+         * Checks if there are online exams and attempts to connect to them
          */ 
         bipAutoconnect(){
             if (this.onlineExams.length > 0){
@@ -269,7 +270,7 @@ export default {
                                 //console.log(exam)
                                 this.serverip = teacher.teacherIP
                                 this.username = this.bipUsername
-                                this.pincode = parseInt(exam.examPin)     // set the pin to the exam pin for auto connect
+                                this.pincode = parseInt(exam.examPin)     // Set the pin to the exam pin for auto connect
                                 console.log(`connecting to exam: ${exam.examName} with teacher: ${teacher.teacherID} and pin: ${exam.examPin}`)
                                 this.registerClient(teacher.teacherIP, exam.examName)
                             }
@@ -288,7 +289,7 @@ export default {
         },
 
         /**
-         * lädt vorkonfigurierte exams vom bildungsportal via bip/api
+         * Loads pre-configured exams from the education portal via bip/api
          */
          async fetchBipExams(){
             if (!this.bipToken) return;  // cannot fetch from bip api without valid token
@@ -302,12 +303,12 @@ export default {
                 })
                 .then(response => { return response.json(); } )                  
                 .then(data => {
-                   // console.log("Daten von der API:", data);
-                    this.bipData = data   // store all of the information in data
+                   // console.log("Data from API:", data);
+                    this.bipData = data   // Store all of the information in data
                     this.onlineExams = data.exams
                     return
                 })
-                .catch(error => { console.error("Fehler beim API-Aufruf:", error);});
+                .catch(error => { console.error("Error during API call:", error);});
                 return
             // }
             // else {
@@ -319,13 +320,13 @@ export default {
                 // })
                 // .then(response => { return response.json(); } )                  
                 // .then(data => {
-                //     console.log("Daten von der API:", data);
-                //     this.bipData = data   // store all of the information in data
+                //     console.log("Data from API:", data);
+                //     this.bipData = data   // Store all of the information in data
                 //     data.exams.forEach( exam => {
                 //   this.onlineExams = this.data.exams    
                 //     })
                 // })
-                // .catch(error => { console.error("Fehler beim API-Aufruf:", error);});
+                // .catch(error => { console.error("Error during API call:", error);});
             // }
         },
 
@@ -342,7 +343,7 @@ export default {
                 console.log(response)
                 this.$swal.fire({
                         title: "BiP Response",
-                        text: "Verbindung hergestellt",
+                        text: "Connection established",
                         icon: 'info',
                         showCancelButton: false,
                 })
@@ -360,24 +361,24 @@ export default {
 
         setupLocalLockdown(){
             this.$swal({
-                title: 'Lokale Prüfung' ,
+                title: 'Local Exam' ,
                 html:`
-                    Prüfungsmodus wählen <br> <br>
+                    Select exam mode <br> <br>
                     <div style="text-align: left; width: 150px; margin: auto auto;">
                             <input class="form-check-input" name=etesttype type="radio" id="editor" value="editor" checked>
-                            <label class="form-check-label" for="editor"> Sprachen </label>
+                            <label class="form-check-label" for="editor"> Languages </label>
                             <br>
                             <input class="form-check-input"  name=etesttype type="radio" id="math" value="math">
-                            <label class="form-check-label" for="math"> Mathematik </label>
+                            <label class="form-check-label" for="math"> Mathematics </label>
                     </div>
                     <div class=" m-2 mt-4"> 
                         <div class="input-group  m-1 mb-1"> 
-                            <span class="input-group-text col-3" style="width:140px;">Benutzername</span>
-                            <input class="form-control" type=text id=localuser placehoder='Benutzername'>
+                            <span class="input-group-text col-3" style="width:140px;">Username</span>
+                            <input class="form-control" type=text id=localuser placehoder='Username'>
                         </div>
                         <div class="input-group m-1 mb-1"> 
-                            <span class="input-group-text col-3" style="width:140px;">Passwort</span>
-                            <input class="form-control" type=password id=localpassword placehoder='Passwort'>
+                            <span class="input-group-text col-3" style="width:140px;">Password</span>
+                            <input class="form-control" type=password id=localpassword placehoder='Password'>
                         </div>
                     </div>`,
                 showCancelButton: true,
@@ -404,7 +405,7 @@ export default {
                         }
                     });
                     let username = document.getElementById('localuser').value; 
-                    username = username.replace(/^\s+|\s+$/g, '');  //check username - remove leading and trailing spaces
+                    username = username.replace(/^\s+|\s+$/g, '');  // Check username - remove leading and trailing spaces
                     let password = document.getElementById('localpassword').value; 
 
                     if (username == "" || password == ""){
@@ -433,7 +434,7 @@ export default {
             this.username = ""
         },  
 
-        // Überprüfen, ob der String Base64-codiert ist
+        // Check if the string is Base64-encoded
         isBase64(str) {
             try {
                 return btoa(atob(str)) === str;
@@ -442,14 +443,59 @@ export default {
             }
         },
 
-        // Base64-String dekodieren und mögliche Tokens extrahieren
+        // Decode Base64 string and extract possible tokens
         decodeBase64AndExtractTokens(base64Str) {
             if (!this.isBase64(base64Str)) {
                 return null;
             }
             const decodedStr = atob(base64Str);
-            const tokens = decodedStr.split(/[:\s,]+/); // Trennzeichen anpassen, falls nötig
+            const tokens = decodedStr.split(/[:\s,]+/); // Adjust separators if necessary
             return tokens;
+        },
+
+        /**
+         * Helper: Sets a reactive property only if the value changes
+         * Prevents unnecessary re-renders
+         */
+        safeAssign(key, newValue) {
+            if (this[key] !== newValue) {
+                this[key] = newValue;
+            }
+        },
+
+        /**
+         * Helper: Compares two server objects based on relevant properties
+         * Ignores timestamp as it constantly changes
+         */
+        compareServerObjects(server1, server2) {
+            if (!server1 || !server2) return false;
+            return (
+                (server1.id || server1.servername) === (server2.id || server2.servername) &&
+                server1.examStatus === server2.examStatus &&
+                server1.bip === server2.bip &&
+                server1.reachable === server2.reachable &&
+                server1.serverip === server2.serverip
+            );
+        },
+
+        /**
+         * Helper: Checks if two server lists are identical (relevant for updates)
+         */
+        isServerlistEqual(list1, list2) {
+            if (list1.length !== list2.length) return false;
+            const names1 = this.extractServerNames(list1);
+            const names2 = this.extractServerNames(list2);
+            if (JSON.stringify(names1) !== JSON.stringify(names2)) return false;
+            
+            // Additionally compare relevant properties
+            for (let i = 0; i < list1.length; i++) {
+                const s1 = list1.find(s => (s.id || s.servername) === (list2[i].id || list2[i].servername));
+                const s2 = list2[i];
+                if (s1 && !this.compareServerObjects(s1, s2)) {
+                    return false;
+                }
+            }
+            return true;
         },
 
 
@@ -464,10 +510,31 @@ export default {
             
             
             if (getinfo.clientinfo.exammode){ return; }  // do not stress ui updates if exammode is active
-            if (JSON.stringify(this.clientinfo) !== JSON.stringify(getinfo.clientinfo)){  this.clientinfo = getinfo.clientinfo;   }  // only update clientinfo if it has changed  // we try to trigger as few ui updates as possible
-            if (this.token !== this.clientinfo.token){ this.token = this.clientinfo.token;  }   // only update token if it has changed
-            if (this.token && this.token != "0000" || !this.token) { if (this.localLockdown) { this.localLockdown = false}     }  //other token than 0000 or no token.. no (local) exam mode
-            if (this.servertimeout > 2){ this.advanced = true }
+            
+            // Only update if clientinfo has actually changed
+            const clientInfoStr = JSON.stringify(getinfo.clientinfo);
+            const currentClientInfoStr = JSON.stringify(this.clientinfo);
+            if (clientInfoStr !== currentClientInfoStr) {
+                this.clientinfo = getinfo.clientinfo;
+            }
+            
+            // Only set token if changed
+            const newToken = this.clientinfo.token;
+            if (this.token !== newToken) {
+                this.token = newToken;
+            }
+            
+            // Only set localLockdown if necessary
+            if ((this.token && this.token != "0000") || !this.token) {
+                if (this.localLockdown) {
+                    this.localLockdown = false;
+                }
+            }
+            
+            // Only set advanced if necessary
+            if (this.servertimeout > 2 && !this.advanced) {
+                this.advanced = true;
+            }
 
             /**
              * Fetch serverlist from server via direct ip polling
@@ -476,23 +543,39 @@ export default {
             if ( this.advanced && !this.token) {
                 if (this.serverip !== ""){
                     if (validator.isIP(this.serverip) || validator.isFQDN(this.serverip)){
-                        this.validip = true
-                        //give some userfeedback here
-                        if (this.serverlistAdvanced.length == 0){ this.status("Suche Prüfungen...")  }
+                        this.safeAssign('validip', true);
+                        // Give some user feedback here
+                        if (this.serverlistAdvanced.length == 0){ this.status("Suche nach Prüfungen...")  }
                         fetch(`https://${this.serverip}:${this.serverApiPort}/server/control/serverlist`)
                         .then(response => response.json()) // Parse JSON response
                         .then(data => {
                             if (data && data.status === "success") {
-                                this.serverlistAdvanced = data.serverlist;
-                                this.networkerror = false;
+                                // Only update if the list has changed
+                                const newListStr = JSON.stringify(data.serverlist);
+                                const currentListStr = JSON.stringify(this.serverlistAdvanced);
+                                if (newListStr !== currentListStr) {
+                                    this.serverlistAdvanced = data.serverlist;
+                                }
+                                this.safeAssign('networkerror', false);
                             }
-                        }).catch(err => { log.error(`student.vue @ fetchInfo (advanced): ${err.message}`); this.networkerror = true; });
+                        }).catch(err => { 
+                            log.error(`student.vue @ fetchInfo (advanced): ${err.message}`); 
+                            this.safeAssign('networkerror', true); 
+                        });
                     } 
-                    else { this.validip = false}
+                    else { 
+                        this.safeAssign('validip', false);
+                    }
                 }
-                else { this.networkerror = false; this.validip = true}
+                else { 
+                    this.safeAssign('networkerror', false);
+                    this.safeAssign('validip', true);
+                }
             }
-            else { this.networkerror = false; this.validip = true}
+            else { 
+                this.safeAssign('networkerror', false);
+                this.safeAssign('validip', true);
+            }
 
 
 
@@ -504,67 +587,106 @@ export default {
              */
              if (getinfo.serverlist.length  !== 0 ) {
                 let newServerlist = getinfo.serverlist; 
-                this.servertimeout = 0 // reset servertimeout (if more than 2 requests return without servers we display serveraddress field - probably multicast blocked)
-                if (this.serverlistAdvanced.length !== 0){  // add servers coming from direct ip polling
+                this.safeAssign('servertimeout', 0); // Reset servertimeout (if more than 2 requests return without servers we display serveraddress field - probably multicast blocked)
+                if (this.serverlistAdvanced.length !== 0){  // Add servers coming from direct ip polling
                     newServerlist = [...newServerlist, ...this.serverlistAdvanced];
            
                 } 
                 // add bip servers to newServerlist
                 if (this.onlineExams.length > 0){
                     this.onlineExams.forEach(exam => {
-                            // Create new server entry in serverlist format
+                        // Optimized: Check if server already exists in newServerlist or current serverlist
+                        const examId = exam.id || exam.examName;
+                        const existingInNewList = newServerlist.find(s => (s.id || s.servername) === examId);
+                        const existingInCurrentList = this.serverlist.find(s => (s.id || s.servername) === examId);
+                        
+                        if (existingInNewList) {
+                            // Server already exists in newServerlist, only update examStatus
+                            if (existingInNewList.examStatus !== exam.examStatus) {
+                                existingInNewList.examStatus = exam.examStatus;
+                            }
+                        } else if (existingInCurrentList) {
+                            // Server exists in current list, but not in newServerlist
+                            // Use existing server and update only relevant properties
+                            const updatedServer = {
+                                ...existingInCurrentList,
+                                examStatus: exam.examStatus,
+                                // Timestamp remains unchanged
+                            };
+                            newServerlist.push(updatedServer);
+                        } else {
+                            // Create new server entry in serverlist format (only for new servers)
                             const newServer = {
                                 id: exam.id,
                                 servername: exam.examName,
                                 reachable: true,
                                 serverport: this.serverApiPort,
-                                timestamp: Date.now(),
+                                timestamp: Date.now(), // Only for new servers
                                 bip: true,
                                 examStatus: exam.examStatus
                             };
-                            newServerlist.push(newServer);  
+                            newServerlist.push(newServer);
+                        }
                     })
                 }
 
-                // remove duplicate servers from newServerlist
+                // Remove duplicate servers from newServerlist
                 newServerlist = newServerlist.reduce((unique, server) => {
-                    if (!unique.some(u => u.id === server.id)) {  // Prüfen, ob der Server bereits im Array basierend auf serverip und servername existiert
-                        unique.push(server); // Fügt den Server hinzu, wenn er nicht existiert
+                    if (!unique.some(u => u.id === server.id)) {  // Check if server already exists in array based on serverip and servername
+                        unique.push(server); // Add server if it doesn't exist
                     }
                     return unique;
                 }, []);
 
 
-                // update serverlist if there are new servers
-                if (JSON.stringify(this.extractServerNames(this.serverlist)) !== JSON.stringify(this.extractServerNames(newServerlist))){   // only compare servernames not the whole server objects (because of ever changing timestamp)
+                // Optimized: Update serverlist only if relevant data has changed
+                if (!this.isServerlistEqual(this.serverlist, newServerlist)) {
                     console.log("student.vue @ fetchInfo: updating serverlist with new servers")
-                    this.serverlist = newServerlist // update serverlist - but only if there are new servers - we need to compare the actual values here not just the length
+                    this.serverlist = newServerlist // update serverlist - but only if there are new servers or relevant changes
                 }
 
-               // update exam status for existing bip servers that are already in the serverlist
+               // Optimized: Update exam status only if status has actually changed
                if (this.onlineExams.length > 0){
+                    let hasChanges = false;
                     this.onlineExams.forEach(exam => {
-                        // nur examen die auch für den schüler erstellt wurden werden über die api aktualisiert und deren exam status wird gesetzt - andere examen die zwar auch bip-exams sind haben daher keinen exam status                   
+                        // Only exams that were also created for the student are updated via the API and their exam status is set - other exams that are also bip-exams therefore have no exam status                   
                         const existingServer = this.serverlist.find(server => server.id === exam.id );// Check if server already exists in currentserverlist
                         if (existingServer) { 
                             if (existingServer.examStatus !== exam.examStatus) {
                                 console.log("student.vue @ fetchInfo: updating exam status for existing server")
                                 existingServer.examStatus = exam.examStatus;  
+                                hasChanges = true;
                                 }  
                         } 
-                    })
+                    });
+                    // Only trigger re-render if something has changed
+                    if (hasChanges) {
+                        // Vue automatically detects the change through direct mutation
+                        // but we still set a new reference to be safe
+                        this.serverlist = [...this.serverlist];
+                    }
                 }
 
 
 
             }
-            else {  // sometimes explicit is easier to read (no servers incoming via multicast)
-                if (this.serverlistAdvanced.length !== 0){  // one server coming via direct ip polling
-                    if (JSON.stringify(this.extractServerNames(this.serverlist)) !== JSON.stringify(this.extractServerNames(this.serverlistAdvanced))){   // only compare servernames not the whole server objects (because of ever changing timestamp)
-                        this.serverlist = this.serverlistAdvanced 
+            else {  // Sometimes explicit is easier to read (no servers incoming via multicast)
+                if (this.serverlistAdvanced.length !== 0){  // One server coming via direct ip polling
+                    // Optimized: Compare with isServerlistEqual instead of only server names
+                    if (!this.isServerlistEqual(this.serverlist, this.serverlistAdvanced)) {
+                        this.serverlist = this.serverlistAdvanced;
                     }
                 } 
-                else { this.serverlist = []; this.servertimeout++ }  // no servers found
+                else { 
+                    // Optimized: Only set if list is not already empty
+                    if (this.serverlist.length !== 0) {
+                        this.serverlist = [];
+                    }
+                    // Optimized: Only increment servertimeout if not already high enough
+                    if (this.servertimeout <= 2) {
+                        this.servertimeout++;
+                    }
+                }
             }
 
            
@@ -573,31 +695,42 @@ export default {
 
 
             /**
-             * check im networkconnection is still alive or if we are already connected and recieved a token 
-             * if not we exit here
+             * Check if network connection is still alive or if we are already connected and received a token 
+             * If not we exit here
              */
-            this.hostip = await ipcRenderer.invoke('checkhostip')
+            const newHostip = await ipcRenderer.invoke('checkhostip');
+            this.safeAssign('hostip', newHostip); // Optimized: Only set if changed
             if (!this.hostip) return;  
             if (this.clientinfo.token) return;   // stop spamming the api if already connected
         
 
             /**
-             * check if server is still alive otherwise mark with attention sign
-             * this is done by pinging the server with a timeout of 2 seconds
-             * if the server does not respond we mark the server as not reachable
+             * Optimized: Check if server is still alive otherwise mark with attention sign
+             * This is done by pinging the server with a timeout of 2 seconds
+             * Only set server.reachable if the value actually changes
              */
             for (let server of this.serverlist){  
                 if (!server.serverip) continue;
-                const signal = AbortSignal.timeout(2000); // 2000 Millisekunden = 2 Sekunden
+                const signal = AbortSignal.timeout(2000); // 2000 milliseconds = 2 seconds
                 fetch(`https://${server.serverip}:${this.serverApiPort}/server/control/pong`, { method: 'GET', signal })
                 .then(response => {
                     if (!response.ok) throw new Error('Response not OK');
-                    server.reachable = true; // Markieren als erreichbar, wenn erfolgreich
+                    // Optimized: Only set if value changes
+                    if (server.reachable !== true) {
+                        server.reachable = true;
+                    }
                 })
                 .catch(err => {
-                    if (err.name === 'AbortError') {   console.warn('student.vue @ fetchinfo (ping): Fetch request was aborted due to timeout'); } 
-                    else {  console.warn(`student.vue @ fetchinfo: ${err.message} - Server unavailable ` );  }
-                    server.reachable = false; // Markieren als nicht erreichbar bei Fehlern
+                    if (err.name === 'AbortError') {   
+                        console.warn('student.vue @ fetchinfo (ping): Fetch request was aborted due to timeout'); 
+                    } 
+                    else {  
+                        console.warn(`student.vue @ fetchinfo: ${err.message} - Server unavailable `);  
+                    }
+                    // Optimized: Only set if value changes
+                    if (server.reachable !== false) {
+                        server.reachable = false;
+                    }
                 });
             }
         },  
@@ -765,11 +898,11 @@ export default {
         this.fetchInfo();
 
         this.fetchinterval = new SchedulerService(4000);
-        this.fetchinterval.addEventListener('action',  this.fetchInfo);  // Event-Listener hinzufügen, der auf das 'action'-Event reagiert
+        this.fetchinterval.addEventListener('action',  this.fetchInfo);  // Add event listener that reacts to the 'action' event
         this.fetchinterval.start();
 
         this.autoUpdateInterval = new SchedulerService(10000);
-        this.autoUpdateInterval.addEventListener('action',  this.bipAutoUpdate);  // Event-Listener hinzufügen, der auf das 'action'-Event reagiert
+        this.autoUpdateInterval.addEventListener('action',  this.bipAutoUpdate);  // Add event listener that reacts to the 'action' event
         this.autoUpdateInterval.start();    
 
         // add event listener to user input field to supress all special chars 
@@ -787,9 +920,9 @@ export default {
         });
 
 
-        // set locale to system locale or fallback to 'en'
-        const systemLocale = navigator.language.split('-')[0] // z.B. "de" aus "de-DE"
-        const locale = ['de', 'en'].includes(systemLocale) ? systemLocale : 'en' // Fallback zu 'en'
+        // Set locale to system locale or fallback to 'en'
+        const systemLocale = navigator.language.split('-')[0] // e.g. "de" from "de-DE"
+        const locale = ['de', 'en'].includes(systemLocale) ? systemLocale : 'en' // Fallback to 'en'
         this.$i18n.locale = locale
 
     },
@@ -835,7 +968,7 @@ export default {
 
 
 .disabledbutton {
-    pointer-events: none; /* Deaktiviert Klicks */
+    pointer-events: none; /* Disables clicks */
 }
 
 .disabledexam {
@@ -884,3 +1017,4 @@ export default {
 }
 
 </style>
+
