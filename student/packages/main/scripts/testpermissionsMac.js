@@ -38,7 +38,7 @@ import log from 'electron-log';
 
 export async function testNetworkPermission(serverip, serverApiPort) {                // returns true if fetch works
     try {
-            const res = await fetch(`https://${serverip}:${serverApiPort}/pong`, { method: 'GET', cache: 'no-store' }) // test request
+            const res = await fetch(`https://${serverip}:${serverApiPort}/server/control/pong`, { method: 'GET', cache: 'no-store' }) // test request
             return res.ok
     } catch {  return false }
 }
