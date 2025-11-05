@@ -22,12 +22,12 @@ parentPort.on('message', async (message) => {
 
         // resize auf Breite 1024
         await new Promise((resolve, reject) => {
-            execFile(imVersion === "7" ? 'magick' : 'convert', [tmpInput, '-resize', '1024x', tmpResized], (err) => err ? reject(err) : resolve());
+            execFile(imVersion == "7" ? 'magick' : 'convert', [tmpInput, '-resize', '1024x', tmpResized], (err) => err ? reject(err) : resolve());
         });
 
         // crop oberste 100 Pixel (max. 1024 breit)
         await new Promise((resolve, reject) => {
-            execFile(imVersion === "7" ? 'magick' : 'convert', [tmpInput, '-crop', '1024x100+0+0', tmpCropped], (err) => err ? reject(err) : resolve());
+            execFile(imVersion == "7" ? 'magick' : 'convert', [tmpInput, '-crop', '1024x100+0+0', tmpCropped], (err) => err ? reject(err) : resolve());
         });
 
         const resizedBuffer = await readFile(tmpResized);

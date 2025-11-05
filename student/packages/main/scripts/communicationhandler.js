@@ -111,7 +111,7 @@ const __dirname = import.meta.dirname;
                 platformDispatcher.useWorker = false
                 throw new Error('Worker not initialized');
             }
-            this.worker.postMessage({ imgBuffer: Array.from(imgBuffer), imVersion: platformDispatcher.imagemagick.version });
+            this.worker.postMessage({ imgBuffer: Array.from(imgBuffer), imVersion: platformDispatcher.imVersion });
             const result = await new Promise(resolve => {
                 this.worker.once('message', (message) => {
                     resolve(message);
