@@ -822,31 +822,61 @@ router.post('/upload/:servername/:servertoken/:studenttoken', async (req, res, n
 
 export default router
 
+// Simple concurrency limiter for ZIP extraction
+const MAX_PARALLEL_EXTRACTS = 4; // limit simultaneous extractions to stabilize latency
+let runningExtracts = 0;
+const extractQueue = [];
+
+function runNextExtract() {
+    if (runningExtracts >= MAX_PARALLEL_EXTRACTS) return;
+    const job = extractQueue.shift();
+    if (!job) return;
+
+    runningExtracts++;
+    const startedAt = Date.now();
+
+    job()
+        .catch(() => {})
+        .finally(() => {
+            const ms = Date.now() - startedAt;
+            log.info(`data @ extract: finished in ${ms}ms (running=${runningExtracts-1}, queued=${extractQueue.length})`);
+            runningExtracts--;
+            setImmediate(runNextExtract);
+        });
+}
+
 async function archiveAndExtractZip(absoluteFilepath, studentarchivedir, fileContent){
     log.info(`data @ receive: Storing Zipfile to ${absoluteFilepath}`)
 
-    return new Promise((resolve, reject) => {
-        fs.writeFile(absoluteFilepath, fileContent, (err) => {
-            if (err) {
-                errors++;
-                log.error(t("data.couldnotstore"));
-                return resolve(false);
-            } else {
+    return new Promise((resolve) => {
+        const exec = async () => {
+            try {
+                await fs.promises.writeFile(absoluteFilepath, fileContent);
+
                 log.info(`data @ receive: Extracting Zipfile to ${studentarchivedir}`);
-                extract(absoluteFilepath, { dir: studentarchivedir })
-                    .then(() => {
-                        fs.unlink(absoluteFilepath, (err) => {
-                            if (err) log.error(err);
-                        }); // remove zip file after extracting
-                        log.info(`data @ receive: Successfully saved files to ${studentarchivedir}, informing Student...`);
-                        resolve(true);
-                    })
-                    .catch((err) => {
-                        log.error("data @ receive: ", err);
-                        resolve(false);
-                    });
+                await extract(absoluteFilepath, {
+                    dir: studentarchivedir,
+                    onEntry: (entry, zipfile) => {
+                        const target = path.normalize(path.join(studentarchivedir, entry.fileName));
+                        if (!target.startsWith(path.normalize(studentarchivedir + path.sep))) {
+                            zipfile.close();
+                            throw new Error('Blocked path traversal: ' + entry.fileName);
+                        }
+                    }
+                });
+
+                try { await fs.promises.unlink(absoluteFilepath); } catch (e) { /* ignore */ }
+                log.info(`data @ receive: Successfully saved files to ${studentarchivedir}, informing Student...`);
+                resolve(true);
+            } catch (err) {
+                log.error("data @ receive (extract): ", err);
+                try { await fs.promises.unlink(absoluteFilepath); } catch (e) { /* ignore */ }
+                resolve(false);
             }
-        });
+        };
+
+        extractQueue.push(exec);
+        if (runningExtracts < MAX_PARALLEL_EXTRACTS) setImmediate(runNextExtract);
     });
 }
 
