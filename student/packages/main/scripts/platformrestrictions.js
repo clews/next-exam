@@ -340,7 +340,9 @@ function disableRestrictions(){
     if (config.development) {return}
     log.info("platformrestrictions @ disableRestrictions: removing restrictions...")
 
-    clipboardInterval.stop()
+    if (clipboardInterval) {    
+        clipboardInterval.stop()
+    }
 
     globalShortcut.unregister('CommandOrControl+V', () => {console.log('activate clipboard')});
     globalShortcut.unregister('CommandOrControl+Shift+V', () => {console.log('activate clipboard')});
