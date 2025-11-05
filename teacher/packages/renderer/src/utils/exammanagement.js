@@ -126,6 +126,8 @@ function kick(studenttoken, studentip){
     const studentname = this.studentlist.find(student => student.token === studenttoken).clientname
     //console.log("studentname:", studentname)
 
+    let delfolderonexit = false;
+
     this.$swal.fire({
         customClass: {
             popup: 'my-popup',
@@ -148,11 +150,15 @@ function kick(studenttoken, studentip){
         icon: "error",
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
+        preConfirm: () => {
+            const checkbox = document.getElementById('checkboxdel');
+            if (checkbox) {
+                delfolderonexit = checkbox.checked;
+            }
+        }
     })
     .then(async (result) => {
         if (result.isConfirmed) {
-
-            let delfolderonexit = document.getElementById('checkboxdel').checked;
  
             fetch(`https://${this.serverip}:${this.serverApiPort}/server/control/setstudentstatus/${this.servername}/${this.servertoken}/${studenttoken}`, { 
                 method: 'POST',

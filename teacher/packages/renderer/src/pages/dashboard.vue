@@ -2516,11 +2516,19 @@ hr {
 /**in order to override swal settings the css needs to be global not scoped*/
 .swal2-popup{
     opacity: 0.9 !important; 
+    transition: none !important;
+    animation: none !important;
+    -webkit-transition: none !important;
+    -webkit-animation: none !important;
 }
 
 .swal2-container {
     backdrop-filter: blur(2px); 
     z-index: 100000 !important;
+    transition: none !important;
+    animation: none !important;
+    -webkit-transition: none !important;
+    -webkit-animation: none !important;
 } 
 
 

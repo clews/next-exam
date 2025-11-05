@@ -213,19 +213,15 @@ async function configureRDP(){
 * Text Editor
 */
 async function configureEditor(){
-    const inputOptions = new Promise((resolve) => {
-        setTimeout(() => {
-            resolve({
-                'de-DE': this.$t("dashboard.de"),
-                'en-GB': this.$t("dashboard.en"),
-                'fr-FR': this.$t("dashboard.fr"),
-                'es-ES': this.$t("dashboard.es"),
-                'it-IT': this.$t("dashboard.it"),
-                'sl-SI': this.$t("dashboard.sl"),
-                'none':this.$t("dashboard.none"),
-            })
-        }, 100)
-    })
+    const inputOptions = {
+        'de-DE': this.$t("dashboard.de"),
+        'en-GB': this.$t("dashboard.en"),
+        'fr-FR': this.$t("dashboard.fr"),
+        'es-ES': this.$t("dashboard.es"),
+        'it-IT': this.$t("dashboard.it"),
+        'sl-SI': this.$t("dashboard.sl"),
+        'none':this.$t("dashboard.none"),
+    }
 
     const updateMarginValueDisplay = () => {
         const marginValueInput = document.getElementById('marginValue');

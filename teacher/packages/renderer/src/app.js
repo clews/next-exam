@@ -28,31 +28,6 @@ import './assets/custom.scss'
 const options = {
     confirmButtonColor: '#198754',
     cancelButtonColor: '#b02a37',
-
-
-    didOpen: (popup) => {
-        // Elemente finden: popup (vom Hook übergeben), Container und Backdrop (über DOM-Query)
-        const elementsToControl = [
-            popup, 
-            document.querySelector('.swal2-container'), 
-            document.querySelector('.my-popup'),
-            document.querySelector('.my-content'),
-            document.querySelector('.backdrop'),   
-            document.querySelector('.swal2-popup'),
-        ];
-        
-        // Transitions entfernen, um Flimmern bei schnellen Events (wie Druck) zu verhindern
-        elementsToControl
-            .filter(el => el)
-            .forEach(el => {
-                el.style.transition = 'none';
-                el.style.animation = 'none';
-                el.style.webkitAnimation = 'none';
-                el.style.webkitTransition = 'none';
-            });
-    }
-
-
 };
 
 const router = createRouter()
