@@ -62,9 +62,6 @@ log.transports.console.format = (message) => {
     }
 };
 
-log.info(platformDispatcher.imagemagick.version)
-
-
 log.verbose()
 log.verbose(`main: -------------------`)
 log.verbose(`main: starting Next-Exam Student "${config.version} ${config.info}" (${process.platform})`)

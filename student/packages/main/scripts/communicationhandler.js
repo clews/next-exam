@@ -863,7 +863,7 @@ const __dirname = import.meta.dirname;
         this.multicastClient.clientinfo.localLockdown = false;
 
         // ask student to quit app after finishing exam
-        WindowHandler.showExitQuestion()
+        await WindowHandler.showExitQuestion()
     }
 
 

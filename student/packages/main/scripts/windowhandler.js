@@ -815,7 +815,7 @@ class WindowHandler {
                 if (this.multicastClient.clientinfo.token){
                     this.mainwindow.hide();
                     e.preventDefault();
-                    this.showMinimizeWarning()
+                    await this.showMinimizeWarning()
                     log.warn(`windowhandler @ createMainWindow: Minimizing Next-Exam to Systemtray`) 
                     return
                 }
@@ -828,9 +828,9 @@ class WindowHandler {
     }
 
 
-    showExitWarning(message){
+    async showExitWarning(message){
         this.mainwindow.allowexit = true
-        dialog.showMessageBoxSync(this.mainwindow, {
+        await dialog.showMessageBox(this.mainwindow, {
             type: 'warning',
             buttons: ['Ok'],
             title: 'Programm Beenden',
@@ -840,15 +840,15 @@ class WindowHandler {
         app.quit()
     }
 
-    showExitQuestion(){
-        let choice = dialog.showMessageBoxSync(this.mainwindow, {
+    async showExitQuestion(){
+        let choice = await dialog.showMessageBox(this.mainwindow, {
             type: 'question',
             buttons: ['Ja', 'Nein'],
             title: 'Programm beenden',
             message: 'Wollen sie die Anwendung Next-Exam beenden?',
             cancelId: 1
         });
-        if(choice == 1){
+        if(choice.response == 1){
             log.info("Windowhandler @ showExitQuestion: do not close Next-Exam after finished Exam")
         }
         else {
@@ -857,8 +857,8 @@ class WindowHandler {
         }
     }
 
-    showMinimizeWarning(){
-        let choice = dialog.showMessageBoxSync(this.mainwindow, {
+    async showMinimizeWarning(){
+        await dialog.showMessageBox(this.mainwindow, {
             type: 'info',
             buttons: ['OK'],
             title: 'Minimize to System Tray',

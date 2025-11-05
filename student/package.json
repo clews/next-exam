@@ -115,7 +115,7 @@
     "node-wifi": "^2.0.16",
     "play-sound": "^1.1.6",
     "ps-tree": "^1.2.0",
-    "screenshot-desktop-wayland": "^1.15.4",
+    "screenshot-desktop-wayland": "^1.15.6",
     "sharp": "^0.33.5",
     "simple-get": "^4.0.1",
     "tesseract.js": "^6.0.0",

@@ -688,7 +688,7 @@ class IpcHandler {
                 }
                 
                 // show warning message if the user does not want to reset the permissions
-                event.returnValue = { sender: "client", message: "Sie haben eventuell ein Problem mit den Netzwerkberechtigungen! Bitte setzen Sie die Berechtigungen und starten Sie Next-Exam neu!", status: "error" };
+                event.returnValue = { sender: "client", message: "Es gibt ein Problem mit dem Netzwerk, den Firewallregeln oder den Netzwerkberechtigungen! Bitte beheben sie dieses Problem und starten Sie Next-Exam neu!", status: "error" };
                 return;  
                     
                 
