@@ -139,7 +139,7 @@ router.get('/msauth', async (req, res) => {
  * @param password the password to enter the exam (not neccessary on single instance system (app) but will be used to exit secure exam mode in the future)
  * #FIXME !!!  This route needs to be secured (anyone can start a server right now - or 1000 servers)
  */
- router.post('/start/:servername/:passwd?', function (req, res, next) {
+ router.post('/start/:servername/:passwd?', async function (req, res, next) {
     // this route may be used by localhost only
     if (!requestSourceAllowed(req, res)) return   // for the webversion we need to check user permissions here (future stuff)
 
@@ -180,7 +180,11 @@ router.get('/msauth', async (req, res) => {
     // log.info(config.workdirectory)
     let serverinstancedir = path.join(config.workdirectory, servername)
 
-    if (!fs.existsSync(serverinstancedir)){ fs.mkdirSync(serverinstancedir, { recursive: true }); }
+    try {
+        await fs.promises.mkdir(serverinstancedir, { recursive: true });
+    } catch (err) {
+        // Directory might already exist, that's ok
+    }
     res.send( {sender: "server", message: t("control.serverstarted"), status: "success"})
     
 })
@@ -305,7 +309,7 @@ for (let i = 0; i<16; i++ ){
 
 
 
- router.get('/registerclient/:servername/:pin/:clientname/:clientip/:hostname/:version/:bipuserid', function (req, res, next) {
+ router.get('/registerclient/:servername/:pin/:clientname/:clientip/:hostname/:version/:bipuserid', async function (req, res, next) {
     const clientname = req.params.clientname
     const clientip = req.params.clientip
     const pin = req.params.pin
@@ -369,14 +373,15 @@ for (let i = 0; i<16; i++ ){
                 let studentfolder =path.join(config.workdirectory, mcServer.serverinfo.servername , clientname);
             
             
-                if (fs.existsSync(studentfolder)) { 
+                try {
+                    await fs.promises.access(studentfolder); // Check if directory exists
                     // das verzeichnis für diesen student existiert 
                     // auf unix ist der ordnername 100% ident - auf windows könnte es aber in der gross/kleinschreibung unterschiede geben
                     // prüfe ob es EXAKT gleich geschrieben wurde (case-sensitiv)
                     
                     const parentDir = path.dirname(studentfolder);
                     const targetDirName = path.basename(studentfolder);
-                    const directories = fs.readdirSync(parentDir, { withFileTypes: true })
+                    const directories = (await fs.promises.readdir(parentDir, { withFileTypes: true }))
                                         .filter(dirent => dirent.isDirectory())
                                         .map(dirent => dirent.name);
 
@@ -387,19 +392,28 @@ for (let i = 0; i<16; i++ ){
                         if (existingDir) {
                             const oldPath = path.join(parentDir, existingDir);
                             const newPath = path.join(parentDir, `backup-${existingDir}`);
-                            fs.renameSync(oldPath, newPath);  // Umbenennen des alten Verzeichnisses
+                            await fs.promises.rename(oldPath, newPath);  // Umbenennen des alten Verzeichnisses
                             log.warn(`control @ registerclient: Renaming ${oldPath} to ${newPath} - thx bill gates for the worst operating system otw`)
                         }
                     }
                     else {
                         log.warn(`control @ registerclient: Using already existing directory: ${targetDirName}`)
                     }
-                } else { // Das Verzeichnis existiert nicht, erstelle es
-                    fs.mkdirSync(studentfolder, { recursive: true });
-                    log.info(`control @ registerclient: Creating ${studentfolder}`);
+                } catch (err) {
+                    // Das Verzeichnis existiert nicht, erstelle es
+                    try {
+                        await fs.promises.mkdir(studentfolder, { recursive: true });
+                        log.info(`control @ registerclient: Creating ${studentfolder}`);
+                    } catch (mkdirErr) {
+                        log.error(`control @ registerclient: Error creating directory: ${mkdirErr}`);
+                    }
                 }
 
-                if (!fs.existsSync(config.tempdirectory)){ fs.mkdirSync(config.tempdirectory, { recursive: true }); }
+                try {
+                    await fs.promises.mkdir(config.tempdirectory, { recursive: true });
+                } catch (err) {
+                    // Directory might already exist, that's ok
+                }
 
                 mcServer.studentList.push(client)
                 return res.json({sender: "server", message:t("control.registered"), status: "success", token: token})  // on success return client token (auth needed for server api)
@@ -616,7 +630,7 @@ router.post('/sharelink/:servername/:csrfservertoken/:studenttoken', function (r
  * @param servername the name of the server 
  * @param csrfservertoken servertoken to authenticate before the request is processed
  */
-router.post('/getserverstatus/:servername/:csrfservertoken', function (req, res, next) {
+router.post('/getserverstatus/:servername/:csrfservertoken', async function (req, res, next) {
     const csrfservertoken = req.params.csrfservertoken
     const servername = req.params.servername
     const mcServer = config.examServerList[servername]
@@ -626,7 +640,8 @@ router.post('/getserverstatus/:servername/:csrfservertoken', function (req, res,
     const filePath = path.join(config.workdirectory, mcServer.serverinfo.servername, 'serverstatus.json');
     let serverstatus;
     try {  
-        serverstatus = JSON.parse(fs.readFileSync(filePath, 'utf-8')); 
+        const fileContent = await fs.promises.readFile(filePath, 'utf-8');
+        serverstatus = JSON.parse(fileContent); 
         mcServer.serverinfo.pin = serverstatus.pin  //also restore last pin to make it easier for students
     }    
     catch (error) {  serverstatus = false;  }
@@ -654,7 +669,7 @@ router.get('/getcurrentserverstatus/:servername/:csrfservertoken', function (req
  * @param csrfservertoken servertoken to authenticate before the request is processed
  * @param req.body.serverstatus contains the whole serverstatus object
  */
-router.post('/setserverstatus/:servername/:csrfservertoken', function (req, res, next) {
+router.post('/setserverstatus/:servername/:csrfservertoken', async function (req, res, next) {
     const csrfservertoken = req.params.csrfservertoken
     const servername = req.params.servername
     const mcServer = config.examServerList[servername]
@@ -671,9 +686,8 @@ router.post('/setserverstatus/:servername/:csrfservertoken', function (req, res,
     const filePath = path.join(config.workdirectory, mcServer.serverinfo.servername, 'serverstatus.json');
 
     try {  
-        if (!fs.existsSync(workdir)){fs.mkdirSync(workdir)}
-
-        fs.writeFileSync(filePath, JSON.stringify(mcServer.serverstatus, null, 2));  
+        await fs.promises.mkdir(workdir, { recursive: true });
+        await fs.promises.writeFile(filePath, JSON.stringify(mcServer.serverstatus, null, 2));  
     }   // mcServer.serverstatus als JSON-Datei speichern
     catch (error) {  log.error(`control @ setserverstatus: ${error}` ) }
 
@@ -816,9 +830,30 @@ router.post('/setstudentstatus/:servername/:csrfservertoken/:studenttoken', func
     student.status.focus = true
     //student.status.activatePrivateSpellcheck = false   // activate only once - when student retrieved "studentstatus" we can reset some values of "student.status"
 
-    // return current serverinformation to process on clientside
+    // return current serverinformation to process on clientside 
+    // Create optimized shallow copy of serverstatus without examInstructionFiles to reduce payload size
+    const serverstatusCopy = { ...mcServer.serverstatus };
+    serverstatusCopy.examSections = { ...mcServer.serverstatus.examSections };
+    
+    // Clear examInstructionFiles in all 4 examSections for both groupA and groupB
+    for (let sectionKey of [1, 2, 3, 4]) {
+        if (serverstatusCopy.examSections[sectionKey]) {
+            serverstatusCopy.examSections[sectionKey] = {
+                ...serverstatusCopy.examSections[sectionKey],
+                groupA: {
+                    ...serverstatusCopy.examSections[sectionKey].groupA,
+                    examInstructionFiles: []
+                },
+                groupB: {
+                    ...serverstatusCopy.examSections[sectionKey].groupB,
+                    examInstructionFiles: []
+                }
+            };
+        }
+    }
+    
     res.charset = 'utf-8';
-    res.send({sender: "server", message:t("control.studentupdate"), status:"success", serverstatus:mcServer.serverstatus, studentstatus: studentstatus })
+    res.send({sender: "server", message:t("control.studentupdate"), status:"success", serverstatus:serverstatusCopy, studentstatus: studentstatus })
 })
 
 
@@ -881,11 +916,9 @@ router.post('/updatescreenshot', async function (req, res, next) {
                 let absoluteFilename = path.join(filepath, `${time}-${req.body.screenshotfilename}`);
             
                 try {
-                    if (!fs.existsSync(filepath)) {fs.mkdirSync(filepath, { recursive: true }); }
+                    await fs.promises.mkdir(filepath, { recursive: true });
                     let screenshotBuffer = Buffer.from(req.body.screenshot, 'base64');    // Konvertieren des Base64-Strings in einen Buffer und Speichern der Datei
-                    fs.writeFile(absoluteFilename, screenshotBuffer, err => {
-                        if (err) { log.error( `control @ updatescreenshot: ${err}` ); }
-                    });
+                    await fs.promises.writeFile(absoluteFilename, screenshotBuffer);
                 } catch (err) { log.error(`control @ updatescreenshot: ${err}` ); }
             }
       

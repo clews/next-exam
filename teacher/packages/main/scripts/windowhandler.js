@@ -64,8 +64,11 @@ class WindowHandler {
         if (biptest){   this.bipwindow.loadURL(`https://q.bildung.gv.at/admin/tool/mobile/launch.php?service=moodle_mobile_app&passport=next-exam`)   }
         else {          this.bipwindow.loadURL(`https://www.bildung.gv.at/admin/tool/mobile/launch.php?service=moodle_mobile_app&passport=next-exam`)   }
 
-        this.bipwindow.once('ready-to-show', () => {
-            this.bipwindow.show()
+        // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
+        this.bipwindow.webContents.once('did-finish-load', () => {
+            if (this.bipwindow && !this.bipwindow.isVisible()) {
+                this.bipwindow.show()
+            }
         });
 
         this.bipwindow.webContents.on('did-navigate', (event, url) => {    // a pdf could contain a link ^^
@@ -147,42 +150,47 @@ class WindowHandler {
   
         })
         
+        
+        // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
+        this.mainwindow.webContents.once('did-finish-load', () => {
+            log.info('windowhandler @ createWindow: did-finish-load - showing window')
+            if (this.mainwindow && !this.mainwindow.isVisible()) {
+                this.mainwindow.show()
+                this.mainwindow.moveTop();
+            }
+        })
+        
+        
         if (app.isPackaged || process.env["DEBUG"]) {
+            const filePath = join(__dirname, '../renderer/index.html')
+            log.info(`windowhandler @ createWindow: Loading file: ${filePath}`)
             this.mainwindow.removeMenu() 
-            this.mainwindow.loadFile(join(__dirname, '../renderer/index.html'))
+            this.mainwindow.loadFile(filePath)
         } 
         else {
             const url = `http://${process.env['VITE_DEV_SERVER_HOST']}:${process.env['VITE_DEV_SERVER_PORT']}`
+            log.info(`windowhandler @ createWindow: Loading URL: ${url}`)
             this.mainwindow.removeMenu() 
             this.mainwindow.loadURL(url)
         }
     
         if (this.config.showdevtools) { this.mainwindow.webContents.openDevTools()  }
     
-        // Make all links open with the browser, not with the application
-        // win.webContents.setWindowOpenHandler(({ url }) => {
-        //     if (url.startsWith('https:')) shell.openExternal(url)
-        //     return { action: 'deny' }
-        // })
-    
         this.mainwindow.webContents.session.setCertificateVerifyProc((request, callback) => {
             var { hostname, certificate, validatedCertificate, verificationResult, errorCode } = request;
             callback(0);
         });
     
-    
-        // this.mainwindow.on('app-command', (e, cmd) => {
-        //     // 'browser-backward' und 'browser-forward' sind die Befehle, die beim Klick auf die Maustasten gesendet werden
-        //     if (cmd === 'browser-backward' || cmd === 'browser-forward') {
-        //         log.warn("no indirect navigation allowed")
-        //         e.preventDefault(); // Verhindern Sie das Standardverhalten
-        //     }
-        // });
-
-
-        this.mainwindow.once('ready-to-show', () => {
-            this.mainwindow?.show()
-            this.mainwindow?.moveTop();
+        
+        // Show window even if loading fails (Electron 39 compatibility)
+        this.mainwindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+            log.warn(`windowhandler @ createWindow: did-fail-load - Error ${errorCode}: ${errorDescription} for URL: ${validatedURL}`)
+            // Still show the window even if loading failed
+            if (this.mainwindow && !this.mainwindow.isVisible()) {
+                log.info('windowhandler @ createWindow: Showing window after did-fail-load')
+                this.mainwindow.show()
+                this.mainwindow.moveTop();
+            }
         })
 
         this.mainwindow.on('close', async  (e) => {   //ask before closing
@@ -226,11 +234,14 @@ class WindowHandler {
         let url = `https://localhost:22422/server/control/oauth`
         this.authwindow.loadURL(url)
         if (this.config.showdevtools) { this.authwindow.webContents.openDevTools()  }
-        this.authwindow.once('ready-to-show', () => {
-            this.authwindow?.removeMenu() 
-            this.authwindow?.setMinimizable(false)
-            this.authwindow?.show()
-            this.authwindow?.moveTop();
+        // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
+        this.authwindow.webContents.once('did-finish-load', () => {
+            if (this.authwindow && !this.authwindow.isVisible()) {
+                this.authwindow.removeMenu() 
+                this.authwindow.setMinimizable(false)
+                this.authwindow.show()
+                this.authwindow.moveTop();
+            }
         })
     }
 }

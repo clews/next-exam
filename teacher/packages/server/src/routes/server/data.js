@@ -34,7 +34,7 @@ import pdf from '@bingsjs/pdf-parse';
 /**
  * GET a FILE-LIST from workdirectory
  */ 
- router.post('/getfiles/:servername/:token', function (req, res, next) {
+ router.post('/getfiles/:servername/:token', async function (req, res, next) {
     const token = req.params.token
     const servername = req.params.servername
     const mcServer = config.examServerList[servername] // get the multicastserver object
@@ -49,26 +49,28 @@ import pdf from '@bingsjs/pdf-parse';
     
 
     try {
-        fs.readdirSync(dir).reduce(function (list, file) {
+        const files = await fs.promises.readdir(dir);
+        for (const file of files) {
             const filepath = path.join(dir, file);
             let ext = path.extname(file).toLowerCase();
             
             try {
-                if (fs.statSync(filepath).isDirectory()) {
+                const stats = await fs.promises.stat(filepath);
+                if (stats.isDirectory()) {
                     folders.push({ path: filepath, name: file, type: "dir", ext: "", parent: dir });
                 }
-                else if (fs.statSync(filepath).isFile() && !omitExtensions.includes(ext)) {
+                else if (stats.isFile() && !omitExtensions.includes(ext)) {
                     folders.push({ path: filepath, name: file, type: "file", ext: ext, parent: dir }); // Korrigiert `parent: ''` zu `parent: dir` für Konsistenz
                 }
             } catch (innerErr) {
-                // Behandeln Sie Fehler, die von fs.statSync geworfen werden
+                // Behandeln Sie Fehler, die von fs.promises.stat geworfen werden
                 console.error("data @ getfiles: Fehler beim Zugriff auf Datei oder Verzeichnis: ", innerErr);
             }
-            
-        }, []);
+        }
     } catch (err) {
-        // Behandeln Sie Fehler, die von fs.readdirSync geworfen werden
+        // Behandeln Sie Fehler, die von fs.promises.readdir geworfen werden
         console.error("data @ getfiles: Fehler beim Lesen des Verzeichnisses: ", err);
+        return res.status(500).json({ status: "error", message: t("data.fileerror") });
     }
     return res.send( folders )
 })
@@ -98,16 +100,20 @@ import pdf from '@bingsjs/pdf-parse';
     let dir =  path.join( config.workdirectory, mcServer.serverinfo.servername);
     // get all studentdirectories from workdirectory
     let studentFolders = []
-    if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
-        console.error('Der angegebene Pfad existiert nicht oder ist kein Verzeichnis.');
-    } 
-    else {
-        const items = fs.readdirSync(dir, { withFileTypes: true });    // Lese den Inhalt des Hauptordners
-        items.forEach(item => {
-            if (item.isDirectory() && item.name.toUpperCase() !== 'UPLOADS') {  // Unterordner, außer 'UPLOADS'
-                studentFolders.push({ path: path.join(dir, item.name), studentName: item.name });  //foldername == studentname
-            }
-        });
+    try {
+        const stats = await fs.promises.stat(dir);
+        if (!stats.isDirectory()) {
+            console.error('Der angegebene Pfad existiert nicht oder ist kein Verzeichnis.');
+        } else {
+            const items = await fs.promises.readdir(dir, { withFileTypes: true });    // Lese den Inhalt des Hauptordners
+            items.forEach(item => {
+                if (item.isDirectory() && item.name.toUpperCase() !== 'UPLOADS') {  // Unterordner, außer 'UPLOADS'
+                    studentFolders.push({ path: path.join(dir, item.name), studentName: item.name });  //foldername == studentname
+                }
+            });
+        }
+    } catch (err) {
+        console.error('Der angegebene Pfad existiert nicht oder ist kein Verzeichnis.', err);
     }
 
 
@@ -118,27 +124,37 @@ import pdf from '@bingsjs/pdf-parse';
         let selectedFile = '';
 
         let submissionDir = path.join(studentDir.path, "ABGABE")
-        if (fs.existsSync(submissionDir)) {
-            let submissionFiles = fs.readdirSync(submissionDir)
+        try {
+            await fs.promises.access(submissionDir); // Check if directory exists
+            let submissionFiles = await fs.promises.readdir(submissionDir)
             if (submissionFiles.length > 0) {
-                let latestSubmissionFile = submissionFiles
-                    .map(file => {
+                const fileStats = await Promise.all(
+                    submissionFiles.map(async (file) => {
                         let filePath = path.join(submissionDir, file)
-                        return { file, mtime: fs.statSync(filePath).mtime }
+                        const stats = await fs.promises.stat(filePath)
+                        return { file, mtime: stats.mtime }
                     })
+                );
+                let latestSubmissionFile = fileStats
                     .sort((a, b) => b.mtime - a.mtime)[0].file
         
                 latestPDFpath = path.join(submissionDir, latestSubmissionFile)
                 selectedFile = latestSubmissionFile
             }
+        } catch (err) {
+            // Directory doesn't exist or can't be accessed
         }
         
-      
-        if (fs.existsSync(latestPDFpath)) { 
-            studentDir.latestFilePath = latestPDFpath; 
-            studentDir.latestFileName = selectedFile  
-        }
-        else {
+        try {
+            if (latestPDFpath) {
+                await fs.promises.access(latestPDFpath); // Check if file exists
+                studentDir.latestFilePath = latestPDFpath; 
+                studentDir.latestFileName = selectedFile  
+            } else {
+                studentDir.latestFilePath = null; 
+                studentDir.latestFileName = null  
+            }
+        } catch (err) {
             studentDir.latestFilePath = null; 
             studentDir.latestFileName = null  
         }
@@ -161,10 +177,8 @@ import pdf from '@bingsjs/pdf-parse';
         let indexPDFdata = await createIndexPDF(studentFolders, servername)   //contains the index table pdf as uint8array
         let indexPDFpath = path.join(dir,"index.pdf")
         try {
-            fs.writeFileSync(indexPDFpath, indexPDFdata, (err) => {
-                if (err) throw err;
-                log.info('data @ getlatest: Index PDF saved successfully!');
-            });
+            await fs.promises.writeFile(indexPDFpath, indexPDFdata);
+            log.info('data @ getlatest: Index PDF saved successfully!');
         }
         catch(err){log.error("data @ getlatest:",err)}
         latestFiles.unshift(indexPDFpath)
@@ -172,10 +186,8 @@ import pdf from '@bingsjs/pdf-parse';
         let pdfBuffer = Buffer.from(PDF) 
         let pdfPath = path.join(dir,"combined.pdf")
         try {
-            fs.writeFile(pdfPath, pdfBuffer, (err) => {
-                if (err) throw err;
-                log.info('data @ getlatest: PDF saved successfully!');
-            });
+            await fs.promises.writeFile(pdfPath, pdfBuffer);
+            log.info('data @ getlatest: PDF saved successfully!');
         }
         catch(err){log.error("data @ getlatest:",err)}
         return res.json({warning: warning, pdfBuffer:pdfBuffer, pdfPath:pdfPath });
@@ -205,7 +217,7 @@ function isValidPdf(data) {
 }
 
 async function countCharsOfPDF(pdfPath, studentname, servername){
-    const dataBuffer = fs.readFileSync(pdfPath);// Read the PDF file
+    const dataBuffer = await fs.promises.readFile(pdfPath);// Read the PDF file
     let chars = 0 
 
     if (isValidPdf(dataBuffer)){
@@ -270,7 +282,7 @@ async function createIndexPDF(dataArray, servername){
         let filename = "-"
     
         if (item.latestFilePath ) {  // if pdf filepath exists get time from filetime and count chars of pdf
-            const stats = fs.statSync(item.latestFilePath);
+            const stats = await fs.promises.stat(item.latestFilePath);
             time = moment(stats.mtimeMs).format('DD.MM.YYYY HH:mm')
             chars = await countCharsOfPDF(item.latestFilePath, item.studentName, servername)
         }
@@ -347,34 +359,40 @@ async function createIndexPDF(dataArray, servername){
     // get latest directory of student 
     let directoryPath =  path.join( config.workdirectory, mcServer.serverinfo.servername, studentname);
 
-    if (!fs.existsSync(directoryPath)){ fs.mkdirSync(directoryPath, { recursive: true });  }
+    try {
+        await fs.promises.mkdir(directoryPath, { recursive: true });
+    } catch (err) {
+        // Directory might already exist, that's ok
+    }
 
-
-    fs.readdir(directoryPath, { withFileTypes: true }, async (err, files) => {
-        if (err) throw err;
+    try {
+        const files = await fs.promises.readdir(directoryPath, { withFileTypes: true });
         const directories = files.filter(file => file.isDirectory());  // Nur Ordner filtern
-        directories.sort((a, b) => {  // Sortieren der Ordner nach Änderungsdatum
-            const statA = fs.statSync(path.join(directoryPath, a.name));
-            const statB = fs.statSync(path.join(directoryPath, b.name));
-            return statB.mtime.getTime() - statA.mtime.getTime();
-        });
+        
+        // Sort directories by modification date
+        const directoriesWithStats = await Promise.all(
+            directories.map(async (dir) => {
+                const dirPath = path.join(directoryPath, dir.name);
+                const stats = await fs.promises.stat(dirPath);
+                return { dir, stats, mtime: stats.mtime };
+            })
+        );
+        directoriesWithStats.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
 
-        if (directories.length > 0) {  // Neuesten Ordner anzeigen (erstes Element nach Sortierung)
-            latestfolder = directories[0].name
-            latestfolderPath = path.join(directoryPath, directories[0].name);
+        if (directoriesWithStats.length > 0) {  // Neuesten Ordner anzeigen (erstes Element nach Sortierung)
+            latestfolder = directoriesWithStats[0].dir.name
+            latestfolderPath = path.join(directoryPath, directoriesWithStats[0].dir.name);
 
             //check if the newest directory is older than 5 minutes..  warn the teacher!
             const now = Date.now(); // Current time in milliseconds since the UNIX epoch
             const minute =  60 * 1000; // 1 minute in milliseconds
-            const folderStats = fs.statSync(latestfolderPath)
+            const folderStats = directoriesWithStats[0].stats;
             if (now - folderStats.mtime.getTime() > minute) { warning = true;} 
-
 
             let latestPDFpath = null
 
-           
             try {
-                const files = fs.readdirSync(latestfolderPath);
+                const files = await fs.promises.readdir(latestfolderPath);
                 let selectedFile = '';
             
                 const csrfFiles = files.filter(file => file.includes('aux') && file.endsWith('.pdf'));
@@ -401,21 +419,26 @@ async function createIndexPDF(dataArray, servername){
                 latestPDFpath = null; 
             }
 
-
-
-            if (fs.existsSync(latestPDFpath)) {
-                let PDF = await concatPages([latestPDFpath])
-                let pdfBuffer = Buffer.from(PDF) 
-                return res.json({warning: warning, pdfBuffer:pdfBuffer, latestfolderPath:latestfolderPath, pdfPath:latestPDFpath });
-            }
-            else {
-                return res.json({warning: warning, pdfBuffer:false, latestfolderPath:latestfolderPath});  // we return latestfolderpath because "openLatestFolder" just needs this to work
+            try {
+                if (latestPDFpath) {
+                    await fs.promises.access(latestPDFpath); // Check if file exists
+                    let PDF = await concatPages([latestPDFpath])
+                    let pdfBuffer = Buffer.from(PDF) 
+                    return res.json({warning: warning, pdfBuffer:pdfBuffer, latestfolderPath:latestfolderPath, pdfPath:latestPDFpath });
+                } else {
+                    return res.json({warning: warning, pdfBuffer:false, latestfolderPath:latestfolderPath});  // we return latestfolderpath because "openLatestFolder" just needs this to work
+                }
+            } catch (err) {
+                return res.json({warning: warning, pdfBuffer:false, latestfolderPath:latestfolderPath});
             }
         } else {
             log.info('data @ getlatestfromstudent: Keine Ordner gefunden.'); 
             return res.json({warning: warning, pdfBuffer:false, latestfolderPath:latestfolderPath});
         }
-    });
+    } catch (err) {
+        log.error('data @ getlatestfromstudent: Fehler:', err);
+        return res.json({warning: warning, pdfBuffer:false, latestfolderPath:latestfolderPath});
+    }
 })
 
 
@@ -441,7 +464,7 @@ async function concatPages(pdfsToMerge) {
     // Create a new PDFDocument
     const tempPDF = await PDFDocument.create();
     for (const pdfpath of pdfsToMerge) { 
-        let pdfBytes = fs.readFileSync(pdfpath);
+        let pdfBytes = await fs.promises.readFile(pdfpath);
         //check if this actually is a pdf
         if (isValidPdf(pdfBytes)){
             const pdf = await PDFDocument.load(pdfBytes); 
@@ -470,7 +493,7 @@ async function concatPages(pdfsToMerge) {
 /**
  * DELETE File from EXAM directory
  */ 
- router.post('/delete/:servername/:token', function (req, res, next) {
+ router.post('/delete/:servername/:token', async function (req, res, next) {
     const token = req.params.token
     const servername = req.params.servername
     const mcServer = config.examServerList[servername] // get the multicastserver object
@@ -479,13 +502,19 @@ async function concatPages(pdfsToMerge) {
   
     const filepath = req.body.filepath
     if (filepath) { //return specific file
-        if (fs.statSync(filepath).isDirectory()){
-            fs.rmSync(filepath, { recursive: true, force: true });
+        try {
+            const stats = await fs.promises.stat(filepath);
+            if (stats.isDirectory()){
+                await fs.promises.rm(filepath, { recursive: true, force: true });
+            }
+            else {
+                await fs.promises.unlink(filepath);
+            }
+            res.json({ status:"success", sender: "server", message:t("data.fdeleted"),  })
+        } catch (err) {
+            log.error("data @ delete:", err);
+            res.status(500).json({ status:"error", sender: "server", message:t("data.fileerror") })
         }
-        else {
-            fs.unlink(filepath, (err) => { if (err) log.error(err); })
-        }
-        res.json({ status:"success", sender: "server", message:t("data.fdeleted"),  })
     }
 })
 
@@ -653,8 +682,8 @@ router.post('/getexammaterials/:servername/:token', async (req, res, next) => {
         
         let studentarchivedir = path.join(studentdirectory, tstring)
         try {
-            if (!fs.existsSync(studentdirectory)){ fs.mkdirSync(studentdirectory, { recursive: true });  }
-            if (!fs.existsSync(studentarchivedir)){ fs.mkdirSync(studentarchivedir, { recursive: true }); }
+            await fs.promises.mkdir(studentdirectory, { recursive: true });
+            await fs.promises.mkdir(studentarchivedir, { recursive: true });
         }
         catch (err) {
             log.error("data @ receive: ", err)
@@ -671,8 +700,8 @@ router.post('/getexammaterials/:servername/:token', async (req, res, next) => {
                     let backupdir =  path.join(config.backupdirectory, mcServer.serverinfo.servername, student.clientname, tstring) // same concept as in studentarchivedir
                     log.info(`data @ receive: Copying to backup directory: ${studentarchivedir} ->   ${backupdir} `)
                     try {
-                        if (!fs.existsSync(backupdir)){ fs.mkdirSync(backupdir, { recursive: true });  }
-                        fs.cpSync(studentarchivedir, backupdir, { recursive: true })
+                        await fs.promises.mkdir(backupdir, { recursive: true });
+                        await fs.promises.cp(studentarchivedir, backupdir, { recursive: true })
                     }
                     catch (err) {
                         log.error("data @ receive: ", err)
@@ -708,7 +737,11 @@ router.post('/upload/:servername/:servertoken/:studenttoken', async (req, res, n
 
     // create uploads directory
     let uploaddirectory =  path.join(config.workdirectory, mcServer.serverinfo.servername, 'UPLOADS')
-    if (!fs.existsSync(uploaddirectory)){ fs.mkdirSync(uploaddirectory, { recursive: true });  }
+    try {
+        await fs.promises.mkdir(uploaddirectory, { recursive: true });
+    } catch (err) {
+        // Directory might already exist, that's ok
+    }
 
 
     if (req.files){

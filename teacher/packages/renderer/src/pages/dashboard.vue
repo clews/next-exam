@@ -1934,6 +1934,7 @@ computed: {
     background-color: white;
     box-shadow: 0 0 1em rgba(0, 0, 0, 0.5);
     width: 400px;
+    z-index: 1000000;
 }
 
 
@@ -2024,7 +2025,7 @@ computed: {
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.4); /* Abdunkeln des Hintergrunds */
     backdrop-filter: blur(2px); /* Unscharf-Effekt */
-    z-index: 1999; /* Unter dem Dialog */
+    z-index: 111999; /* Unter dem Dialog */
     display: none; /* Standardmäßig nicht angezeigt */
    transition: 0.3s;
 }

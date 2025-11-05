@@ -28,7 +28,7 @@ export default defineConfig({
     }),
     VueI18nPlugin({
         compositionOnly: false,
-        include: path.resolve(__dirname, './locales/*'),
+        include: path.resolve(__dirname, './src/locales/*.json'),
         runtimeOnly: false,
         fullInstall: true,
         forceStringify : true,
@@ -49,6 +49,11 @@ export default defineConfig({
     },
   },
   css: {   // this covers bootstrap css warnings when minifying the css code
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: ['import', 'color-functions', 'legacy-js-api', 'global-builtin']
+      }
+    },
     postcss: {
       plugins: [
         {

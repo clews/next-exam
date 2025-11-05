@@ -117,13 +117,33 @@ api.use(cors())
 api.use("/static",express.static(config.tempdirectory));
 api.use(cookieParser());
 
-// api.use((req, res, next) => {
-//     console.log(`Incoming request: ${req.method} ${req.url}`);
-//     res.on('finish', () => {
-//       //console.log(`Request to ${req.method} ${req.url} responded with status ${res.statusCode}`);
-//     });
-//     next();
-//   });
+// Track connection metrics for monitoring (declared here so it can be used in middleware)
+let activeConnections = 0;
+
+// Request monitoring middleware - logs request duration and warns on slow requests
+api.use((req, res, next) => {
+    const startTime = Date.now();
+    const requestId = `${req.method} ${req.url}`;
+    
+    res.on('finish', () => {
+        const duration = Date.now() - startTime;
+        if (duration > 5000) { // Warn if request takes longer than 5 seconds
+            log.warn(`server: Slow request detected: ${requestId} took ${duration}ms`);
+        }
+        if (activeConnections > 150) {
+            log.warn(`server: High load - ${activeConnections} active connections during ${requestId}`);
+        }
+    });
+    
+    res.on('close', () => {
+        if (!res.headersSent) {
+            const duration = Date.now() - startTime;
+            log.warn(`server: Request closed before completion: ${requestId} after ${duration}ms`);
+        }
+    });
+    
+    next();
+});
 
 api.use('/server', serverRouter)
 //api.use(limiter)  //disabled for now because this need a lot of testing to find good parameters
@@ -147,6 +167,22 @@ var options = {
   };
 
 const server = https.createServer(options, api);
+
+// Configure timeouts and connection limits to prevent resource exhaustion
+server.timeout = 30000; // 30 seconds - close idle connections after 30s
+server.keepAliveTimeout = 5000; // 5 seconds - close keep-alive connections after 5s of inactivity
+server.maxConnections = 200; // Limit concurrent connections to prevent overload
+
+// Track connection metrics for monitoring
+server.on('connection', (socket) => {
+    activeConnections++;
+    if (activeConnections > 150) {
+        log.warn(`server: High connection count: ${activeConnections}`);
+    }
+    socket.on('close', () => {
+        activeConnections--;
+    });
+});
 
 if (config.buildforWEB){  // the api is started by the electron main process - for web we do it here
     server.listen(config.serverApiPort, () => {  

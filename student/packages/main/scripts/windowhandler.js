@@ -92,8 +92,11 @@ class WindowHandler {
         if (biptest){   this.bipwindow.loadURL(`https://q.bildung.gv.at/admin/tool/mobile/launch.php?service=moodle_mobile_app&passport=next-exam`)   }
         else {          this.bipwindow.loadURL(`https://www.bildung.gv.at/admin/tool/mobile/launch.php?service=moodle_mobile_app&passport=next-exam`)   }
 
-        this.bipwindow.once('ready-to-show', () => {
-            this.bipwindow.show()
+        // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
+        this.bipwindow.webContents.once('did-finish-load', () => {
+            if (this.bipwindow && !this.bipwindow.isVisible()) {
+                this.bipwindow.show()
+            }
         });
 
         this.bipwindow.webContents.on('did-navigate', (event, url) => {    // a pdf could contain a link ^^
@@ -169,40 +172,15 @@ class WindowHandler {
      
         this.easterwin.loadFile(join(__dirname, `../../public/cowsonice/index.html`))
 
-        this.easterwin.once('ready-to-show', () => {
-            this.easterwin.show()
+        // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
+        this.easterwin.webContents.once('did-finish-load', () => {
+            if (this.easterwin && !this.easterwin.isVisible()) {
+                this.easterwin.show()
+            }
         });
     }
 
 
-    /**
-     * this is the windows splashscreen
-     */
-    createSplashWin() {
-        this.splashwin = new BrowserWindow({
-            title: 'Next-Exam',
-            icon: join(__dirname, '../../public/icons/icon.png'),
-            center:true,
-            width: 600,
-            height:200,
-            alwaysOnTop: true,
-            skipTaskbar:true,
-            autoHideMenuBar: true,
-            resizable: false,
-            minimizable: false,
-            movable: false,
-            frame: false,
-            show: false,
-            transparent: true
-        })
-     
-        this.splashwin.loadFile(join(__dirname, `../../public/splash.html`))
-
-        this.splashwin.once('ready-to-show', () => {
-            this.splashwin.show()
-            this.createMainWindow()
-        });
-    }
 
 
     /**
@@ -338,17 +316,19 @@ class WindowHandler {
 
         if (this.config.showdevtools) { screenlockWindow.webContents.openDevTools()  }
 
-        screenlockWindow.once('ready-to-show', () => {
-            screenlockWindow.removeMenu() 
-           
-            screenlockWindow.setMinimizable(false)
-            screenlockWindow.setKiosk(true)
-            screenlockWindow.setAlwaysOnTop(true, "pop-up-menu", 1)   //above exam window (pop-up-menu, 0)
-            screenlockWindow.show()
-            screenlockWindow.moveTop();
-            screenlockWindow.setClosable(true)
-            screenlockWindow.setVisibleOnAllWorkspaces(true); // put the window on all virtual workspaces
-            this.addBlurListener("screenlock")
+        // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
+        screenlockWindow.webContents.once('did-finish-load', () => {
+            if (screenlockWindow && !screenlockWindow.isVisible()) {
+                screenlockWindow.removeMenu() 
+                screenlockWindow.setMinimizable(false)
+                screenlockWindow.setKiosk(true)
+                screenlockWindow.setAlwaysOnTop(true, "pop-up-menu", 1)   //above exam window (pop-up-menu, 0)
+                screenlockWindow.show()
+                screenlockWindow.moveTop();
+                screenlockWindow.setClosable(true)
+                screenlockWindow.setVisibleOnAllWorkspaces(true); // put the window on all virtual workspaces
+                this.addBlurListener("screenlock")
+            }
         })
 
         screenlockWindow.on('close', async  (e) => {   // window should not be closed manually.. ever! but if you do make sure to clean examwindow variable and end exam for the client
@@ -426,37 +406,38 @@ class WindowHandler {
                 webSecurity: false            }
         });
 
+        // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
+        this.examwindow.webContents.once('did-finish-load', async () => {
+            if (this.examwindow && !this.examwindow.isVisible()) {
+                if (this.config.showdevtools) { this.examwindow.webContents.openDevTools()  }
+                
+                if (this.config.development) {
+                    this.examwindow.setOpacity(1)
+                    this.examwindow.show()
+                    this.examwindow.focus()
+                    this.examwindow.setFullScreen(false)
+                }
+                if (!this.config.development) {
+                    this.examwindow.removeMenu() 
+                    this.examwindow.show()
+                    this.examwindow.focus()
+         
+                    // if (process.platform ==='darwin') { this.examwindow.setAlwaysOnTop(true, "pop-up-menu", 0)  }  // do not display above popup because of colorpicker in editor (fix that!)
+                    // else {                              this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) }
 
+                    this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) 
 
-        this.examwindow.once('ready-to-show', async () => {
-            if (this.config.showdevtools) { this.examwindow.webContents.openDevTools()  }
-            
-            if (this.config.development) {
-                this.examwindow.setOpacity(1)
-                this.examwindow.show()
-                this.examwindow.focus()
-                this.examwindow.setFullScreen(false)
-            }
-            if (!this.config.development) {
-                this.examwindow.removeMenu() 
-                this.examwindow.show()
-                this.examwindow.focus()
-     
-                // if (process.platform ==='darwin') { this.examwindow.setAlwaysOnTop(true, "pop-up-menu", 0)  }  // do not display above popup because of colorpicker in editor (fix that!)
-                // else {                              this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) }
+                    this.examwindow.focus();
+                    this.examwindow.setKiosk(true); 
+                    this.examwindow.setOpacity(1)
 
-                this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) 
-
-                this.examwindow.focus();
-                this.examwindow.setKiosk(true); 
-                this.examwindow.setOpacity(1)
-
-                //restrictions
-                this.addBlurListener();  // detects if window gets out of focus 
-                if (!this.isWayland){ this.checkWindowInterval.start() }  // checks if the active window is next-exam (introduces exceptions for windows) 
-                enableRestrictions(this)  // enable restriction only when exam window is fully loaded and in focus
-                await this.sleep(2000)    // wait an additional 2 sec for windows restrictions to kick in (they steal focus)
-                this.examwindow.focus();  // focus again just to be sure
+                    //restrictions
+                    this.addBlurListener();  // detects if window gets out of focus 
+                    if (!this.isWayland){ this.checkWindowInterval.start() }  // checks if the active window is next-exam (introduces exceptions for windows) 
+                    enableRestrictions(this)  // enable restriction only when exam window is fully loaded and in focus
+                    await this.sleep(2000)    // wait an additional 2 sec for windows restrictions to kick in (they steal focus)
+                    this.examwindow.focus();  // focus again just to be sure
+                }
             }
         })
 
@@ -779,99 +760,43 @@ class WindowHandler {
         })
 
 
-            this.mainwindow.once('ready-to-show', () => {
-            // this.splashwin.close()
+        // Electron 39: Window is shown by did-finish-load handler, 
+        // Show window even if loading fails (Electron 39 compatibility)
+        this.mainwindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+            log.warn(`windowhandler @ createMainWindow: did-fail-load - Error ${errorCode}: ${errorDescription} for URL: ${validatedURL}`)
+            // Still show the window even if loading failed
+            if (this.mainwindow && !this.mainwindow.isVisible()) {
+                log.info('windowhandler @ createMainWindow: Showing window after did-fail-load')
                 this.mainwindow.show()
-                
-                this.mainwindow.setVisibleOnAllWorkspaces(true); // put the window on all virtual workspaces
-                this.mainwindow.focus();
-                this.mainwindow.moveTop();
-
-                if (process.platform == 'darwin'){
-                    // check permissions to handle settings in macos
-
-                    //childProcess.exec('tccutil reset AppleEvents com.nextexam-student.app')   //reset permission settings - ask gain next time!
-                    //childProcess.exec('tccutil reset Accessibility com.nextexam-student.app') 
-                    //childProcess.exec('tccutil reset AppleEvents com.vscodium') // apple events können resetted werde da macos immerwieder danach fragt
-                    //childProcess.exec('tccutil reset Accessibility com.vscodium')  //accessibility wird nur einmal gefragt, danach muss der user es manuell aktivieren
-                                
-                    // let settingsScriptfile = join(__dirname, '../../public/opensettings.applescript')
-                    // if (app.isPackaged) {
-                    //     settingsScriptfile = join(process.resourcesPath, 'app.asar.unpacked', 'public/opensettings.applescript')
-                    // }
-            
-                    // let accessScriptfile = join(__dirname, '../../public/access.applescript')
-                    // if (app.isPackaged) {
-                    //     accessScriptfile = join(process.resourcesPath, 'app.asar.unpacked', 'public/access.applescript')
-                    // }
-
-                    // let spacesScriptfile = join(__dirname, '../../public/spaces.applescript')
-                    // if (app.isPackaged) {
-                    //     spacesScriptfile = join(process.resourcesPath, 'app.asar.unpacked', 'public/spaces.applescript')
-                    // }
-
-                    // childProcess.execFile('osascript', [accessScriptfile], (error, stdout, stderr) => {
-                    //     if (stderr) { 
-                    //         log.info(stderr) 
-                    //         if (stderr.includes("Berechtigung") || stderr.includes("authorized")|| stderr.includes("berechtigt")){
-                    //             log.error("no accessibility permissions granted")
-                            
-                    //             let message = "Sie müssen die Berechtigungen für den Hilfszugriff (Bedienungshilfen) erteilen!"
-                                
-                    //                 childProcess.execFile('osascript', [settingsScriptfile], (error, stdout, stderr) => {
-                    //                     if (stderr) { 
-                    //                         log.info(stderr) 
-                    //                     }
-                    //                 })
-
-                    //            //this.showExitWarning(message)  //show warning and quit app
-                    //         }
-                    //     }
-                        // else {  // accessibility rights should be set
-                        //     childProcess.execFile('osascript', [spacesScriptfile], (error, stdout, stderr) => {
-                        //         if (stderr) { 
-                        //             log.info(stderr) 
-                        //             if (stderr.includes("Berechtigung") || stderr.includes("authorized")){
-                        //                 log.error("no Systemsettings permissions granted")
-                        //                 let message = "Sie müssen die Berechtigungen zur Automation erteilen!"
-                        //                 if (stderr.includes("Hilfszugriff") || stderr.includes("Accessibility")){
-                        //                     message = "Sie müssen die Berechtigungen für den Hilfszugriff (Bedienungshilfen) erteilen!"
-                        //                 }
-                        //             this.showExitWarning(message)  //show warning and quit app
-                        //             }
-                        //         }
-                        //     })
-                        // }
-                    // })
-
-                
-                    
-
-                    // attention ! das neue macos erlaubt auch ohne berechtiung screenshots aber diese beinhalten dann keine apps (sind quasi nur der background)
-                    // screenshot()   //grab "screenshot" with screenshot node module 
-                    // .then( (res) => { 
-                    //     log.info("screenshot allowed") 
-                    //  })
-                    // .catch((err) => {   
-                    //     log.error(`requestUpdate Screenshot: ${err}`) 
-                    //     let message = "Sie müssen die Berechtigungen zur Bildschirmaufnahme erteilen!"
-                    //     //childProcess.exec('tccutil reset ScreenCapture com.nextexam-student.app') 
-                    //     //childProcess.exec('tccutil reset ScreenCapture com.vscodium') 
-                    //     this.showExitWarning(message) 
-                    // });
-                }
-            })
-
-
-
-
+                this.mainwindow.setVisibleOnAllWorkspaces(true)
+                this.mainwindow.focus()
+                this.mainwindow.moveTop()
+            }
+        })
+        
+ 
+        // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
+        this.mainwindow.webContents.once('did-finish-load', () => {
+            log.info('windowhandler @ createMainWindow: did-finish-load - showing window')
+            if (this.mainwindow && !this.mainwindow.isVisible()) {
+                this.mainwindow.show()
+                this.mainwindow.setVisibleOnAllWorkspaces(true)
+                this.mainwindow.focus()
+                this.mainwindow.moveTop()
+            }
+        })
+        
+     
 
         if (app.isPackaged || process.env["DEBUG"]) {
+            const filePath = join(__dirname, '../renderer/index.html')
+            log.info(`windowhandler @ createMainWindow: Loading file: ${filePath}`)
             this.mainwindow.removeMenu() 
-            this.mainwindow.loadFile(join(__dirname, '../renderer/index.html'))
+            this.mainwindow.loadFile(filePath)
         } 
         else {
             const url = `http://${process.env['VITE_DEV_SERVER_HOST']}:${process.env['VITE_DEV_SERVER_PORT']}`
+            log.info(`windowhandler @ createMainWindow: Loading URL: ${url}`)
             this.mainwindow.removeMenu() 
             this.mainwindow.loadURL(url)
         }
