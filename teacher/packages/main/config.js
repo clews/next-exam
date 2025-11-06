@@ -26,9 +26,9 @@ const config = {
     buildforWEB: false,
     isPuavo: false,
 
-    version: '1.1.0.8',
+    version: '1.1.0.9',
     buildDate: '20251106',
-    buildNumber: '8',
+    buildNumber: '9',
     info: 'pre-release'
 }
 export default config;

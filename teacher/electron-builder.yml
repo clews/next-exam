@@ -1,5 +1,5 @@
-buildNumber: "8"
-buildVersion: 1.1.0.8
+buildNumber: "9"
+buildVersion: 1.1.0.9
 productName: Next-Exam-Teacher
 appId: com.nextexam.teacher
 asar: true
@@ -7,7 +7,7 @@ asarUnpack:
   - public
 afterPack: scripts/afterpack.js
 directories:
-  output: ../release/1.1.0.8_20251106
+  output: ../release/1.1.0.9_20251106
 compression: normal
 files:
   - dist
