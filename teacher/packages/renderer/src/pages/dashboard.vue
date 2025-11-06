@@ -1739,12 +1739,12 @@ computed: {
         this.workdirectory= `${this.currentdirectory}/${this.servername}`
 
         this.availablePrinters = await ipcRenderer.invoke("getprinters")
-        this.availablePrinters.forEach(printer => {
-            if (printer.isDefault){
-                console.log(`dashboard @ mounted: found and set default printer: ${printer.printerName}`)
-                this.defaultPrinter = printer.printerName
-            }
-        })
+        // this.availablePrinters.forEach(printer => {   //deprecated in electron 36 - only native methods available to get default printer for win,lin,mac
+        //     if (printer.isDefault){
+        //         console.log(`dashboard @ mounted: found and set default printer: ${printer.printerName}`)
+        //         this.defaultPrinter = printer.printerName
+        //     }
+        // })
        
         
   

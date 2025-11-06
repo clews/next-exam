@@ -223,6 +223,17 @@ class WindowHandler {
         blockwin.removeMenu() 
         blockwin.setMinimizable(false)
 
+        // Position window on specific display BEFORE showing it
+        blockwin.setBounds({
+            x: display.bounds.x,
+            y: display.bounds.y,
+            width: display.bounds.width,
+            height: display.bounds.height
+        });
+
+        blockwin.setAlwaysOnTop(true, "screen-saver", 1) 
+        blockwin.show()
+
         if (process.platform ==='darwin') { 
             blockwin.setFullScreen(true);
             blockwin.on('leave-full-screen', () => {
@@ -230,11 +241,8 @@ class WindowHandler {
             }); 
         }  
         else {   
-            blockwin.setKiosk(true); // Kiosk = “take over main screen”. on macos that's why we use fullScreen workaround with event listener
+            blockwin.setKiosk(true); // Kiosk = "take over main screen". on macos that's why we use fullScreen workaround with event listener
         }
-
-        blockwin.setAlwaysOnTop(true, "screen-saver", 1) 
-        blockwin.show()
         blockwin.moveTop();
 
         blockwin.display = display
@@ -243,24 +251,17 @@ class WindowHandler {
     }
 
 
-    // block additional screens with a blockwindow - try not to block primary display
+    // block all screens with a blockwindow
     async initBlockWindows(){
         let displays = screen.getAllDisplays()
-        let primary = screen.getPrimaryDisplay()
         //log.info(`windowhandler @ initBlockWindows: found ${displays.length} displays`)
-        if (!primary || primary === "" || !primary.id){ primary = displays[0] }       
-
         
-        if (!this.config.development) {  // lock additional screens
+        if (!this.config.development) {  // lock all screens
             for (let display of displays){
-                if ( display.id !== primary.id ) {
-                    if ( !this.isApproximatelyEqual(display.bounds.x, primary.bounds.x)) {  //on kde displays may be manually positioned at 1920px or 1921px so we allow a range to identify overlapping (cloned) displays
-                        const alreadyExists = this.blockwindows.some(bw => bw.display?.id === display.id);
-                        if (!alreadyExists) {
-                            log.info("windowhandler @ initBlockWindows: create blockwin on:",display.id)
-                            this.newBlockWin(display)  // add blockwindows for additional displays
-                        }
-                    } 
+                const alreadyExists = this.blockwindows.some(bw => bw.display?.id === display.id);
+                if (!alreadyExists) {
+                    log.info("windowhandler @ initBlockWindows: create blockwin on:",display.id)
+                    this.newBlockWin(display)  // add blockwindows for all displays
                 }
             }
             await this.sleep(1000)
@@ -392,7 +393,6 @@ class WindowHandler {
             skipTaskbar:true,
             autoHideMenuBar: true,
             minimizable: false,
-            fullscreen: true,
             visibleOnAllWorkspaces: true,
             kiosk: true,
             show: false,
@@ -408,36 +408,32 @@ class WindowHandler {
 
         // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
         this.examwindow.webContents.once('did-finish-load', async () => {
-            if (this.examwindow && !this.examwindow.isVisible()) {
-                if (this.config.showdevtools) { this.examwindow.webContents.openDevTools()  }
-                
-                if (this.config.development) {
-                    this.examwindow.setOpacity(1)
+            if (!this.examwindow) return;
+            
+            if (this.config.showdevtools) { this.examwindow.webContents.openDevTools()  }
+            
+            if (this.config.development) {
+                this.examwindow.setOpacity(1)
+                if (!this.examwindow.isVisible()) {
                     this.examwindow.show()
-                    this.examwindow.focus()
-                    this.examwindow.setFullScreen(false)
                 }
-                if (!this.config.development) {
-                    this.examwindow.removeMenu() 
-                    this.examwindow.show()
-                    this.examwindow.focus()
-         
-                    // if (process.platform ==='darwin') { this.examwindow.setAlwaysOnTop(true, "pop-up-menu", 0)  }  // do not display above popup because of colorpicker in editor (fix that!)
-                    // else {                              this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) }
+                this.examwindow.focus()
+                this.examwindow.setFullScreen(false)
+            }
+            if (!this.config.development) {
+                this.examwindow.removeMenu()                 
+                this.examwindow.show()
+                this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) 
+                this.examwindow.setKiosk(true);
+                this.examwindow.setFullScreen(true);
+                this.examwindow.setOpacity(1)
 
-                    this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) 
-
-                    this.examwindow.focus();
-                    this.examwindow.setKiosk(true); 
-                    this.examwindow.setOpacity(1)
-
-                    //restrictions
-                    this.addBlurListener();  // detects if window gets out of focus 
-                    if (!this.isWayland){ this.checkWindowInterval.start() }  // checks if the active window is next-exam (introduces exceptions for windows) 
-                    enableRestrictions(this)  // enable restriction only when exam window is fully loaded and in focus
-                    await this.sleep(2000)    // wait an additional 2 sec for windows restrictions to kick in (they steal focus)
-                    this.examwindow.focus();  // focus again just to be sure
-                }
+                //restrictions
+                this.addBlurListener()
+                if (!this.isWayland){ this.checkWindowInterval.start() } 
+                enableRestrictions(this)
+                await this.sleep(2000)
+                this.examwindow.focus()
             }
         })
 
@@ -740,13 +736,29 @@ class WindowHandler {
      */
     async createMainWindow() {
         let primarydisplay = screen.getPrimaryDisplay()
+        if (!primarydisplay || !primarydisplay.bounds) {
+            primarydisplay = screen.getAllDisplays()[0]
+        }
+
+        // Window dimensions - defined once, used everywhere
+        const windowWidth = 1024
+        const windowHeight = 600
+
+        // Calculate center position on primary display
+        let x = 0
+        let y = 0
+        if (primarydisplay && primarydisplay.bounds) {
+            x = primarydisplay.bounds.x + Math.floor((primarydisplay.bounds.width - windowWidth) / 2)
+            y = primarydisplay.bounds.y + Math.floor((primarydisplay.bounds.height - windowHeight) / 2)
+        }
 
         this.mainwindow = new BrowserWindow({
             title: 'Main window',
             icon: join(__dirname, '../../public/icons/icon.png'),
-            center:true,
-            width: 1024,
-            height: 600,
+            x: x,
+            y: y,
+            width: windowWidth,
+            height: windowHeight,
             minWidth: 850,
             minHeight: 600,
             resizable: false, // verhindert das Ändern der Größe    electron bug: >> https://github.com/electron/electron/issues/44755
@@ -776,14 +788,24 @@ class WindowHandler {
         
  
         // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
-        this.mainwindow.webContents.once('did-finish-load', () => {
+        this.mainwindow.webContents.once('did-finish-load', async () => {
             log.info('windowhandler @ createMainWindow: did-finish-load - showing window')
-            if (this.mainwindow && !this.mainwindow.isVisible()) {
-                this.mainwindow.show()
-                this.mainwindow.setVisibleOnAllWorkspaces(true)
-                this.mainwindow.focus()
-                this.mainwindow.moveTop()
+            if (!this.mainwindow) return;
+            
+            this.mainwindow.show()
+            this.mainwindow.setVisibleOnAllWorkspaces(true)
+            this.mainwindow.focus()
+            this.mainwindow.moveTop()
+            
+            // Note: KDE Plasma may ignore setBounds() and position windows based on mouse cursor location
+            // This is a known limitation of KDE Plasma's window manager
+            if (primarydisplay && primarydisplay.bounds) {
+                const centerX = primarydisplay.bounds.x + Math.floor((primarydisplay.bounds.width - windowWidth) / 2)
+                const centerY = primarydisplay.bounds.y + Math.floor((primarydisplay.bounds.height - windowHeight) / 2)
+                this.mainwindow.setBounds({ x: centerX, y: centerY, width: windowWidth, height: windowHeight })
+                this.mainwindow.setPosition(centerX, centerY)
             }
+
         })
         
      

@@ -790,7 +790,10 @@ const __dirname = import.meta.dirname;
         }
 
         if (WindowHandler.examwindow){
-            WindowHandler.initBlockWindows()
+            await WindowHandler.initBlockWindows()
+            // Bring exam window to front above all block windows
+            WindowHandler.examwindow.moveTop();
+            WindowHandler.examwindow.focus();
         }
     }
 

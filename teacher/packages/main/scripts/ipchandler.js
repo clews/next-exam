@@ -422,7 +422,7 @@ class IpcHandler {
             const printers = await this.WindowHandler.mainwindow.webContents.getPrintersAsync();
             const printerData = printers.map(printer => ({
                 printerName: printer.name,
-                isDefault: printer.isDefault,
+                isDefault: printer.isDefault, // deprecated in electron 36
                 description: printer.description
             }));
 
