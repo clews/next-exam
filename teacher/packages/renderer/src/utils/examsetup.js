@@ -158,6 +158,8 @@ async function configureMath(){
  * RDP
  */
 async function configureRDP(){
+    let savedDomain = ''; // Store domain value before dialog closes (Electron 39 compatibility)
+
     this.$swal.fire({
         customClass: {
             popup: 'my-popup',
@@ -184,10 +186,15 @@ async function configureRDP(){
             if (this.serverstatus.examSections[this.serverstatus.activeSection].rdpConfig) {
                 document.getElementById('domain').value = this.serverstatus.examSections[this.serverstatus.activeSection].rdpConfig.domain || ''
             }
+        },
+        preConfirm: () => {
+            // Save domain value before dialog closes (Electron 39 compatibility)
+            const domainElement = document.getElementById('domain');
+            savedDomain = domainElement ? domainElement.value.trim() : '';
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            const domain = document.getElementById('domain').value.trim();
+            const domain = savedDomain; // Use saved value instead of reading from DOM
             
             if (!domain) {
                 this.$swal.fire({
@@ -378,22 +385,31 @@ async function configureEditor(){
         },
         willClose: () => {
             const marginValueInput = document.getElementById('marginValue');
-            marginValueInput.removeEventListener('input', updateMarginValueDisplay);
+            if (marginValueInput) {
+                marginValueInput.removeEventListener('input', updateMarginValueDisplay);
+            }
         },
         inputValidator: (value) => {
             if (!value) {  return 'You need to choose a language!' }
 
         },
         preConfirm: () => {
-            this.serverstatus.examSections[this.serverstatus.activeSection].suggestions = document.getElementById('checkboxsuggestions').checked; 
-            this.serverstatus.examSections[this.serverstatus.activeSection].languagetool = document.getElementById('checkboxLT').checked; 
+            // Save all values before dialog closes (Electron 39 compatibility)
+            const checkboxSuggestionsElement = document.getElementById('checkboxsuggestions');
+            const checkboxLTElement = document.getElementById('checkboxLT');
+            const marginValueElement = document.getElementById('marginValue');
+            const audioRepeatElement = document.getElementById('audiorepeat');
+            const fontSizeElement = document.getElementById('fontsize');
+
+            this.serverstatus.examSections[this.serverstatus.activeSection].suggestions = checkboxSuggestionsElement ? checkboxSuggestionsElement.checked : false; 
+            this.serverstatus.examSections[this.serverstatus.activeSection].languagetool = checkboxLTElement ? checkboxLTElement.checked : false; 
 
             const radioButtons = document.querySelectorAll('input[name="correction_margin"]');
-            const marginValue = document.getElementById('marginValue').value;
+            const marginValue = marginValueElement ? marginValueElement.value : '';
             const linespacingradioButtons = document.querySelectorAll('input[name="linespacing"]');
             const fontfamilyradioButtons = document.querySelectorAll('input[name="fontfamily"]');
-            const audioRepeat = document.getElementById('audiorepeat').value;
-            const fontSize = document.getElementById('fontsize').value;
+            const audioRepeat = audioRepeatElement ? audioRepeatElement.value : '';
+            const fontSize = fontSizeElement ? fontSizeElement.value : '';
 
             let selectedMargin = '';
             radioButtons.forEach((radio) => {

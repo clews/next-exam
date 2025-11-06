@@ -372,6 +372,12 @@ export default {
                 'none': this.$t("student.none"),
             }
 
+            let savedUsername = ''; // Store input values before dialog closes (Electron 39 compatibility)
+            let savedPassword = '';
+            let savedLanguagetool = false;
+            let savedSuggestions = false;
+            let savedExammode = '';
+
             this.$swal({
                 customClass: {
                     input: 'my-select',
@@ -472,19 +478,32 @@ export default {
                         }, 100);
                     }
                 },
+                preConfirm: () => {
+                    // Save all input values before dialog closes (Electron 39 compatibility)
+                    const localUserElement = document.getElementById('localuser');
+                    const localPasswordElement = document.getElementById('localpassword');
+                    const checkboxLTElement = document.getElementById('checkboxLT');
+                    const checkboxSuggestionsElement = document.getElementById('checkboxsuggestions');
+                    const radioButtons = document.querySelectorAll('input[name="etesttype"]');
+                    
+                    savedUsername = localUserElement ? localUserElement.value : '';
+                    savedPassword = localPasswordElement ? localPasswordElement.value : '';
+                    savedLanguagetool = checkboxLTElement ? checkboxLTElement.checked : false;
+                    savedSuggestions = checkboxSuggestionsElement ? checkboxSuggestionsElement.checked : false;
+                    
+                    radioButtons.forEach((radio) => {
+                        if (radio.checked) {
+                            savedExammode = radio.value;
+                        }
+                    });
+                }
             }).then((result) => {
                 if (result.isConfirmed) { 
 
-                    const radioButtons = document.querySelectorAll('input[name="etesttype"]');
-                    let exammode = '';
-                    radioButtons.forEach((radio) => {
-                        if (radio.checked) {
-                            exammode = radio.value;
-                        }
-                    });
-                    let username = document.getElementById('localuser').value; 
+                    let exammode = savedExammode; // Use saved value instead of reading from DOM
+                    let username = savedUsername; // Use saved value instead of reading from DOM
                     username = username.replace(/^\s+|\s+$/g, '');  // Check username - remove leading and trailing spaces
-                    let password = document.getElementById('localpassword').value; 
+                    let password = savedPassword; // Use saved value instead of reading from DOM
 
                     if (username == "" || password == ""){
                         this.localLockdown = false
@@ -493,8 +512,8 @@ export default {
                     
                     // Read checkbox values and language selection
                     const spellchecklang = result.value || 'de-DE';
-                    let languagetool = document.getElementById('checkboxLT').checked;
-                    let suggestions = document.getElementById('checkboxsuggestions').checked;
+                    let languagetool = savedLanguagetool; // Use saved value instead of reading from DOM
+                    let suggestions = savedSuggestions; // Use saved value instead of reading from DOM
                     
                     // If language is 'none', disable languagetool
                     if (spellchecklang === 'none') {

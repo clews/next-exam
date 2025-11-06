@@ -29,14 +29,13 @@
     "@intlify/unplugin-vue-i18n": "^11.0.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "electron": "^39.0.0",
-    "electron-builder": "^26.0.12",
+    "electron-builder": "^26.1.0",
     "nodemon": "^3.1.6",
     "sass": "^1.93.3",
     "typescript": "^5.6.2",
     "vite": "^7.1.12",
     "vite-plugin-commonjs": "^0.10.3",
-    "vite-plugin-resolve": "^2.5.2",
-    "vue": "^3.5.6"
+    "vite-plugin-resolve": "^2.5.2"
   },
   "env": {
     "//": "Used in build scripts",
@@ -115,7 +114,7 @@
     "node-wifi": "^2.0.16",
     "play-sound": "^1.1.6",
     "ps-tree": "^1.2.0",
-    "screenshot-desktop-wayland": "^1.15.6",
+    "screenshot-desktop-wayland": "^1.15.7",
     "sharp": "^0.33.5",
     "simple-get": "^4.0.1",
     "tesseract.js": "^6.0.0",

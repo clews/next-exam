@@ -413,6 +413,9 @@ function delfolderquestion(event, token="all"){
 async function activateSpellcheckForStudent(token, clientname){
     const student = this.studentlist.find(obj => obj.token === token);  //get specific student (status)
     //console.log(student.status)
+    let savedSuggestions = false; // Store checkbox values before dialog closes (Electron 39 compatibility)
+    let savedLanguagetool = false;
+
     await this.$swal.fire({
         customClass: {
             popup: 'my-popup',
@@ -441,12 +444,19 @@ async function activateSpellcheckForStudent(token, clientname){
                 document.getElementById('checkboxLT').checked = false
                 document.getElementById('checkboxsuggestions').checked = false
             }   
+        },
+        preConfirm: () => {
+            // Save checkbox values before dialog closes (Electron 39 compatibility)
+            const checkboxLTElement = document.getElementById('checkboxLT');
+            const checkboxSuggestionsElement = document.getElementById('checkboxsuggestions');
+            savedLanguagetool = checkboxLTElement ? checkboxLTElement.checked : false;
+            savedSuggestions = checkboxSuggestionsElement ? checkboxSuggestionsElement.checked : false;
         }
     }).then(async (input) => {
         if (!input.isConfirmed) {return}
 
-        let suggestions = document.getElementById('checkboxsuggestions').checked;
-        let languagetool = document.getElementById('checkboxLT').checked;
+        let suggestions = savedSuggestions; // Use saved value instead of reading from DOM
+        let languagetool = savedLanguagetool; // Use saved value instead of reading from DOM
 
         if (!languagetool){
             console.log(`de-activating spellcheck for user: ${clientname} `)

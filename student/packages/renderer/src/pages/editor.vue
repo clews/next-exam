@@ -918,18 +918,18 @@ export default {
                     this.$swal.fire({
                         title: message,
                         icon: "info",
-                        timer: 1500,
-                        timerProgressBar: true,
-                        didOpen: () => { this.$swal.showLoading() }
+                       // timer: 1500,
+                       // timerProgressBar: true,
+                       // didOpen: () => { this.$swal.showLoading() }
                     })
                 }
                 else {
                     this.$swal.fire({
                         title: data.message,
                         icon: "error",
-                        timer: 1500,
-                        timerProgressBar: true,
-                        didOpen: () => { this.$swal.showLoading() }
+                        // timer: 1500,
+                        // timerProgressBar: true,
+                        // didOpen: () => { this.$swal.showLoading() }
                     })
                 }
             })
@@ -1073,6 +1073,8 @@ export default {
 
 
         reloadAll(){
+            let savedKeepcontent = false; // Store checkbox value before dialog closes (Electron 39 compatibility)
+
             this.$swal.fire({
                 title: this.$t("editor.reload"),
                 html:  `${this.$t("editor.reloadtext")}
@@ -1083,11 +1085,16 @@ export default {
                 icon: "question",
                 showCancelButton: true,
                 cancelButtonText: this.$t("editor.cancel"),
-                reverseButtons: true
+                reverseButtons: true,
+                preConfirm: () => {
+                    // Save checkbox value before dialog closes (Electron 39 compatibility)
+                    const keepcontentElement = document.getElementById('keepcontent');
+                    savedKeepcontent = keepcontentElement ? keepcontentElement.checked : false;
+                }
             })
             .then((result) => {
                 if (result.isConfirmed) {
-                    let keepcontent = document.getElementById('keepcontent').checked;
+                    let keepcontent = savedKeepcontent; // Use saved value instead of reading from DOM
                     console.log("Reinitializing Editor Component")
                     let content = ""
                     if (keepcontent) {
@@ -1350,7 +1357,8 @@ export default {
                 showCancelButton: false,
                 preConfirm: () => {
                     // Falls der Benutzer die Checkbox aktiviert hat, aktualisieren wir die Variable:
-                        const dontShow = document.getElementById('dontShowCheckbox').checked;
+                        const dontShowCheckboxElement = document.getElementById('dontShowCheckbox');
+                        const dontShow = dontShowCheckboxElement ? dontShowCheckboxElement.checked : false;
                         if (dontShow) { this.showfileerror = false;  }
                     }
                 });
@@ -2278,4 +2286,23 @@ Other Styles
 }
 
 
+</style>
+
+<style>
+/**in order to override swal settings the css needs to be global not scoped*/
+.swal2-popup{
+    opacity: 0.9 !important; 
+    transition: none !important;
+    animation: none !important;
+    -webkit-transition: none !important;
+    -webkit-animation: none !important;
+}
+
+.swal2-container {
+    backdrop-filter: blur(2px); 
+    transition: none !important;
+    animation: none !important;
+    -webkit-transition: none !important;
+    -webkit-animation: none !important;
+} 
 </style>
