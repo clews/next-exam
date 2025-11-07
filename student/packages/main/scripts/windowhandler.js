@@ -966,7 +966,7 @@ class WindowHandler {
                 let nameLower = name.toLowerCase()
                 let wpathLower = wpath.toLowerCase()
 
-                if (nameLower.includes("exam") || nameLower.includes("next")  || nameLower.includes("electron") ||  wpathLower.includes("easeofaccessdialog")  ){  
+                if (nameLower.includes("exam") || nameLower.includes("next")  || nameLower.includes("electron") ||  wpathLower.includes("easeofaccessdialog") ||  wpathLower.includes("disable-shortcuts") ){  
                     // fokus is on allowed window instance
                     this.focusTargetAllowed = true
                 }
@@ -1049,7 +1049,7 @@ class WindowHandler {
     }
     //special blur event for temporary low security screenlock
     blureventScreenlock(winhandler) { 
-        log.info("blur-screenlock")
+        log.info("windowhandler @ blureventScreenlock: blur-screenlock triggered")
         try {
             //don't cycle through all of them .. it will create an infinite focus race
             winhandler.screenlockwindows[0].show();  // we keep focus on the window.. no matter what
@@ -1057,7 +1057,7 @@ class WindowHandler {
             winhandler.screenlockwindows[0].focus();
         }
         catch (err){
-            log.error(err)
+            log.error(`windowhandler @ blureventScreenlock: ${err}`)
         }
     
     }

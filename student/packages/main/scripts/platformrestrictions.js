@@ -122,15 +122,20 @@ function enableRestrictions(winhandler){
         
         try {
             appsToClose.forEach(app => {
+                // First check if process exists, then kill it
                 // Use pgrep to find processes by name (case-insensitive, process name only, not full command line)
                 // Without -f flag, pgrep only searches process names, not command lines
                 // This avoids killing processes that only contain the app name in their command line (e.g. Cursor containing "chrome")
-                childProcess.exec(`pgrep -i "${app}" | xargs -r kill -9`, (error) => {
-                    if (!error) { // success - process was found and killed
-                        log.info(`platformrestrictions @ enableRestrictions: closed ${app}`);
+                childProcess.exec(`pgrep -i "${app}"`, (pgrepError, stdout) => {
+                    if (!pgrepError && stdout && stdout.trim()) {
+                        // Process found, now kill it
+                        childProcess.exec(`pgrep -i "${app}" | xargs -r kill -9`, (killError) => {
+                            if (!killError) {
+                                log.info(`platformrestrictions @ enableRestrictions: closed ${app}`);
+                            }
+                        });
                     }
-                    // code 1 means no process found, which is fine - no logging
-                    // other errors are also ignored as requested
+                    // If pgrep returns error or no output, process doesn't exist - no logging needed
                 });
             });
         } catch (err) {
@@ -307,13 +312,15 @@ function enableRestrictions(winhandler){
         // kill EXPLORER windowsbutton and swipe gestures - kill everything else
         try {
             childProcess.exec('taskkill /f /im explorer.exe', (error, stdout, stderr) => {
-                if (error) {
-                    log.error(`platformrestrictions @ enableRestrictions (win explorer): ${error.message}`);
-                    return;
+                if (!error && stdout) {
+                    // Only log if taskkill was successful (process found and killed)
+                    log.info(`platformrestrictions @ enableRestrictions: closed explorer.exe`);
                 }
-                log.info(`stdout: ${stdout}`);
+                // If error (e.g. process not found), silently ignore - no logging needed
             });
-        } catch (err){log.error(`platformrestrictions @ enableRestrictions (win explorer): ${err}`);}
+        } catch (err){
+            // silently ignore errors
+        }
     }
 
 
@@ -452,13 +459,16 @@ function disableRestrictions(){
 
         log.info("platformrestrictions @ disableRestrictions (win): unblocking shortcuts...")
         try { 
-            childProcess.exec(`taskkill  /IM "disable-shortcuts.exe" /T /F`, (error, stderr, stdout) => { 
-                if (error) {
-                    log.error(`platformrestrictions @ disableRestrictions (win enableshortcuts): ${error.message}`);
-                    return;
+            childProcess.exec(`taskkill  /IM "disable-shortcuts.exe" /T /F`, (error, stdout, stderr) => { 
+                if (!error && stdout) {
+                    // Only log if taskkill was successful (process found and killed)
+                    log.info(`platformrestrictions @ disableRestrictions: closed disable-shortcuts.exe`);
                 }
+                // If error (e.g. process not found), silently ignore - no logging needed
             });
-        }catch(e){log.error(`platformrestrictions @ disablerestrictions (win enableshortcuts): ${e.message}`)}
+        }catch(e){
+            // silently ignore errors
+        }
 
         // start explorer.exe windowsshell again
         // Überprüfe, ob explorer.exe läuft
