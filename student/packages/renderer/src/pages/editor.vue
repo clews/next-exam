@@ -1235,23 +1235,47 @@ export default {
         },
         async loadBackupFile(filename=false){
             // check if there is a bak file in the exam directory and load it
+            // This must run early to read the file before editor overwrites it after 20 seconds
             let backupfileName = filename ? filename : this.clientname + ".bak"
-            let backupfileContent = await ipcRenderer.invoke('getbackupfile', backupfileName )
-            if (backupfileContent){
-                this.$swal.fire({
-                    title: this.$t("editor.backupfound"),
-                    html:  `${this.$t("editor.replacecontent1")} <b>${backupfileName}</b> ${this.$t("editor.replacecontent2")}`,
-                    icon: "question",
-                    showCancelButton: true,
-                    cancelButtonText: this.$t("editor.cancel"),
-                    reverseButtons: true
-                })
-                .then(async (result) => {
-                    if (result.isConfirmed) {
-                        this.editor.commands.clearContent(true)
-                        this.editor.commands.insertContent(backupfileContent)  
-                    } 
-                }); 
+            console.log(`editor @ loadBackupFile: Checking for backup file: ${backupfileName}`)
+            try {
+                let backupfileContent = await ipcRenderer.invoke('getbackupfile', backupfileName )
+               
+                if (backupfileContent){
+                    console.log(`editor @ loadBackupFile: Backup file found, waiting for window to be ready before showing dialog`)
+                    // Wait for window to be fully rendered before showing dialog
+                    // Use requestAnimationFrame to ensure DOM is ready
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            // Double RAF ensures the dialog can be displayed
+                            console.log(`editor @ loadBackupFile: Window ready, showing dialog`)
+                            this.$swal.fire({
+                                title: this.$t("editor.backupfound"),
+                                html:  `${this.$t("editor.replacecontent1")} <b>${backupfileName}</b> ${this.$t("editor.replacecontent2")}`,
+                                icon: "question",
+                                showCancelButton: true,
+                                cancelButtonText: this.$t("editor.cancel"),
+                                reverseButtons: true
+                            })
+                            .then(async (result) => {
+                                if (result.isConfirmed) {
+                                    console.log(`editor @ loadBackupFile: User confirmed, loading backup file`)
+                                    this.editor.commands.clearContent(true)
+                                    this.editor.commands.insertContent(backupfileContent)  
+                                } else {
+                                    console.log(`editor @ loadBackupFile: User cancelled loading backup file`)
+                                }
+                            })
+                            .catch((error) => {
+                                console.error(`editor @ loadBackupFile: Error showing dialog: ${error}`)
+                            })
+                        })
+                    })
+                } else {
+                    console.log(`editor @ loadBackupFile: No backup file found or content is empty`)
+                }
+            } catch (error) {
+                console.error(`editor @ loadBackupFile: Error loading backup file: ${error}`)
             }
         },
 
@@ -1301,10 +1325,12 @@ export default {
         this.setCSSVariable('--js-fontsize', `${this.fontsize}`); 
 
       
+        console.log(`editor @ mounted: Component mounted, initializing editor`)
         this.createEditor(); // this initializes the editor
         this.zoomin()
         this.getExamMaterials()
 
+        console.log(`editor @ mounted: Calling loadBackupFile`)
         this.loadBackupFile()
 
 

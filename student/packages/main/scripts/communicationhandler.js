@@ -522,9 +522,10 @@ const __dirname = import.meta.dirname;
                 // MOVE Section Files to a subdirectory named by the CURRENT locked section
                 try {
                     // PART 1: SAVE CURRENT EXAMDIR FILES to a subdirectory named by the CURRENT locked section
-                    if (fs.existsSync(examDir) && currentLockedSection) { // Check if main dir exists and a section is currently active
+                                    
+                    if (fs.existsSync(examDir) && currentLockedSection != null && currentLockedSection !== undefined) { // Check if main dir exists and a section is currently active
                         
-                        log.warn(`communicationhandler @ processUpdatedServerstatus: Saving content from examDir to section ${currentLockedSection}`);
+                        log.debug(`communicationhandler @ processUpdatedServerstatus: Saving content from examDir to section ${currentLockedSection}`);
                 
                         const savePath = `${examDir}/${currentLockedSection}`;
                         if (!fs.existsSync(savePath)) {
@@ -532,6 +533,9 @@ const __dirname = import.meta.dirname;
                         }
                 
                         const files = fs.readdirSync(examDir);
+                        log.info(`communicationhandler @ processUpdatedServerstatus: Found ${files.length} items in examDir to save`);
+                        
+                        let filesSaved = 0;
                         for (const file of files) {
                             const oldPath = `${examDir}/${file}`;
                             const stat = fs.statSync(oldPath); // Get file stats
@@ -541,17 +545,27 @@ const __dirname = import.meta.dirname;
                                 const newPath = `${savePath}/${file}`;
                                 fs.copyFileSync(oldPath, newPath); // Copy file
                                 fs.unlinkSync(oldPath); // Delete original file from examDir
+                                filesSaved++;
+                                log.info(`communicationhandler @ processUpdatedServerstatus: Saved file ${file} to section ${currentLockedSection}`);
+                            } else {
+                                log.info(`communicationhandler @ processUpdatedServerstatus: Skipping non-file (folder) item ${file} in examDir`);
                             }
                         }
+                        log.info(`communicationhandler @ processUpdatedServerstatus: Successfully saved ${filesSaved} files to section ${currentLockedSection}`);
+                    } else {
+                        log.warn(`communicationhandler @ processUpdatedServerstatus: Skipping save - examDir exists: ${fs.existsSync(examDir)}, currentLockedSection: ${currentLockedSection}`);
                     }
                 
                     // PART 2: LOAD FILES from the subdirectory named by the NEW locked section to examDir
-                    if (newLockedSection) {
-                        log.warn(`communicationhandler @ processUpdatedServerstatus: Loading content from section ${newLockedSection} to examDir`);
+                    if (newLockedSection != null && newLockedSection !== undefined) {
+                        log.debug(`communicationhandler @ processUpdatedServerstatus: Loading content from section ${newLockedSection} to examDir`);
                 
                         const loadPath = `${examDir}/${newLockedSection}`;
                         if (fs.existsSync(loadPath)) { // Check if the new section folder exists
                             const filesToLoad = fs.readdirSync(loadPath);
+                            log.info(`communicationhandler @ processUpdatedServerstatus: Found ${filesToLoad.length} items in section ${newLockedSection} directory`);
+                            
+                            let filesCopied = 0;
                             for (const file of filesToLoad) {
                                 const sourcePath = `${loadPath}/${file}`;
                                 const destPath = `${examDir}/${file}`;
@@ -559,14 +573,23 @@ const __dirname = import.meta.dirname;
                                 
                                 if (stat.isFile()) { // Ensure only files are copied back
                                     fs.copyFileSync(sourcePath, destPath); // Copy file to examDir
+                                    filesCopied++;
+                                    log.info(`communicationhandler @ processUpdatedServerstatus: Copied file ${file} from section ${newLockedSection} to examDir`);
+                                } else {
+                                    log.warn(`communicationhandler @ processUpdatedServerstatus: Skipping non-file item ${file} in section ${newLockedSection} directory`);
                                 }
                             }
+                            log.info(`communicationhandler @ processUpdatedServerstatus: Successfully copied ${filesCopied} files from section ${newLockedSection} to examDir`);
                         } else {
                              log.info(`communicationhandler @ processUpdatedServerstatus: New locked section directory ${newLockedSection} does not exist. Starting with a clean state.`);
                         }
+                    } else {
+                        log.warn(`communicationhandler @ processUpdatedServerstatus: newLockedSection is falsy (${newLockedSection}), skipping file load`);
                     }
                 } catch (error) {
                     log.error(`communicationhandler @ processUpdatedServerstatus: Error during folder operation - ${error}`);
+                    log.error(`communicationhandler @ processUpdatedServerstatus: Error stack: ${error.stack}`);
+                    log.error(`communicationhandler @ processUpdatedServerstatus: currentLockedSection: ${currentLockedSection}, newLockedSection: ${newLockedSection}, examDir: ${examDir}`);
                 }
 
                 /**

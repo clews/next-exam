@@ -868,17 +868,30 @@ class IpcHandler {
          * @param filename filename without
          */ 
         ipcMain.handle('getbackupfile', async (event, filename) => {   
+            log.info(`ipchandler @ getbackupfile: Request received for filename: ${filename}`)
             const workdir = path.join(config.examdirectory,"/")
             if (filename) { //return content of specific file as string (html) to replace in editor)
                 let filepath = path.join(workdir,filename)
+                log.info(`ipchandler @ getbackupfile: Full file path: ${filepath}`)
                 try {
+                    if (!fs.existsSync(filepath)){
+                        log.warn(`ipchandler @ getbackupfile: backup file not found: ${filepath}`); 
+                        return false;
+                    }
+                    log.info(`ipchandler @ getbackupfile: backup file exists, reading content`)
                     let data = fs.readFileSync(filepath, 'utf8')
+                    log.info(`ipchandler @ getbackupfile: Successfully read backup file, content length: ${data.length}`)
                     return data
                 }
                 catch (err) {
-                    log.info(`ipchandler @ getbackupfile: no backup file found`); 
+                    log.error(`ipchandler @ getbackupfile: Error reading backup file: ${err}`); 
+                    log.error(`ipchandler @ getbackupfile: Error stack: ${err.stack}`)
                     return false
                 }
+            }
+            else {
+                log.warn(`ipchandler @ getbackupfile: no filename provided`); 
+                return false;
             }
         })
 
