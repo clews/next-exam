@@ -390,6 +390,9 @@ class WindowHandler {
 
         if (this.config.showdevtools) { screenlockWindow.webContents.openDevTools()  }
 
+        // Add window to array first, before adding blur listener
+        this.screenlockwindows.push(screenlockWindow)
+
         // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
         screenlockWindow.webContents.once('did-finish-load', () => {
             if (!screenlockWindow) return;
@@ -409,7 +412,9 @@ class WindowHandler {
             if (!this.config.development) { e.preventDefault(); }  
         });
 
-        this.screenlockwindows.push(screenlockWindow)
+        screenlockWindow.on('closed', () => {   // remove window from array when actually closed
+            this.screenlockwindows = this.screenlockwindows.filter(win => win && win !== screenlockWindow && !win.isDestroyed())
+        });
     }
 
 
@@ -507,7 +512,7 @@ class WindowHandler {
                 if (!this.isWayland){ this.checkWindowInterval.start() } // constantly check if the active window is the examwindow - if not, bring it to front
                 enableRestrictions(this)  // disable keyboard shortcuts etc.
                 
-                await this.sleep(500)  // do not set blur listener too early
+                await this.sleep(1000)  // do not set blur listener too early
                 this.addBlurListener()  // add blur listener to the examwindow
             }
         })
@@ -1012,7 +1017,11 @@ class WindowHandler {
             await this.windowTracker()  //checks if new focus window is allowed
             log.info("windowtracker check done...")
         }
-        if (winhandler.screenlockwindows.length > 0) { return }// do nothing if screenlockwindow stole focus // do not trigger an infinite loop between exam window and screenlock window (stealing each others focus because screenlockwindow appears above exam window and will capture a klick and therefore steal focus)
+        // Clean up destroyed screenlock windows from array and check if any still exist
+        winhandler.screenlockwindows = winhandler.screenlockwindows.filter(win => win && !win.isDestroyed())
+        const hasActiveScreenlock = winhandler.screenlockwindows.some(win => win && !win.isDestroyed() && win.isVisible())
+        // Also check clientinfo.screenlock flag as fallback in case array was cleared but windows still exist
+        if (hasActiveScreenlock || winhandler.multicastClient?.clientinfo?.screenlock) { return }// do nothing if screenlockwindow stole focus // do not trigger an infinite loop between exam window and screenlock window (stealing each others focus because screenlockwindow appears above exam window and will capture a klick and therefore steal focus)
         if (winhandler.focusTargetAllowed){ 
             winhandler.examwindow.moveTop();
             winhandler.examwindow.show(); 

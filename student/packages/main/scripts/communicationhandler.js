@@ -716,14 +716,16 @@ const __dirname = import.meta.dirname;
     killScreenlock(){
         try {
             for (let screenlockwindow of WindowHandler.screenlockwindows){
-                screenlockwindow.close(); 
-                screenlockwindow.destroy(); 
-                screenlockwindow = null;
+                if (screenlockwindow && !screenlockwindow.isDestroyed()) {
+                    screenlockwindow.close(); 
+                    screenlockwindow.destroy(); 
+                }
             }
         } catch (e) { 
-            WindowHandler.screenlockwindows = []
             log.error("communicationhandler @ killScreenlock: no functional screenlockwindow to handle")
         } 
+        // Clear array completely after attempting to destroy all windows
+        // The closed event handler will also clean up, but this ensures the array is empty
         WindowHandler.screenlockwindows = []
         this.multicastClient.clientinfo.screenlock = false
     }
