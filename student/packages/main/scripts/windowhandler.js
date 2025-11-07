@@ -392,17 +392,17 @@ class WindowHandler {
 
         // Electron 39: ready-to-show fires AFTER show() is called, so use did-finish-load instead
         screenlockWindow.webContents.once('did-finish-load', () => {
-            if (screenlockWindow && !screenlockWindow.isVisible()) {
-                screenlockWindow.removeMenu() 
-                screenlockWindow.setMinimizable(false)
-                screenlockWindow.setKiosk(true)
-                screenlockWindow.setAlwaysOnTop(true, "pop-up-menu", 1)   //above exam window (pop-up-menu, 0)
-                screenlockWindow.show()
-                screenlockWindow.moveTop();
-                screenlockWindow.setClosable(true)
-                screenlockWindow.setVisibleOnAllWorkspaces(true); // put the window on all virtual workspaces
-                this.addBlurListener("screenlock")
-            }
+            if (!screenlockWindow) return;
+            
+            screenlockWindow.removeMenu() 
+            screenlockWindow.setMinimizable(false)
+            screenlockWindow.setKiosk(true)
+            screenlockWindow.setAlwaysOnTop(true, "pop-up-menu", 1)   //above exam window (pop-up-menu, 0)
+            screenlockWindow.show()
+            screenlockWindow.moveTop();
+            screenlockWindow.setClosable(true)
+            screenlockWindow.setVisibleOnAllWorkspaces(true); // put the window on all virtual workspaces
+            this.addBlurListener("screenlock")
         })
 
         screenlockWindow.on('close', async  (e) => {   // window should not be closed manually.. ever! but if you do make sure to clean examwindow variable and end exam for the client
@@ -958,8 +958,10 @@ class WindowHandler {
             if (activeWin && activeWin.owner && activeWin.owner.name) {
                 let name = activeWin.owner.name
                 let wpath = activeWin.owner.path
+                let nameLower = name.toLowerCase()
+                let wpathLower = wpath.toLowerCase()
 
-                if (name.includes("exam") || name.includes("next")  || name.includes("Electron")|| name.includes("electron") ||  wpath.includes("EaseOfAccessDialog")  ){  
+                if (nameLower.includes("exam") || nameLower.includes("next")  || nameLower.includes("electron") ||  wpathLower.includes("easeofaccessdialog")  ){  
                     // fokus is on allowed window instance
                     this.focusTargetAllowed = true
                 }
@@ -979,8 +981,6 @@ class WindowHandler {
 
     //adds blur listener when entering exammode   // blur event isnt fired on macos MISSIONCONTROL (which cant be deactivated anymore) - damn you apple!
     addBlurListener(window = "examwindow"){
-        log.info("windowhandler @ addBlurListener: adding blur listener")
-        
         if (window === "examwindow"){ 
             log.info(`windowhandler @ addBlurListener: Setting Blur Event for ${window}`)
             this.examwindow.addListener('blur', () => this.blurevent(this)) 
@@ -990,7 +990,6 @@ class WindowHandler {
             for (let screenlockwindow of this.screenlockwindows){
                 screenlockwindow.addListener('blur', () => this.blureventScreenlock(this))   
             }
-            
         }
     }
     //removes blur listener when leaving exam mode
@@ -1013,7 +1012,7 @@ class WindowHandler {
             await this.windowTracker()  //checks if new focus window is allowed
             log.info("windowtracker check done...")
         }
-        if (winhandler.screenlockwindows.length > 0) { return }// do nothing if screenlockwindow stole focus // do not trigger an infinite loop between exam window and screenlock window (stealing each others focus)
+        if (winhandler.screenlockwindows.length > 0) { return }// do nothing if screenlockwindow stole focus // do not trigger an infinite loop between exam window and screenlock window (stealing each others focus because screenlockwindow appears above exam window and will capture a klick and therefore steal focus)
         if (winhandler.focusTargetAllowed){ 
             winhandler.examwindow.moveTop();
             winhandler.examwindow.show(); 
