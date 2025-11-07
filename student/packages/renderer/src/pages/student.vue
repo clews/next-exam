@@ -1068,10 +1068,9 @@ export default {
     async mounted() {  
         document.querySelector("#statusdiv").style.visibility = "hidden";
 
-        await this.fetchInfo();
-        this.isLoading = false;
         
         // Hide initial loading overlay from index.html with fade-out
+        this.isLoading = false;
         const initialOverlay = document.getElementById('initial-loading-overlay');
         if (initialOverlay) {
             initialOverlay.classList.add('fade-out');
@@ -1079,6 +1078,9 @@ export default {
                 initialOverlay.style.display = 'none';
             }, 300);
         }
+
+        // Fetch info asynchronously without blocking
+        this.fetchInfo();
   
         this.fetchinterval = new SchedulerService(4000);
         this.fetchinterval.addEventListener('action',  this.fetchInfo);  // Add event listener that reacts to the 'action' event

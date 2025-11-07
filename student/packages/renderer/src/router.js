@@ -21,16 +21,18 @@ import { createRouter as _createRouter,  createWebHashHistory } from 'vue-router
  */
 
 
-import notfound from '/src/pages/notfound.vue'
+// Import student directly since it's the initial route and needs to be available immediately
 import student from '/src/pages/student.vue'
-import editor from '/src/pages/editor.vue'
-import geogebra from '/src/pages/geogebra.vue'
-import gforms from '/src/pages/forms.vue'
-import lock from '/src/pages/lock.vue'
-import eduvidual from '/src/pages/eduvidual.vue'
-import microsoft365 from '/src/pages/microsoft365.vue'
-import website from '/src/pages/website.vue'
-import rdpview from '/src/pages/rdpview.vue'
+// Lazy load other components for faster initial load
+const notfound = () => import('/src/pages/notfound.vue')
+const editor = () => import('/src/pages/editor.vue')
+const geogebra = () => import('/src/pages/geogebra.vue')
+const gforms = () => import('/src/pages/forms.vue')
+const lock = () => import('/src/pages/lock.vue')
+const eduvidual = () => import('/src/pages/eduvidual.vue')
+const microsoft365 = () => import('/src/pages/microsoft365.vue')
+const website = () => import('/src/pages/website.vue')
+const rdpview = () => import('/src/pages/rdpview.vue')
 
 
 import config from '../../main/config.js';
