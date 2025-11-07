@@ -76,4 +76,13 @@ vApp.use(VueSweetalert2, options)
 // wait until router is ready before mounting to ensure hydration match
 router.isReady().then(() => {
     vApp.mount('#app')
+    
+    // Hide initial loading overlay from index.html with fade-out (works for all views)
+    const initialOverlay = document.getElementById('initial-loading-overlay');
+    if (initialOverlay) {
+        initialOverlay.classList.add('fade-out');
+        setTimeout(() => {
+            initialOverlay.style.display = 'none';
+        }, 300);
+    }
 })

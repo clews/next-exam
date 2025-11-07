@@ -1068,16 +1068,7 @@ export default {
     async mounted() {  
         document.querySelector("#statusdiv").style.visibility = "hidden";
 
-        
-        // Hide initial loading overlay from index.html with fade-out
         this.isLoading = false;
-        const initialOverlay = document.getElementById('initial-loading-overlay');
-        if (initialOverlay) {
-            initialOverlay.classList.add('fade-out');
-            setTimeout(() => {
-                initialOverlay.style.display = 'none';
-            }, 300);
-        }
 
         // Fetch info asynchronously without blocking
         this.fetchInfo();
