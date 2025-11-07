@@ -120,7 +120,22 @@ function enableRestrictions(winhandler){
      ****************************************/
     if (process.platform === 'linux') {
         
-        appsToClose.forEach(app => { childProcess.exec(`pgrep ${app} | xargs kill -9`, (error) => { }); });  // pgrep zum Finden der PID, dann kill zum Beenden des Prozesses
+        try {
+            appsToClose.forEach(app => {
+                // Use pgrep to find processes by name (case-insensitive, process name only, not full command line)
+                // Without -f flag, pgrep only searches process names, not command lines
+                // This avoids killing processes that only contain the app name in their command line (e.g. Cursor containing "chrome")
+                childProcess.exec(`pgrep -i "${app}" | xargs -r kill -9`, (error) => {
+                    if (!error) { // success - process was found and killed
+                        log.info(`platformrestrictions @ enableRestrictions: closed ${app}`);
+                    }
+                    // code 1 means no process found, which is fine - no logging
+                    // other errors are also ignored as requested
+                });
+            });
+        } catch (err) {
+            // silently ignore errors
+        }
 
         //////////////
         // PLASMASHELL
@@ -248,9 +263,21 @@ function enableRestrictions(winhandler){
 
         try {
             appsToClose.forEach(app => {
-                childProcess.exec(`taskkill /F /IM "${app}.exe" /T`, (error, stderr, stdout) => {}); // taskkill-Befehl für Windows
+                // Escape app name for PowerShell - replace single quotes with double single quotes
+                const escapedApp = app.replace(/'/g, "''");
+                // PowerShell command: set app name as variable first to avoid string interpolation issues
+                // Uses -ErrorAction SilentlyContinue to handle access denied and other errors gracefully
+                const command = `powershell -NoProfile -Command "$appName = '${escapedApp}'; try { $procs = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -ilike ('*' + $appName + '*') }; if ($procs -and $procs.Count -gt 0) { $procs | Stop-Process -Force -ErrorAction SilentlyContinue; Write-Output 'killed' } } catch { }"`;
+                childProcess.exec(command, (error, stdout, stderr) => {
+                    if (!error && stdout && stdout.trim().includes('killed')) { // success - process was found and killed
+                        log.info(`platformrestrictions @ enableRestrictions: closed ${app}`);
+                    }
+                    // no process found or other errors are silently ignored
+                });
             });
-        } catch (err){log.error(`platformrestrictions @ enableRestrictions (win taskkill): ${err}`);}
+        } catch (err) {
+            // silently ignore errors
+        }
           
 
 

@@ -32,16 +32,28 @@ import * as fsExtra from 'fs-extra';
 import ip from 'ip'
 import { gateway4sync } from 'default-gateway';
 import { Worker } from 'worker_threads';
-
 import WindowHandler from './scripts/windowhandler.js'
 import CommHandler from './scripts/communicationhandler.js'
 import IpcHandler from './scripts/ipchandler.js'
-
-
 import { updateSystemTray } from './scripts/traymenu.js'
-
 import JreHandler from './scripts/jre-handler.js';
 JreHandler.init()
+
+
+
+app.commandLine.appendSwitch('lang', 'de');
+app.commandLine.appendSwitch('enable-unsafe-swiftshader');
+app.commandLine.appendSwitch('log-level', '3'); // 3 = WARN, 2 = ERROR, 1 = INFO
+
+if (process.platform === 'linux'){
+    app.commandLine.appendSwitch('disable-features', 'VaapiVideoDecoder,OutOfProcessRasterization,CanvasOopRasterization'); // disable fragile GPU features
+    app.commandLine.appendSwitch('disable-zero-copy'); 
+}
+else if (process.platform === 'darwin'){
+    app.commandLine.appendSwitch('enable-features', 'Metal,CanvasOopRasterization');  // macos only
+}
+
+
 
 
 
@@ -69,23 +81,21 @@ log.verbose(`main: -------------------`)
 log.info(`main: Logfilelocation at ${platformDispatcher.logfile}`)
 platformDispatcher.messages.forEach(message => { log.debug(message) });
 
+// log electron version and other platform information
+log.debug(`main: Electron version: ${process.versions.electron}`)
+log.debug(`main: Chromium version: ${process.versions.chrome}`)
+log.debug(`main: Node version: ${process.versions.node}`)
+log.debug(`main: V8 version: ${process.versions.v8}`)
+log.debug(`main: OS: ${process.platform} ${process.arch}`)
+log.debug(`main: Arch: ${process.arch}`)
+
+
 WindowHandler.init(multicastClient, config)  // mainwindow, examwindow, blockwindow
 CommHandler.init(multicastClient, config)    // starts "beacon" intervall and fetches information from the teacher - acts on it (startexam, stopexam, sendfile, getfile)
 IpcHandler.init(multicastClient, config, WindowHandler, CommHandler)  //controll all Inter Process Communication
 
 // Prevents Electron from creating the default menu
 Menu.setApplicationMenu(null);
-app.commandLine.appendSwitch('lang', 'de');
-app.commandLine.appendSwitch('enable-unsafe-swiftshader');
-
-
-if (process.platform === 'linux'){
-    app.commandLine.appendSwitch('disable-features', 'VaapiVideoDecoder,OutOfProcessRasterization,CanvasOopRasterization'); // disable fragile GPU features
-    app.commandLine.appendSwitch('disable-zero-copy'); 
-}
-else if (process.platform === 'darwin'){
-    app.commandLine.appendSwitch('enable-features', 'Metal,CanvasOopRasterization');  // macos only
-}
 
 
 if (!app.requestSingleInstanceLock()) {  // allow only one instance of the app per client
@@ -193,8 +203,6 @@ process.emitWarning = (warning, options) => {
 
 
 
- // Optional additional control over console errors
-app.commandLine.appendSwitch('log-level', '3'); // 3 = WARN, 2 = ERROR, 1 = INFO
 
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => { // SSL/TLS: this is the self signed certificate support
     event.preventDefault(); // On certificate error we disable default behaviour (stop loading the page)

@@ -150,7 +150,7 @@ class WindowHandler {
 
 
     /**
-     * this is the windows splashscreen
+     * this is an easter egg
      */
     createEasterWin() {
         this.easterwin = new BrowserWindow({
@@ -183,11 +183,24 @@ class WindowHandler {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /**
      * BlockWindow (to cover additional screens)
      * @param display 
      */
-
     newBlockWin(display) {
         let blockwin = new BrowserWindow({
             x: display.bounds.x + 0,
@@ -244,9 +257,7 @@ class WindowHandler {
             blockwin.setKiosk(true); // Kiosk = "take over main screen". on macos that's why we use fullScreen workaround with event listener
         }
         blockwin.moveTop();
-
         blockwin.display = display
-
         this.blockwindows.push(blockwin)
     }
 
@@ -257,31 +268,86 @@ class WindowHandler {
         //log.info(`windowhandler @ initBlockWindows: found ${displays.length} displays`)
         
         if (!this.config.development) {  // lock all screens
-            for (let display of displays){
-                const alreadyExists = this.blockwindows.some(bw => bw.display?.id === display.id);
-                if (!alreadyExists) {
-                    log.info("windowhandler @ initBlockWindows: create blockwin on:",display.id)
-                    this.newBlockWin(display)  // add blockwindows for all displays
+            // Wait for exam window to be visible and positioned (important for Wayland/KWin)
+            if (this.examwindow && !this.examwindow.isDestroyed()) {
+                let retries = 0
+                const maxRetries = 10
+                while (!this.examwindow.isVisible() && retries < maxRetries) {
+                    await this.sleep(100)
+                    retries++
+                }
+                // Additional wait to ensure positioning is complete on Wayland
+                await this.sleep(200)
+            }
+            
+            // Get all existing windows and determine their displays
+            const usedDisplayIds = new Set()
+            
+            // Check exam window display
+            if (this.examwindow && !this.examwindow.isDestroyed()) {
+                try {
+                    const bounds = this.examwindow.getBounds()
+                    const display = screen.getDisplayMatching(bounds)
+                    usedDisplayIds.add(display.id)
+                    log.info(`windowhandler @ initBlockWindows: exam window is on display ${display.id}`)
+                } catch (err) {
+                    log.error(`windowhandler @ initBlockWindows: error getting exam window display: ${err}`)
                 }
             }
+            
+            // Check block windows displays
+            for (const blockwin of this.blockwindows) {
+                if (blockwin && !blockwin.isDestroyed()) {
+                    try {
+                        const bounds = blockwin.getBounds()
+                        const display = screen.getDisplayMatching(bounds)
+                        usedDisplayIds.add(display.id)
+                        log.info(`windowhandler @ initBlockWindows: block window found on display ${display.id}`)
+                    } catch (err) {
+                        log.error(`windowhandler @ initBlockWindows: error getting block window display: ${err}`)
+                    }
+                }
+            }
+            
+            // Create block windows for displays that don't have exam or block windows
+            for (let display of displays){
+                if (usedDisplayIds.has(display.id)) {
+                    log.info(`windowhandler @ initBlockWindows: skipping display ${display.id} - already has exam or block window`)
+                    continue
+                }
+                
+                log.info("windowhandler @ initBlockWindows: create blockwin on:",display.id)
+                this.newBlockWin(display)  // add blockwindows for displays without exam window
+            }
+            
             await this.sleep(1000)
             this.blockwindows.forEach( (blockwin) => {
-                blockwin.moveTop();
+                if (blockwin && !blockwin.isDestroyed()) {
+                    blockwin.moveTop();
+                }
             })
         }
     }
 
 
-    //returns true if a number is within tolerance 
-    isApproximatelyEqual(x1, x2, tolerance = 4) {
-        return Math.abs(x1 - x2) <= tolerance;
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * Screenlock Window (to cover the mainscreen) - block students from working
      * @param display 
      */
-
     createScreenlockWindow(display) {
         let screenlockWindow = new BrowserWindow({
             show: false,
@@ -372,6 +438,15 @@ class WindowHandler {
             examtype = "editor" 
         } 
         
+        // Always use primary display for exam window
+        if (!primarydisplay || !primarydisplay.bounds || !primarydisplay.id) {
+            primarydisplay = screen.getPrimaryDisplay()
+            if (!primarydisplay || !primarydisplay.bounds) {
+                const displays = screen.getAllDisplays()
+                primarydisplay = displays[0] || primarydisplay
+            }
+        }
+        
         let px = 0
         let py = 0
         if (primarydisplay && primarydisplay.bounds && primarydisplay.bounds.x) {
@@ -433,6 +508,14 @@ class WindowHandler {
                 if (!this.isWayland){ this.checkWindowInterval.start() } 
                 enableRestrictions(this)
                 await this.sleep(2000)
+                this.examwindow.focus()
+                
+                // Initialize block windows after exam window is fully positioned (important for Wayland/KWin)
+                // Wait a bit more to ensure window positioning is complete
+                await this.sleep(500)
+                await this.initBlockWindows()
+                // Bring exam window to front above all block windows
+                this.examwindow.moveTop()
                 this.examwindow.focus()
             }
         })
@@ -731,6 +814,14 @@ class WindowHandler {
 
 
 
+
+
+
+
+
+
+    
+
     /**
      * the main window
      */
@@ -763,7 +854,7 @@ class WindowHandler {
             minHeight: 600,
             resizable: false, // verhindert das Ändern der Größe    electron bug: >> https://github.com/electron/electron/issues/44755
             fullscreenable: false, // verhindert den Vollbildmodus - wichtig für macos denn wenn auf macos das mainwindow auf fullscreen ist greift beim examwindow der kiosk mode nicht 
-        
+           
             show: false,
             webPreferences: {
                 preload: join(__dirname, '../preload/preload.cjs'),
@@ -792,20 +883,20 @@ class WindowHandler {
             log.info('windowhandler @ createMainWindow: did-finish-load - showing window')
             if (!this.mainwindow) return;
             
+     
+            // Note: KDE Plasma may ignore setBounds() and position windows based on mouse cursor location
+            if (primarydisplay && primarydisplay.bounds) {
+                const centerX = primarydisplay.bounds.x + Math.floor((primarydisplay.bounds.width - windowWidth) / 2)
+                const centerY = primarydisplay.bounds.y + Math.floor((primarydisplay.bounds.height - windowHeight) / 2)
+                this.mainwindow.setBounds({ x: centerX, y: centerY, width: windowWidth, height: windowHeight })
+                
+            }
+
             this.mainwindow.show()
             this.mainwindow.setVisibleOnAllWorkspaces(true)
             this.mainwindow.focus()
             this.mainwindow.moveTop()
             
-            // Note: KDE Plasma may ignore setBounds() and position windows based on mouse cursor location
-            // This is a known limitation of KDE Plasma's window manager
-            if (primarydisplay && primarydisplay.bounds) {
-                const centerX = primarydisplay.bounds.x + Math.floor((primarydisplay.bounds.width - windowWidth) / 2)
-                const centerY = primarydisplay.bounds.y + Math.floor((primarydisplay.bounds.height - windowHeight) / 2)
-                this.mainwindow.setBounds({ x: centerX, y: centerY, width: windowWidth, height: windowHeight })
-                this.mainwindow.setPosition(centerX, centerY)
-            }
-
         })
         
      

@@ -707,7 +707,7 @@ const __dirname = import.meta.dirname;
         if (WindowHandler.screenlockwindows.length == 0){  // why do we check? because exammode is left if the server connection gets lost but students could reconnect while the exam window is still open and we don't want to create a second one
             this.multicastClient.clientinfo.screenlock = true
             for (let display of displays){
-                WindowHandler.createScreenlockWindow(display)  // add blockwindows for additional displays
+                WindowHandler.createScreenlockWindow(display)  // add screenlock windows for additional displays
             } 
         }
     }
@@ -776,6 +776,11 @@ const __dirname = import.meta.dirname;
                     enableRestrictions(WindowHandler)
                     await this.sleep(2000) // wait an additional 2 sec for windows restrictions to kick in (they steal focus)
                     WindowHandler.addBlurListener();
+                    // For reconnect: initialize block windows after window is repositioned
+                    await this.sleep(500)
+                    await WindowHandler.initBlockWindows()
+                    WindowHandler.examwindow.moveTop()
+                    WindowHandler.examwindow.focus()
                 }   
             }
             catch (e) { //examwindow variable is still set but the window is not managable anymore (manually closed in dev mode?)
@@ -788,20 +793,11 @@ const __dirname = import.meta.dirname;
                 return  // in that case.. we are finished here !
             }
         }
-
-        if (WindowHandler.examwindow){
-            await WindowHandler.initBlockWindows()
-            // Bring exam window to front above all block windows
-            WindowHandler.examwindow.moveTop();
-            WindowHandler.examwindow.focus();
-        }
+        // Note: For new exam windows, initBlockWindows() is called in did-finish-load handler
+        // to ensure window is fully positioned (important for Wayland/KWin)
     }
 
 
-    //returns true if a number is within tolerance 
-    isApproximatelyEqual(x1, x2, tolerance = 4) {
-        return Math.abs(x1 - x2) <= tolerance;
-    }
 
 
 
