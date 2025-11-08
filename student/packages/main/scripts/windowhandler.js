@@ -481,7 +481,7 @@ class WindowHandler {
             autoHideMenuBar: true,
             minimizable: false,
             visibleOnAllWorkspaces: true,
-            kiosk: true,
+            kiosk: this.config.development ? false : true,
             show: true,
             transparent: false,
             icon: join(__dirname, '../../public/icons/icon.png'),

@@ -338,11 +338,14 @@ export async function loadImage(file, base64=false){
  * @param {*} file the name of the audiofile to be played
  */
 export async function playAudio(file, base64=false) {
-    let audioFile = this.audiofiles.find(obj => obj.name === file);  // search for file in this.audiofiles - get object
+    // get filename string for both base64 and non-base64 cases
+    const filename = base64 ? file.filename : file;
+    let audioFile = this.audiofiles.find(obj => obj.name === filename);  // search for file in this.audiofiles - get object
     this.LTdisable()  // close langugagetool
 
-    if (!audioFile && base64){
-        audioFile = {name: file.filename, playbacks: this.serverstatus.examSections[this.serverstatus.activeSection].audioRepeat}
+    if (!audioFile){
+        // create audioFile object if it doesn't exist (for both base64 and non-base64 files)
+        audioFile = {name: filename, playbacks: this.serverstatus.examSections[this.serverstatus.activeSection].audioRepeat}
         this.audiofiles.push(audioFile)
     }
 
@@ -365,7 +368,7 @@ export async function playAudio(file, base64=false) {
                 <span class="col-3" style="">${this.$t("editor.audionotallowed")}</span> 
             `,
             didRender: () => {
-                document.getElementById('soundtest').onclick = () => soundtest();
+                document.getElementById('soundtest').onclick = () => soundtest(this);
             }
         }).then(async (result) => {
             if (result.isConfirmed) {
@@ -378,11 +381,11 @@ export async function playAudio(file, base64=false) {
                             this.audioSource = `data:audio/mp3;base64,${base64Data}`;
                             audioPlayer.load(); // Lädt die neue Quelle
                             audioPlayer.play().then(() => { 
-                                console.log('Playback started');
+                                console.log('filehandler @ playAudio: Playback started');
                                 audioFile.playbacks -= 1
                             }).catch(e => { console.error('Playback failed:', e); });
-                        } else { console.error('Keine Daten empfangen'); }
-                    } catch (error) { console.error('Fehler beim Empfangen der MP3-Datei:', error); }   
+                        } else { console.error('filehandler @ playAudio: Keine Daten empfangen'); }
+                    } catch (error) { console.error('filehandler @ playAudio: Fehler beim Empfangen der MP3-Datei:', error); }   
                 }
             } 
         }); 
@@ -397,12 +400,12 @@ export async function playAudio(file, base64=false) {
             if (base64Data) {
                 this.audioSource = `data:audio/mpeg;base64,${base64Data}`;
                 audioPlayer.load(); // Lädt die neue Quelle
-            } else { console.error('Keine Daten empfangen'); }
-        } catch (error) { console.error('Fehler beim Empfangen der MP3-Datei:', error); } 
+            } else { console.error('filehandler @ playAudio: Keine Daten empfangen'); }
+        } catch (error) { console.error('filehandler @ playAudio: Fehler beim Empfangen der MP3-Datei:', error); } 
     }
 }
 
-async function soundtest(){
+async function soundtest(context){
     try {
         const base64Data = await ipcRenderer.invoke('getAudioFile', 'attention.wav', true);
         if (base64Data) {
@@ -413,17 +416,17 @@ async function soundtest(){
                 soundtest.classList.remove('btn-info')
             }
             
-            this.audioSource = `data:audio/mp3;base64,${base64Data}`;
+            context.audioSource = `data:audio/mp3;base64,${base64Data}`;
             audioPlayer.load(); // Lädt die neue Quelle
             audioPlayer.play().then(async () => { 
-                await this.sleep(2000)
+                await context.sleep(2000)
                 if (soundtest){
                     soundtest.classList.remove('btn-success')
                     soundtest.classList.add('btn-info')
                 }
-            }).catch(e => { console.error('Playback failed:', e); });
-        } else { console.error('Keine Daten empfangen'); }
-    } catch (error) { console.error('Fehler beim Empfangen der MP3-Datei:', error); }   
+            }).catch(e => { console.error('filehandler @ soundtest: Playback failed:', e); });
+        } else { console.error('filehandler @ soundtest: Keine Daten empfangen'); }
+    } catch (error) { console.error('filehandler @ soundtest: Fehler beim Empfangen der MP3-Datei:', error); }   
 }
 
 
@@ -453,7 +456,7 @@ export async function loadGGB(file, base64=false){
                     const ggbApplet = ggbIframe.contentWindow.ggbApplet;
                     ggbApplet.setBase64(base64GgbFile);
                 } else {
-                    console.error('Error loading file');
+                    console.error('filehandler @ loadGGB: Error loading file');
                 }
             }
             else {
