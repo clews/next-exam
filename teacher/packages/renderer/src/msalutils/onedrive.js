@@ -24,14 +24,20 @@ async function uploadselect() {
                 <label class="form-check-label" for="checkboxsuggestions"> ${this.$t("dashboard.replace")} </label> <br>
             </div>`,
         preConfirm: () => {
-            
+            // Get checkbox value before dialog closes
+            const replaceCheckbox = document.getElementById('replace');
+            if (replaceCheckbox) {
+                this.replaceMSOfile = replaceCheckbox.checked;
+            } else {
+                this.replaceMSOfile = false;
+            }
         }
     })
     .then(async (input) => {
         if (!input.value) { this.status(this.$t("dashboard.nofiles")); return }
         
         //should we replace all files in the teachers onedrive folder for this exam name? (careful this could delete all of the students work - download it in addition to the lokal workfolder!
-        this.replaceMSOfile =  document.getElementById('replace').checked; 
+        // replaceMSOfile is already set in preConfirm before dialog closes 
         this.status(this.$t("dashboard.uploadfiles"));
 
         //check for allowed file extension again

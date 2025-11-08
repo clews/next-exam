@@ -486,6 +486,7 @@ export async function getExamMaterials(){
         // set up webview blocking for the webviewpane
         const webviewPane = document.getElementById('safebrowser');
         if (webviewPane) {
+            console.log('filehandler @ getExamMaterials: setting WebviewPane dom-ready event to block websites');
             webviewPane.addEventListener('dom-ready', async () => {  // content id can only be accessed after dom-ready event
                 if (webviewPane.getWebContentsId) {
                     const guestId = webviewPane.getWebContentsId();
@@ -495,7 +496,7 @@ export async function getExamMaterials(){
                     }
                 }
             }, { once: true });
-            console.log('filehandler @ getExamMaterials: waiting for WebviewPane dom-ready event');
+            
         } else {
             console.log('filehandler @ getExamMaterials: WebviewPane not in DOM');
         }

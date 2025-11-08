@@ -94,5 +94,28 @@
         padding: 0px !important;
     }
 
+
+
+#pdfembed {
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 0px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 15px rgba(22, 9, 9, 0.5);
+    border-radius: 6px;
+    background-size: 100% 100%;  
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.embed-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: 30px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: flex-start;
+}
+
+
 </style>
   

@@ -4,8 +4,8 @@
  */
 
 const config = {
-    development: false,  // disable kiosk mode on exam mode and other stuff (autofill input fields)
-    showdevtools: false,
+    development: true,  // disable kiosk mode on exam mode and other stuff (autofill input fields)
+    showdevtools: true,
     useBundledJRE: true,
     bipIntegration: false,
     bipDemo: false,
@@ -27,7 +27,7 @@ const config = {
     isPuavo: false,
     
     version: '1.1.0.10',
-    buildDate: '20251107',
+    buildDate: '20251108',
     buildNumber: '10',
     info: 'pre-release'
 }
