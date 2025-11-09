@@ -31,12 +31,12 @@ import fs from 'fs'
 import * as fsExtra from 'fs-extra';
 import ip from 'ip'
 import { gateway4sync } from 'default-gateway';
-import { Worker } from 'worker_threads';
 import WindowHandler from './scripts/windowhandler.js'
 import CommHandler from './scripts/communicationhandler.js'
 import IpcHandler from './scripts/ipchandler.js'
 import { updateSystemTray } from './scripts/traymenu.js'
 import JreHandler from './scripts/jre-handler.js';
+import { checkParentProcess } from './scripts/checkparent.js';
 JreHandler.init()
 
 
@@ -273,17 +273,12 @@ app.whenReady()
 
     if (!config.development){
 
-
-
         updateSystemTray('de');
         
-
         // this checks if the app was started from within a browser (directly after download)
-        const runCheckParentInWorker = () => {
-            const workerPath = path.join(__dirname, '../../public', 'checkparent.worker.js');
-            const worker = new Worker(workerPath, { type: 'module' });
-        
-            worker.on('message', (result) => {
+        (async () => {
+            try {
+                const result = await checkParentProcess();
                 if (!result.success) {
                     log.error('main @ checkParent:', result.error);
                     return;
@@ -302,13 +297,10 @@ app.whenReady()
                 } else {
                     log.info('main @ checkparent: Parent Process Check OK');
                 }
-            });
-        
-            worker.on('error', (error) => {
-                log.error('main @ checkParent worker error:', error);
-            });
-        };
-        runCheckParentInWorker();
+            } catch (error) {
+                log.error('main @ checkParent error:', error);
+            }
+        })();
     }
 
   
@@ -317,26 +309,16 @@ app.whenReady()
     globalShortcut.register('F5', () => {});  //reload page
     globalShortcut.register('CommandOrControl+Shift+R', () => {});
     globalShortcut.register('Alt+F4', () => {});  //exit app
- 
     globalShortcut.register('CommandOrControl+W', () => {});
     globalShortcut.register('CommandOrControl+Q', () => {});  //quit
     globalShortcut.register('CommandOrControl+D', () => {});  //show desktop
     globalShortcut.register('CommandOrControl+L', () => {});  //lockscreen
     globalShortcut.register('CommandOrControl+P', () => {});  //change screen layout
+    globalShortcut.register('Alt+Left', () => {  return false });  // Navigation attempt blocked
 
-    if (!config.development){
-    }
-    else { 
+    if (config.development){
         globalShortcut.register('CommandOrControl+Shift+G', () => {  if (global && global.gc){ global.gc({type:'mayor',execution: 'async'}); global.gc({type:'minor',execution: 'async'});  }});
-        globalShortcut.register('CommandOrControl+Shift+D', () => {
-            const win = BrowserWindow.getFocusedWindow()
-            if (win) {
-                win.webContents.toggleDevTools()
-            }
-        })
+        globalShortcut.register('CommandOrControl+Shift+T', () => {  const win = BrowserWindow.getFocusedWindow(); if (win) { win.webContents.toggleDevTools() }});
     }
 
-    globalShortcut.register('Alt+Left', () => {
-        // Navigation attempt blocked
-    });
 })

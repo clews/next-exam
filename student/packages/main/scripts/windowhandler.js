@@ -291,7 +291,6 @@ class WindowHandler {
             // This ensures the screen is reserved even if the window isn't fully initialized yet
             if (this.examDisplayId) {
                 usedDisplayIds.add(this.examDisplayId)
-                log.info(`windowhandler @ initBlockWindows: using reserved exam display ${this.examDisplayId}`)
             }
             
             // Always exclude primary display (exam window location)

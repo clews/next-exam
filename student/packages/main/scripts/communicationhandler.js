@@ -143,7 +143,7 @@ const __dirname = import.meta.dirname;
         this.timer++   // we use timer to time loops with different intervals without introducing new unneccesary schedulers
         if (this.timer % 20 === 0 ){  // run every 20*5 (updateloop) seconds
 
-            const usesRemoteAssistant = runRemoteCheck(process.platform)
+            const usesRemoteAssistant = await runRemoteCheck(process.platform)
 
             if (usesRemoteAssistant) {
                 log.warn('main @ ready: Possible remote assistance detected');
