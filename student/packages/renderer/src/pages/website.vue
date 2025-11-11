@@ -429,14 +429,6 @@ export default {
             if (this._onDomReady) {
                 webview.removeEventListener('dom-ready', this._onDomReady);
             }
-            // Remove webview from DOM to prevent crashes when window closes
-            try {
-                if (webview.parentNode) {
-                    webview.parentNode.removeChild(webview);
-                }
-            } catch (err) {
-                console.warn('website @ beforeUnmount: error removing webview from DOM:', err);
-            }
         }
         
         // Clean up preview click listener
