@@ -332,14 +332,46 @@ export default {
 
                     })();  
                 `);
+                
+                // In neueren Electron-Versionen muss will-navigate auf webContents registriert werden
+                try {
+                    const webContents = webview.getWebContents();
+                    if (webContents && !webContents.isDestroyed()) {
+                        // Remove old listener if exists
+                        webContents.removeAllListeners('will-navigate');
+                        // Add will-navigate listener to webContents
+                        webContents.on('will-navigate', this._onWillNavigate);
+                        console.log('website @ dom-ready: will-navigate listener registered on webContents');
+                    }
+                } catch (error) {
+                    console.log('website @ dom-ready: could not access webContents, using webview event:', error);
+                    // Fallback to webview event
+                    webview.addEventListener('will-navigate', this._onWillNavigate);
+                }
             };
             webview.addEventListener('dom-ready', this._onDomReady);
+            
+            // Also try to register on did-attach-webview as fallback
+            webview.addEventListener('did-attach-webview', (event) => {
+                try {
+                    const webContents = event.webContents;
+                    if (webContents && !webContents.isDestroyed()) {
+                        webContents.removeAllListeners('will-navigate');
+                        webContents.on('will-navigate', this._onWillNavigate);
+                        console.log('website @ did-attach-webview: will-navigate listener registered on webContents');
+                    }
+                } catch (error) {
+                    console.log('website @ did-attach-webview: error registering listener:', error);
+                }
+            });
 
                     
             // Event abfangen, wenn eine Navigation beginnt
-            this._onWillNavigate = (event) => {
-                if (!event.url.includes(this.url)){  //we block everything except pages that contain the following keyword-combinations
-                    console.log(event.url)
+            this._onWillNavigate = (event, url) => {
+                // Handle both event.url (webview event) and url parameter (webContents event)
+                const targetUrl = url || event.url;
+                if (!targetUrl.includes(this.url)){  //we block everything except pages that contain the following keyword-combinations
+                    console.log(targetUrl)
                  
                     const isValidUrl = (testUrl) => {
                         try {
@@ -381,27 +413,33 @@ export default {
                     };
 
                     //check if this an exception (subdomain, login, init) - if URL doesn't include either of these combinations - block! EXPLICIT is easier to read ;-)
-                    if ( isValidUrl(event.url) ) { console.log("webview @ will-navigate: url allowed") }  // allow subdomain
+                    if ( isValidUrl(targetUrl) ) { console.log("webview @ will-navigate: url allowed") }  // allow subdomain
                    
                     // allow microsoft login / google login / google accounts / 2fa activation / microsoft365 login / google lookup
-                    else if ( event.url.includes("login") && event.url.includes("Microsoft") )                                 { console.log("webview @ will-navigate: url allowed") }  // microsoft login
-                    else if ( event.url.includes("login") && event.url.includes("Google") )                                    { console.log("webview @ will-navigate: url allowed") }  // google login
-                    else if ( event.url.includes("accounts") && event.url.includes("google.com") )                             { console.log("webview @ will-navigate: url allowed") }  // google accounts
-                    else if ( event.url.includes("mysignins") && event.url.includes("microsoft") )                             { console.log("webview @ will-navigate: url allowed") }  // 2fa activation
-                    else if ( event.url.includes("account") && event.url.includes("windowsazure") )                            { console.log("webview @ will-navigate: url allowed") }  // microsoft braucht mehr contact information (telnr)
-                    else if ( event.url.includes("login") && event.url.includes("microsoftonline") )                           { console.log("webview @ will-navigate: url allowed") }  // microsoft365 login
-                    else if ( event.url.includes("lookup") && event.url.includes("google") )                                   { console.log("webview @ will-navigate: url allowed") }  // google lookup
-                    else if ( event.url.includes("bildung.gv.at") && event.url.includes("SAML2") )                                   { console.log("webview @ will-navigate: url allowed") }  // google lookup
-                    else if ( event.url.includes("id-austria.gv.at") && event.url.includes("authHandler") )                                   { console.log("webview @ will-navigate: url allowed") }  // google lookup
+                    else if ( targetUrl.includes("login") && targetUrl.includes("Microsoft") )                                 { console.log("webview @ will-navigate: url allowed") }  // microsoft login
+                    else if ( targetUrl.includes("login") && targetUrl.includes("Google") )                                    { console.log("webview @ will-navigate: url allowed") }  // google login
+                    else if ( targetUrl.includes("accounts") && targetUrl.includes("google.com") )                             { console.log("webview @ will-navigate: url allowed") }  // google accounts
+                    else if ( targetUrl.includes("mysignins") && targetUrl.includes("microsoft") )                             { console.log("webview @ will-navigate: url allowed") }  // 2fa activation
+                    else if ( targetUrl.includes("account") && targetUrl.includes("windowsazure") )                            { console.log("webview @ will-navigate: url allowed") }  // microsoft braucht mehr contact information (telnr)
+                    else if ( targetUrl.includes("login") && targetUrl.includes("microsoftonline") )                           { console.log("webview @ will-navigate: url allowed") }  // microsoft365 login
+                    else if ( targetUrl.includes("lookup") && targetUrl.includes("google") )                                   { console.log("webview @ will-navigate: url allowed") }  // google lookup
+                    else if ( targetUrl.includes("bildung.gv.at") && targetUrl.includes("SAML2") )                                   { console.log("webview @ will-navigate: url allowed") }  // google lookup
+                    else if ( targetUrl.includes("id-austria.gv.at") && targetUrl.includes("authHandler") )                                   { console.log("webview @ will-navigate: url allowed") }  // google lookup
 
                     else {
                         console.log("webview @ will-navigate: blocked leaving exam mode")
-                        console.log(`webview @ will-navigate: url: ${event.url}`)
-                        webview.stop()
+                        console.log(`webview @ will-navigate: url: ${targetUrl}`)
+                        event.preventDefault(); // Prevent navigation on webContents
+                        try {
+                            webview.stop(); // Fallback for webview element
+                        } catch (e) {
+                            // webview.stop() might not work on webContents event
+                        }
                     }
                 }
                 else { console.log("webview @ will-navigate: entered valid test environment")  }
             };
+            // Also register on webview element as fallback
             webview.addEventListener('will-navigate', this._onWillNavigate);
 
 
@@ -456,6 +494,17 @@ export default {
         // Clean up webview event listeners
         const webview = document.getElementById('webviewmain');
         if (webview) {
+            // Remove webContents listeners if they exist
+            try {
+                const webContents = webview.getWebContents();
+                if (webContents && !webContents.isDestroyed() && this._onWillNavigate) {
+                    webContents.removeAllListeners('will-navigate');
+                }
+            } catch (error) {
+                // webContents might not be accessible
+            }
+            
+            // Remove webview element listeners
             if (this._onWillNavigate) {
                 webview.removeEventListener('will-navigate', this._onWillNavigate);
             }
