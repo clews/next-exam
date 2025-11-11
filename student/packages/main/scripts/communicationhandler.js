@@ -867,7 +867,9 @@ const __dirname = import.meta.dirname;
                         }
                     })
                 }   
-      
+                await this.sleep(3000) 
+
+                
                 WindowHandler.examwindow.close(); 
                 WindowHandler.examwindow.destroy(); 
             }

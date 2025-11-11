@@ -100,7 +100,6 @@ childProcess.exec('echo $XDG_CURRENT_DESKTOP', (error, stdout, stderr) => {
 
 
 function enableRestrictions(winhandler){
-    return
     if (config.development) {return}
     
     log.info("platformrestrictions @ enableRestrictions: enabling platform restrictions")
@@ -372,7 +371,6 @@ function enableRestrictions(winhandler){
 
 
 function disableRestrictions(){
-    return
     if (config.development) {return}
     log.info("platformrestrictions @ disableRestrictions: removing restrictions...")
 
