@@ -859,16 +859,16 @@ const __dirname = import.meta.dirname;
 
 
                 // destroy devtools window
-                if (this.config.development){
+                if (this.config.development || this.config.showdevtools){
                     const allWebContents = webContents.getAllWebContents()                        // alle WebViews des Childs
                     for (const wc of allWebContents) {
-                        if (wc.hostWebContents?.id === WindowHandler.examwindow.webContents.id && wc.isDevToolsOpened?.()){
+                        if (WindowHandler.examwindow && wc.hostWebContents?.id === WindowHandler.examwindow.webContents.id && wc.isDevToolsOpened?.()){
                             log.info("communicationhandler @ endExam: destroying devtools window")
                             wc.closeDevTools()                                                 // DT des WebViews schließen (auch detached)
                         }
                     }
                     // Wait for all DevTools to be closed before closing the exam window
-                    await this.sleep(100)                                                       // ensure all closeDevTools() calls are completed
+                    await this.sleep(1000)                                                       // ensure all closeDevTools() calls are completed
                     if (WindowHandler.examwindow){
                         WindowHandler.examwindow.close(); 
                         WindowHandler.examwindow.destroy(); 

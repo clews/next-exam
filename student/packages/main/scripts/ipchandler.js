@@ -125,6 +125,143 @@ class IpcHandler {
               
         return true;
     });
+
+        // Helper function for common exception URLs (used by all exam modes)
+        const checkCommonExceptions = (targetUrl) => {
+            if (targetUrl.includes("login") && targetUrl.includes("Microsoft")) return true;
+            if (targetUrl.includes("login") && targetUrl.includes("Google")) return true;
+            if (targetUrl.includes("accounts") && targetUrl.includes("google.com")) return true;
+            if (targetUrl.includes("mysignins") && targetUrl.includes("microsoft")) return true;
+            if (targetUrl.includes("account") && targetUrl.includes("windowsazure")) return true;
+            if (targetUrl.includes("login") && targetUrl.includes("microsoftonline")) return true;
+            if (targetUrl.includes("lookup") && targetUrl.includes("google")) return true;
+            if (targetUrl.includes("bildung.gv.at") && targetUrl.includes("SAML2")) return true;
+            if (targetUrl.includes("id-austria.gv.at") && targetUrl.includes("authHandler")) return true;
+            return false;
+        };
+
+        // Unified IPC handler for webview blocking - supports website, eduvidual, forms, rdp modes
+        ipcMain.handle('start-blocking-for-website-webview', (event, { guestId, mode, allowedDomain, baseUrl, moodleTestId, moodleDomain, gformsTestId }) => {
+            const guest = webContents.fromId(Number(guestId));
+            if (!guest || guest.isDestroyed?.()) return false;
+          
+            // Remove old listeners to prevent duplicate registrations
+            guest.removeAllListeners('will-navigate');
+            
+            // URL validation function - different logic based on mode
+            const isUrlAllowed = (targetUrl) => {
+                if (mode === "website") {
+                    // WEBSITE mode: check domain matching
+                    if (!targetUrl || targetUrl.includes(baseUrl)) return true;
+                    
+                    try {
+                        const urlObj = new URL(targetUrl);
+                        const domain = urlObj.hostname;
+                        
+                        if (domain === allowedDomain) return true;
+                        if (domain.endsWith('.' + allowedDomain)) {
+                            const prefix = domain.slice(0, -(allowedDomain.length + 1));
+                            if (prefix && !prefix.includes('.') && /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(prefix)) {
+                                return true;
+                            }
+                        }
+                    } catch (error) {
+                        return false;
+                    }
+                } else if (mode === "eduvidual") {
+                    // EDUVIDUAL/MOODLE mode: check moodleTestId
+                    if (targetUrl.includes(moodleTestId)) {
+                        return true;
+                    }
+                    
+                    // Moodle-specific exceptions
+                    if (targetUrl.includes("startattempt.php") && targetUrl.includes(moodleDomain)) {
+                        return true; // moodledomain ohne testid
+                    }
+                    if (targetUrl.includes("processattempt.php") && targetUrl.includes(moodleDomain)) {
+                        return true; // moodledomain ohne testid
+                    }
+                    if (targetUrl.includes("logout") && targetUrl.includes(moodleDomain)) {
+                        return true;
+                    }
+                    if (targetUrl.includes("login") && targetUrl.includes("eduvidual")) {
+                        return true;
+                    }
+                    if (targetUrl.includes("login") && targetUrl.includes(moodleDomain)) {
+                        return true;
+                    }
+                    if (targetUrl.includes("policy") && targetUrl.includes(moodleDomain)) {
+                        return true;
+                    }
+                    if (targetUrl.includes("auth") && targetUrl.includes(moodleDomain)) {
+                        return true;
+                    }
+                    if (targetUrl.includes("SAML2") && targetUrl.includes("portal.tirol.gv.at")) {
+                        return true;
+                    }
+                    if (targetUrl.includes("login") && targetUrl.includes("portal.tirol.gv.at")) {
+                        return true;
+                    }
+                    if (targetUrl.includes("login") && targetUrl.includes("tirol.gv.at")) {
+                        return true;
+                    }
+                } else if (mode === "forms") {
+                    // FORMS mode: check gformsTestId
+                    if (targetUrl.includes(gformsTestId)) {
+                        return true;
+                    }
+                    
+                    // Google Forms-specific exceptions
+                    if (targetUrl.includes("docs.google.com") && targetUrl.includes("formResponse")) {
+                        return true;
+                    }
+                    if (targetUrl.includes("docs.google.com") && targetUrl.includes("viewscore")) {
+                        return true;
+                    }
+                } else if (mode === "rdp") {
+                    // RDP mode: allow all (or implement specific logic if needed)
+                    return true;
+                }
+                
+                // Common exception URLs (used by all modes)
+                return checkCommonExceptions(targetUrl);
+            };
+            
+            // Handle target="_blank" links and window.open - block BEFORE navigation
+            guest.setWindowOpenHandler(({ url }) => {
+                if (isUrlAllowed(url)) {
+                    log.info(`ipchandler @ start-blocking-for-website-webview [${mode}]: allowed window.open to`, url);
+                    guest.loadURL(url); // Open in same webview
+                    return { action: 'deny' }; // Prevent new window
+                } else {
+                    log.warn(`ipchandler @ start-blocking-for-website-webview [${mode}]: blocked window.open to`, url);
+                    return { action: 'deny' };
+                }
+            });
+            
+            // Handle will-navigate on webContents level - this fires BEFORE navigation happens
+            guest.on('will-navigate', (e, url) => {
+                if (!isUrlAllowed(url)) {
+                    log.warn(`ipchandler @ start-blocking-for-website-webview [${mode}]: blocked navigation to`, url);
+                    e.preventDefault(); // Block navigation completely - this happens BEFORE page loads
+                    guest.stop(); // Stop any loading immediately
+                } else {
+                    log.info(`ipchandler @ start-blocking-for-website-webview [${mode}]: allowed navigation to`, url);
+                }
+            });
+              
+            return true;
+        });
+
+        // Alias for eduvidual mode - redirects to unified handler
+        ipcMain.handle('start-blocking-for-eduvidual-webview', (event, { guestId, moodleTestId, moodleDomain }) => {
+            // Call the unified handler with eduvidual mode
+            const unifiedHandler = ipcMain.listeners('start-blocking-for-website-webview')[0];
+            if (unifiedHandler) {
+                return unifiedHandler(event, { guestId, mode: 'eduvidual', moodleTestId, moodleDomain });
+            }
+            return false;
+        });
           
 
     /**

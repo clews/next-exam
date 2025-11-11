@@ -162,8 +162,6 @@ export default {
             allowedDomain: null, // Extracted domain for navigation validation
             
             // Event listener references for cleanup
-            _onWillNavigate: null,
-            _onDidFinishLoad: null,
             _onDidStartLoading: null,
             _onDidStopLoading: null,
             _onDomReady: null,
@@ -305,10 +303,39 @@ export default {
                 const iframe = shadowRoot.querySelector('iframe');
                 if (iframe) { iframe.style.height = '100%'; } 
                 
-                // Register will-navigate event early, before webview loads
-                // This ensures it catches all navigation events including link clicks
-                webview.addEventListener('will-navigate', this._onWillNavigate);
-                console.log('website @ mounted: will-navigate listener registered early on webview element');
+                // Setup blocking in backend via IPC - this ensures events are caught early
+                const setupBackendBlocking = async () => {
+                    if (webview.getWebContentsId) {
+                        const guestId = webview.getWebContentsId();
+                        if (guestId) {
+                            try {
+                                await ipcRenderer.invoke('start-blocking-for-website-webview', { 
+                                    guestId, 
+                                    mode: 'website',
+                                    allowedDomain: this.allowedDomain,
+                                    baseUrl: this.url
+                                });
+                                console.log(`website @ mounted: backend blocking setup for webview ${guestId}`);
+                            } catch (error) {
+                                console.error('website @ mounted: failed to setup backend blocking', error);
+                            }
+                        }
+                    }
+                };
+                
+                // Try to setup blocking immediately, retry on dom-ready if needed
+                setupBackendBlocking().catch(() => {
+                    const retrySetup = () => {
+                        setTimeout(() => {
+                            setupBackendBlocking().catch(() => {
+                                console.warn('website @ mounted: backend blocking setup failed, will retry');
+                            });
+                        }, 100);
+                    };
+                    webview.addEventListener('dom-ready', retrySetup, { once: true });
+                });
+                
+                console.log('website @ mounted: backend blocking setup initiated');
             }
             
 
@@ -337,55 +364,17 @@ export default {
             
 
                          
-            // Helper function to check if URL is allowed (reused for did-navigate fallback)
-            this._isUrlAllowed = (targetUrl) => {
-                if (!targetUrl || targetUrl.includes(this.url)) { return true;  } // Allow URLs within base URL
-                
-                const isValidUrl = (testUrl) => {
-                    try {
-                        const testUrlObj = new URL(testUrl);
-                        const testDomain = testUrlObj.hostname;
-                        
-                        if (testDomain === this.allowedDomain) { return true;  }
-                        
-                        if (testDomain.endsWith('.' + this.allowedDomain)) {
-                            const prefix = testDomain.slice(0, -(this.allowedDomain.length + 1));
-                            if (prefix && !prefix.includes('.') && /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(prefix)) {
-                                return true;
-                            }
-                        }
-                        
-                        return false;
-                    } catch (error) {
-                        return false;
-                    }
-                };
-                
-                if (isValidUrl(targetUrl)) return true;
-                if (targetUrl.includes("login") && targetUrl.includes("Microsoft")) return true;
-                if (targetUrl.includes("login") && targetUrl.includes("Google")) return true;
-                if (targetUrl.includes("accounts") && targetUrl.includes("google.com")) return true;
-                if (targetUrl.includes("mysignins") && targetUrl.includes("microsoft")) return true;
-                if (targetUrl.includes("account") && targetUrl.includes("windowsazure")) return true;
-                if (targetUrl.includes("login") && targetUrl.includes("microsoftonline")) return true;
-                if (targetUrl.includes("lookup") && targetUrl.includes("google")) return true;
-                if (targetUrl.includes("bildung.gv.at") && targetUrl.includes("SAML2")) return true;
-                if (targetUrl.includes("id-austria.gv.at") && targetUrl.includes("authHandler")) return true;
-                
-                return false;
-            };
-            
             // Fallback: Use did-navigate to check and navigate back if URL is not allowed
             // This catches navigation that will-navigate might miss
-            this._onDidNavigate = (event) => {
-                const currentUrl = event.url || webview.getURL();
-                if (currentUrl && !this._isUrlAllowed(currentUrl)) {
-                    console.log("webview @ did-navigate: blocked navigation to", currentUrl);
-                    // Navigate back to allowed URL
-                    webview.loadURL(this.url);
-                }
-            };
-            webview.addEventListener('did-navigate', this._onDidNavigate);
+            // this._onDidNavigate = (event) => {
+            //     const currentUrl = event.url || webview.getURL();
+            //     if (currentUrl && !this._isUrlAllowed(currentUrl)) {
+            //         console.log("webview @ did-navigate: blocked navigation to", currentUrl);
+            //         // Navigate back to allowed URL
+            //         webview.loadURL(this.url);
+            //     }
+            // };
+            // webview.addEventListener('did-navigate', this._onDidNavigate);
 
             // loading events to hide css manipulation
             this._onDidStartLoading = () => { this.isLoading = true;   }; // Zeige das Overlay während des Ladens
@@ -410,16 +399,7 @@ export default {
         // Clean up webview by removing it from DOM to prevent crashes
         const webview = document.getElementById('webviewmain');
         if (webview) {
-            // Remove webview element listeners first
-            if (this._onWillNavigate) {
-                webview.removeEventListener('will-navigate', this._onWillNavigate);
-            }
-            if (this._onDidNavigate) {
-                webview.removeEventListener('did-navigate', this._onDidNavigate);
-            }
-            if (this._onDidFinishLoad) {
-                webview.removeEventListener('did-finish-load', this._onDidFinishLoad);
-            }
+            // Remove webview element listeners (blocking is handled in backend, but we still clean up local listeners)
             if (this._onDidStartLoading) {
                 webview.removeEventListener('did-start-loading', this._onDidStartLoading);
             }

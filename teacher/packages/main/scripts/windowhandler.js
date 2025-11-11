@@ -193,6 +193,21 @@ class WindowHandler {
             }
         })
 
+
+        // Block navigation on mainwindow.webContents to avoid any navigation away from the app except for internal links
+        this.mainwindow.webContents.on('will-navigate', (event, url) => {
+            event.preventDefault(); // Prevent navigation away from the app
+        });
+
+        this.mainwindow.webContents.on('new-window', (event, url) => {
+            event.preventDefault(); // Prevent new window from opening
+        });
+
+        this.mainwindow.webContents.setWindowOpenHandler(({ url }) => {
+            return { action: 'deny' }; // Prevent new window from opening
+        });
+
+
         this.mainwindow.on('close', async  (e) => {   //ask before closing
             if (!this.config.development && this.mainwindow?.webContents.getURL().includes("dashboard")) {
                 // do not close a running exam by accident 

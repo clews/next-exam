@@ -168,7 +168,6 @@ export default {
             webviewVisible: false,
             
             // Event listener references for cleanup
-            _onWillNavigate: null,
             _onDidFinishLoad: null,
             _onDidStartLoading: null,
             _onDidStopLoading: null,
@@ -228,83 +227,80 @@ export default {
                 const shadowRoot = webview.shadowRoot;
                 const iframe = shadowRoot.querySelector('iframe');
                 if (iframe) { iframe.style.height = '100%'; } 
-            }
-            
-            this._onDidFinishLoad = () => {
-
-                if (this.config.showdevtools) {webview.openDevTools();  }
-                const preloadScriptContent = `
-                    (function() {
-                        const css = \`
-                        * {transition: .1s !important;}
-                        .branding { display: none !important; }
-                        #header { display: none !important; }
-                        .drawer-left-toggle { display: none !important; }
-                    .drawer.drawer-right { top:0 !important; height: 100% !important;}
-                        #page-footer { display: none !important; }
-                        #theme_boost-drawers-courseindex { display: none !important; }
-                        #page.drawers {margin-top:0px !important;}
-                        #page-wrapper {padding-top:0px !important;}
-                        .navbar, #nav-drawer, #page-header {display: none !important;}
-                        body {margin-left: 0px !important;}
-                        #page {height: 100% !important}
-                        #page.drawers.show-drawer-left  {margin-left: 0px !important; padding-left: 3rem !important; }
-                        .bycs-header {display: none !important;}
-                        .mbsfooter {display: none !important;}
-                        \`;
-
-                        const style = document.createElement('style');
-                        style.type = 'text/css';
-                        style.innerHTML = css;
-                        document.head.appendChild(style);
-                    })();
-                `;
-                webview.executeJavaScript(preloadScriptContent)
-                .then(() => {     this.isLoading = false;  })  // Verberge das Overlay und zeige den Webview-Inhalt
-                .catch((err) => { this.isLoading = false;  })
-            };
-            webview.addEventListener('did-finish-load', this._onDidFinishLoad);
-            
-            
-            this._onDidStartLoading = () => { this.isLoading = true;   }; // Zeige das Overlay während des Ladens
-            this._onDidStopLoading = () => {   this.isLoading = false;  };           // Verberge das Overlay, wenn das Laden gestoppt ist
-            webview.addEventListener('did-start-loading', this._onDidStartLoading);
-            webview.addEventListener('did-stop-loading', this._onDidStopLoading);
-            
-            
-            // Event abfangen, wenn eine Navigation beginnt
-            this._onWillNavigate = (event) => {
-                //console.log(event.url)
-                if (!event.url.includes(this.moodleTestId)){  //we block everything whithout testID except pages that contain the following keyword-combinations
-                    console.log("checkung url: "+event.url)
-                    //check if this an exception (login, init) - if URL doesn't include either of these combinations - block! EXPLICIT is easier to read ;-)
-                    if ( event.url.includes("startattempt.php") && event.url.includes(this.moodleDomain) )        { console.log(" url allowed") }  // moodledomain ohne testid
-                    else if ( event.url.includes("processattempt.php") && event.url.includes(this.moodleDomain) ) { console.log(" url allowed") }  // moodledomain ohne testid
-                    else if ( event.url.includes("login") && event.url.includes("Microsoft") )                    { console.log(" url allowed") }  // microsoft365 login
-                    else if ( event.url.includes("mysignins") && event.url.includes("microsoft") )                { console.log(" url allowed") }  // 2fa activation
-                    else if ( event.url.includes("account") && event.url.includes("windowsazure") )               { console.log(" url allowed") }  // microsoft braucht mehr contact information (telnr)
-                    else if ( event.url.includes("login") && event.url.includes("Google") )                       { console.log(" url allowed") }
-                    else if ( event.url.includes("login") && event.url.includes("microsoftonline") )              { console.log(" url allowed") }  // microsoft365 login
-                    else if ( event.url.includes("accounts") && event.url.includes("google.com") )                { console.log(" url allowed") }
-                    else if ( event.url.includes("logout") && event.url.includes(this.moodleDomain) )             { console.log(" url allowed") }
-                    else if ( event.url.includes("lookup") && event.url.includes("google") )                      { console.log(" url allowed") }
-                    else if ( event.url.includes("login") && event.url.includes("eduvidual") )                    { console.log(" url allowed") }
-                    else if ( event.url.includes("login") && event.url.includes(this.moodleDomain) )              { console.log(" url allowed") }
-                    else if ( event.url.includes("policy") && event.url.includes(this.moodleDomain) )             { console.log(" url allowed") }
-                    else if ( event.url.includes("SAML2") && event.url.includes("portal.tirol.gv.at") )           { console.log(" url allowed") }
-                    else if ( event.url.includes("login") && event.url.includes("portal.tirol.gv.at") )           { console.log(" url allowed") }      
-                    else if ( event.url.includes("login") && event.url.includes("tirol.gv.at") )                  { console.log(" url allowed") }
-                    else if ( event.url.includes("auth") && event.url.includes(this.moodleDomain) )               { console.log(" url allowed") }
-                    else if ( event.url.includes("bildung.gv.at") && event.url.includes("SAML2") )                { console.log(" url allowed") }
-                    else if ( event.url.includes("id-austria.gv.at") && event.url.includes("authHandler") )       { console.log(" url allowed") }
-                    else {
-                        console.log("webview @ will-navigate: blocked leaving exam mode")
-                        webview.stop()
+                
+                // Setup blocking in backend via IPC - this ensures events are caught early
+                const setupBackendBlocking = async () => {
+                    if (webview.getWebContentsId) {
+                        const guestId = webview.getWebContentsId();
+                        if (guestId) {
+                            try {
+                                await ipcRenderer.invoke('start-blocking-for-website-webview', { 
+                                    guestId, 
+                                    mode: 'eduvidual',
+                                    moodleTestId: this.moodleTestId,
+                                    moodleDomain: this.moodleDomain
+                                });
+                                console.log(`eduvidual @ mounted: backend blocking setup for webview ${guestId}`);
+                            } catch (error) {
+                                console.error('eduvidual @ mounted: failed to setup backend blocking', error);
+                            }
+                        }
                     }
-                }
-                else { console.log("webview @ will-navigate: entered valid test environment")  }
-            };
-            webview.addEventListener('will-navigate', this._onWillNavigate);
+                };
+                
+                // Try to setup blocking immediately, retry on dom-ready if needed
+                setupBackendBlocking().catch(() => {
+                    const retrySetup = () => {
+                        setTimeout(() => {
+                            setupBackendBlocking().catch(() => {
+                                console.warn('eduvidual @ mounted: backend blocking setup failed, will retry');
+                            });
+                        }, 100);
+                    };
+                    webview.addEventListener('dom-ready', retrySetup, { once: true });
+                });
+                
+                console.log('eduvidual @ mounted: backend blocking setup initiated');
+                
+                this._onDidFinishLoad = () => {
+                    if (this.config.showdevtools) {webview.openDevTools();  }
+                    const preloadScriptContent = `
+                        (function() {
+                            const css = \`
+                            * {transition: .1s !important;}
+                            .branding { display: none !important; }
+                            #header { display: none !important; }
+                            .drawer-left-toggle { display: none !important; }
+                        .drawer.drawer-right { top:0 !important; height: 100% !important;}
+                            #page-footer { display: none !important; }
+                            #theme_boost-drawers-courseindex { display: none !important; }
+                            #page.drawers {margin-top:0px !important;}
+                            #page-wrapper {padding-top:0px !important;}
+                            .navbar, #nav-drawer, #page-header {display: none !important;}
+                            body {margin-left: 0px !important;}
+                            #page {height: 100% !important}
+                            #page.drawers.show-drawer-left  {margin-left: 0px !important; padding-left: 3rem !important; }
+                            .bycs-header {display: none !important;}
+                            .mbsfooter {display: none !important;}
+                            \`;
+
+                            const style = document.createElement('style');
+                            style.type = 'text/css';
+                            style.innerHTML = css;
+                            document.head.appendChild(style);
+                        })();
+                    `;
+                    webview.executeJavaScript(preloadScriptContent)
+                    .then(() => {     this.isLoading = false;  })  // Verberge das Overlay und zeige den Webview-Inhalt
+                    .catch((err) => { this.isLoading = false;  })
+                };
+                webview.addEventListener('did-finish-load', this._onDidFinishLoad);
+                
+                this._onDidStartLoading = () => { this.isLoading = true;   }; // Zeige das Overlay während des Ladens
+                this._onDidStopLoading = () => {   this.isLoading = false;  };           // Verberge das Overlay, wenn das Laden gestoppt ist
+                webview.addEventListener('did-start-loading', this._onDidStartLoading);
+                webview.addEventListener('did-stop-loading', this._onDidStopLoading);
+            }
         });
     },
     methods: { 
@@ -397,12 +393,9 @@ export default {
 
         document.body.removeEventListener('mouseleave', this.sendFocuslost);
         
-        // Clean up webview event listeners
+        // Clean up webview event listeners (blocking is handled in backend, but we still clean up local listeners)
         const webview = document.getElementById('webviewmain');
         if (webview) {
-            if (this._onWillNavigate) {
-                webview.removeEventListener('will-navigate', this._onWillNavigate);
-            }
             if (this._onDidFinishLoad) {
                 webview.removeEventListener('did-finish-load', this._onDidFinishLoad);
             }

@@ -143,7 +143,6 @@ export default {
             
             // Event listener references for cleanup
             _onDomReady: null,
-            _onWillNavigate: null,
             _onPreviewClick: null,
         }
     }, 
@@ -152,7 +151,7 @@ export default {
         this.currentFile = this.clientname
         this.entrytime = new Date().getTime()  
          
-        console.log(this.serverstatus)
+        // console.log(this.serverstatus)
 
         this.$nextTick(() => { // Code that will run only after the entire view has been rendered
            
@@ -177,41 +176,60 @@ export default {
 
 
             const webview = document.getElementById('gformswebview');
-            const shadowRoot = webview.shadowRoot;
-            const iframe = shadowRoot.querySelector('iframe');
-            if (iframe) { iframe.style.height = '100%'; }  // for some reason iframe height is only 200px
-             
-            this._onDomReady = () => {
-                if (config.showdevtools){ webview.openDevTools();   }
-                webview.executeJavaScript(`
-                    (() => {  // Anonyme Funktion für eigenen Scope sonst wird beim reload der page (absenden der form ) die variable erneut deklariert und failed
-                        const formElement = document.querySelector('form'); // Finden des <form> Elements
-                        const nextElement = formElement ? formElement.nextElementSibling : null;   //das element das wir ausblenden wollen hat keine id aber es kommt direkt nach der form
-                        if (nextElement) { nextElement.style.display = 'none'; }
-                        const element = document.querySelector('[aria-label="Problem an Google melden"]');  // Finden des Elements mit aria-label="Problem an Google melden"
-                        if (element) { element.style.display = 'none'; }
-                        const element2 = document.querySelector('[aria-label="Punktzahl ansehen"]');  // the button doesnt work anyways and doesnt make sense if questions have been answered with longtext
-                        if (element2) { element2.style.display = 'none'; }
-                    })();  // Sofortige Ausführung der anonymen Funktion
-                `);
-            };
-            webview.addEventListener('dom-ready', this._onDomReady);
-
-            // Event abfangen, wenn eine Navigation beginnt
-            this._onWillNavigate = (event) => {
-                if (!event.url.includes(this.serverstatus.gformsTestId)){   //we block everything except pages that contain the following keyword-combinations
-                    console.log(event.url)
-                    //check if this an exception (login, init) - if URL doesn't include either of these combinations - block! EXPLICIT is easier to read ;-)
-                    if ( event.url.includes("docs.google.com") && event.url.includes("formResponse") )           { console.log(" url allowed") }
-                    else if ( event.url.includes("docs.google.com") && event.url.includes("viewscore") )         { console.log(" url allowed") }
-                    else {
-                        console.log("blocked leaving exam mode")
-                        webview.stop()
+            if (webview) {
+                const shadowRoot = webview.shadowRoot;
+                const iframe = shadowRoot.querySelector('iframe');
+                if (iframe) { iframe.style.height = '100%'; }  // for some reason iframe height is only 200px
+                
+                // Setup blocking in backend via IPC - this ensures events are caught early
+                const setupBackendBlocking = async () => {
+                    if (webview.getWebContentsId) {
+                        const guestId = webview.getWebContentsId();
+                        if (guestId) {
+                            try {
+                                await ipcRenderer.invoke('start-blocking-for-website-webview', { 
+                                    guestId, 
+                                    mode: 'forms',
+                                    gformsTestId: this.gformsTestId
+                                });
+                                console.log(`forms @ mounted: backend blocking setup for webview ${guestId}`);
+                            } catch (error) {
+                                console.error('forms @ mounted: failed to setup backend blocking', error);
+                            }
+                        }
                     }
-                }
-                else {console.log("entered valid test environment")  }
-            };
-            webview.addEventListener('will-navigate', this._onWillNavigate);
+                };
+                
+                // Try to setup blocking immediately, retry on dom-ready if needed
+                setupBackendBlocking().catch(() => {
+                    const retrySetup = () => {
+                        setTimeout(() => {
+                            setupBackendBlocking().catch(() => {
+                                console.warn('forms @ mounted: backend blocking setup failed, will retry');
+                            });
+                        }, 100);
+                    };
+                    webview.addEventListener('dom-ready', retrySetup, { once: true });
+                });
+                
+                console.log('forms @ mounted: backend blocking setup initiated');
+                
+                this._onDomReady = () => {
+                    if (config.showdevtools){ webview.openDevTools();   }
+                    webview.executeJavaScript(`
+                        (() => {  // Anonyme Funktion für eigenen Scope sonst wird beim reload der page (absenden der form ) die variable erneut deklariert und failed
+                            const formElement = document.querySelector('form'); // Finden des <form> Elements
+                            const nextElement = formElement ? formElement.nextElementSibling : null;   //das element das wir ausblenden wollen hat keine id aber es kommt direkt nach der form
+                            if (nextElement) { nextElement.style.display = 'none'; }
+                            const element = document.querySelector('[aria-label="Problem an Google melden"]');  // Finden des Elements mit aria-label="Problem an Google melden"
+                            if (element) { element.style.display = 'none'; }
+                            const element2 = document.querySelector('[aria-label="Punktzahl ansehen"]');  // the button doesnt work anyways and doesnt make sense if questions have been answered with longtext
+                            if (element2) { element2.style.display = 'none'; }
+                        })();  // Sofortige Ausführung der anonymen Funktion
+                    `);
+                };
+                webview.addEventListener('dom-ready', this._onDomReady);
+            }
 
 
             // add some eventlisteners once
@@ -337,15 +355,12 @@ export default {
         this.clockinterval.stop() 
         document.body.removeEventListener('mouseleave', this.sendFocuslost);
         
-        // Clean up webview by removing it from DOM to prevent crashes
+        // Clean up webview by removing it from DOM to prevent crashes (blocking is handled in backend, but we still clean up local listeners)
         const webview = document.getElementById('gformswebview');
         if (webview) {
-            // Remove webview element listeners first
+            // Remove webview element listeners
             if (this._onDomReady) {
                 webview.removeEventListener('dom-ready', this._onDomReady);
-            }
-            if (this._onWillNavigate) {
-                webview.removeEventListener('will-navigate', this._onWillNavigate);
             }
             // Remove webview from DOM to prevent crashes when window closes
             try {

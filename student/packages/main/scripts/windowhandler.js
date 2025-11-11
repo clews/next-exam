@@ -49,6 +49,7 @@ class WindowHandler {
       this.bipwindow = null
       this.config = null
       this.multicastClient = null
+      this.exitDialogOpen = false  // prevent multiple exit dialogs from opening
     }
 
     init (mc, config) {
@@ -495,7 +496,7 @@ class WindowHandler {
             autoHideMenuBar: true,
             minimizable: false,
             visibleOnAllWorkspaces: true,
-            kiosk: this.config.development ? false : true,
+            kiosk: this.config.development ? false : false,
             show: true,
             transparent: false,
             icon: join(__dirname, '../../public/icons/icon.png'),
@@ -514,20 +515,23 @@ class WindowHandler {
             if (this.config.showdevtools) { this.examwindow.webContents.openDevTools()  }
             
             if (!this.config.development) {
-                this.examwindow.removeMenu()                 
-                this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) 
-                this.examwindow.setKiosk(true);
-              
-                await this.sleep(500)
-                await this.initBlockWindows()
-                this.examwindow.moveTop()
-                this.examwindow.focus()
-
-                if (!this.isWayland){ this.checkWindowInterval.start() } // constantly check if the active window is the examwindow - if not, bring it to front
-                enableRestrictions(this)  // disable keyboard shortcuts etc.
+                try {
+                    this.examwindow.removeMenu()                 
+                    this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) 
+                    //this.examwindow.setKiosk(true);
                 
-                await this.sleep(1000)  // do not set blur listener too early
-                this.addBlurListener()  // add blur listener to the examwindow
+                    await this.sleep(500)
+                    await this.initBlockWindows()
+                    this.examwindow.moveTop()
+                    this.examwindow.focus()
+
+                    if (!this.isWayland){ this.checkWindowInterval.start() } // constantly check if the active window is the examwindow - if not, bring it to front
+                    enableRestrictions(this)  // disable keyboard shortcuts etc.
+                    
+                    await this.sleep(1000)  // do not set blur listener too early
+                    this.addBlurListener()  // add blur listener to the examwindow
+                }
+                catch(e){ log.error("windowhandler @ did-finish-load: error in examwindow setup", e)}
             }
         })
 
@@ -629,80 +633,27 @@ class WindowHandler {
 
 
         /***************************
-         *  Forms
+         *  Forms, Website, Eduvidual, Editor, RDP, Microsoft365
          ***************************/
-        if (serverstatus.examSections[serverstatus.lockedSection].examtype === "gforms" ){ 
-            // jede WebView abfangen und Popups im selben WebView laden
-            this.examwindow.webContents.on('did-attach-webview', (event, webviewContents) => {
-                webviewContents.setWindowOpenHandler(({ url }) => {
-                    console.log("windowhandler @ examwindow: did-attach-webview: new-window", url)
-                    webviewContents.loadURL(url);         // URL im selben WebView öffnen
-                    return { action: 'deny' };            // neues Fenster unterbinden
-                });
+        // Block navigation on examwindow.webContents level for all modes that can display PDFs in examheader
+        // This prevents navigation when clicking links in PDFs displayed in the examheader
+        // Webview/BrowserView blocking is handled separately via IPC in ipchandler.js or mode-specific handlers below
+        const examTypesWithPdfInHeader = ["gforms", "website", "eduvidual", "editor", "rdp", "microsoft365"];
+        if (examTypesWithPdfInHeader.includes(serverstatus.examSections[serverstatus.lockedSection].examtype)) {
+            this.examwindow.webContents.on('will-navigate', (event, url) => {
+                event.preventDefault(); // Prevent navigation away from the Vue app (e.g. from PDF links in examheader)
             });
-        }
 
-
-
-        /***************************
-         *  Website
-         ***************************/
-        if (serverstatus.examSections[serverstatus.lockedSection].examtype === "website" ){ 
-            // jede WebView abfangen und Popups im selben WebView laden
-            this.examwindow.webContents.on('did-attach-webview', (event, webviewContents) => {
-                webviewContents.setWindowOpenHandler(({ url }) => {
-                    console.log("windowhandler @ examwindow: did-attach-webview: new-window", url)
-                    webviewContents.loadURL(url);         // URL im selben WebView öffnen
-                    return { action: 'deny' };            // neues Fenster unterbinden
-                });
+            // Prevent new windows from opening in the examwindow
+            this.examwindow.webContents.on('new-window', (event, url) => { 
+                log.warn("windowhandler @ examwindow: blocked new-window", url);
+                event.preventDefault();   
             });
-        }
-
-
-        /***************************
-         *  Moodle / Eduvidual
-         ***************************/
-        if (serverstatus.examSections[serverstatus.lockedSection].examtype === "eduvidual" ){  
-            
-            this.examwindow.webContents.on('will-navigate', (event, url) => {    // a pdf could contain a link - ATTENTION: only works for editor mode and the webview component ignores that
-                event.preventDefault()
-            })  //Prevent navigation away from the editor
-
-            // if a new window should open triggered by window.open()
-            this.examwindow.webContents.on('new-window', (event, url) => { 
-                console.log("new-window", url)
-                event.preventDefault();   
-            }); // Prevent the new window from opening
      
-            // if a new window should open triggered by target="_blank"
             this.examwindow.webContents.setWindowOpenHandler(({ url }) => { 
-                console.log("setWindowOpenHandler", url)
+                log.warn("windowhandler @ examwindow: blocked setWindowOpenHandler", url);
                 return { action: 'deny' };   
-            }); // Prevent the new window from opening
-        }
-
-
-
-        /***************************
-         *  Texteditor
-         ***************************/
-        if (serverstatus.examSections[serverstatus.lockedSection].examtype === "editor" ){  // do not under any circumstances allow navigation away from the editor by clicking on linxs in pdfs
-            
-            this.examwindow.webContents.on('will-navigate', (event, url) => {    // a pdf could contain a link - ATTENTION: only works for editor mode and the webview component ignores that
-                event.preventDefault()
-            })  //Prevent navigation away from the editor
-
-            // if a new window should open triggered by window.open()
-            this.examwindow.webContents.on('new-window', (event, url) => { 
-                console.log("new-window", url)
-                event.preventDefault();   
-            }); // Prevent the new window from opening
-     
-            // if a new window should open triggered by target="_blank"
-            this.examwindow.webContents.setWindowOpenHandler(({ url }) => { 
-                console.log("setWindowOpenHandler", url)
-                return { action: 'deny' };   
-            }); // Prevent the new window from opening
+            });
         }
 
         /***************************
@@ -932,19 +883,28 @@ class WindowHandler {
     }
 
     async showExitQuestion(){
-        let choice = await dialog.showMessageBox(this.mainwindow, {
-            type: 'question',
-            buttons: ['Ja', 'Nein'],
-            title: 'Programm beenden',
-            message: 'Wollen sie die Anwendung Next-Exam beenden?',
-            cancelId: 1
-        });
-        if(choice.response == 1){
-            log.info("Windowhandler @ showExitQuestion: do not close Next-Exam after finished Exam")
+        if (this.exitDialogOpen) {
+            log.info("Windowhandler @ showExitQuestion: dialog already open, skipping")
+            return
         }
-        else {
-            this.mainwindow.allowexit = true
-            app.quit()
+        this.exitDialogOpen = true
+        try {
+            let choice = await dialog.showMessageBox(this.mainwindow, {
+                type: 'question',
+                buttons: ['Ja', 'Nein'],
+                title: 'Programm beenden',
+                message: 'Wollen sie die Anwendung Next-Exam beenden?',
+                cancelId: 1
+            });
+            if(choice.response == 1){
+                log.info("Windowhandler @ showExitQuestion: do not close Next-Exam after finished Exam")
+            }
+            else {
+                this.mainwindow.allowexit = true
+                app.quit()
+            }
+        } finally {
+            this.exitDialogOpen = false
         }
     }
 
