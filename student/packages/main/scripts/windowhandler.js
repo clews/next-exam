@@ -496,7 +496,7 @@ class WindowHandler {
             autoHideMenuBar: true,
             minimizable: false,
             visibleOnAllWorkspaces: true,
-            kiosk: this.config.development ? false : false,
+            kiosk: this.config.development ? false : true,
             show: true,
             transparent: false,
             icon: join(__dirname, '../../public/icons/icon.png'),
@@ -518,7 +518,7 @@ class WindowHandler {
                 try {
                     this.examwindow.removeMenu()                 
                     this.examwindow.setAlwaysOnTop(true, "screen-saver", 1) 
-                    //this.examwindow.setKiosk(true);
+                    this.examwindow.setKiosk(true);
                 
                     await this.sleep(500)
                     await this.initBlockWindows()

@@ -271,7 +271,7 @@ export default {
                             .branding { display: none !important; }
                             #header { display: none !important; }
                             .drawer-left-toggle { display: none !important; }
-                        .drawer.drawer-right { top:0 !important; height: 100% !important;}
+                            .drawer.drawer-right { top:0 !important; height: 100% !important;}
                             #page-footer { display: none !important; }
                             #theme_boost-drawers-courseindex { display: none !important; }
                             #page.drawers {margin-top:0px !important;}
@@ -282,6 +282,7 @@ export default {
                             #page.drawers.show-drawer-left  {margin-left: 0px !important; padding-left: 3rem !important; }
                             .bycs-header {display: none !important;}
                             .mbsfooter {display: none !important;}
+                            #footnote {display: none !important;}
                             \`;
 
                             const style = document.createElement('style');

@@ -174,7 +174,57 @@ process.on('uncaughtException', (err) => {
     else if (err.message?.includes('Render frame was disposed')) return;
     else {  log.error('main @ uncaughtException:', err.message); }  // Log or display other errors
 });
- 
+
+// Handle unhandled promise rejections to prevent crashes
+process.on('unhandledRejection', (reason, promise) => {
+    log.error('main @ unhandledRejection: Unhandled promise rejection:', reason);
+    if (reason instanceof Error) {
+        log.error('main @ unhandledRejection: Stack:', reason.stack);
+    }
+});
+
+// Handle renderer process crashes (V8 fatal errors, etc.)
+app.on('render-process-gone', (event, webContents, details) => {
+    log.error('main @ render-process-gone: Renderer process crashed');
+    log.error('main @ render-process-gone: Reason:', details.reason);
+    log.error('main @ render-process-gone: Exit code:', details.exitCode);
+    
+    // Try to identify which window crashed
+    const allWindows = BrowserWindow.getAllWindows();
+    const crashedWindow = allWindows.find(win => win.webContents.id === webContents.id);
+    
+    if (crashedWindow) {
+        log.error(`main @ render-process-gone: Window title: ${crashedWindow.getTitle()}`);
+        
+        // For exam window crashes, try to close it gracefully
+        if (crashedWindow === WindowHandler.examwindow) {
+            log.warn('main @ render-process-gone: Exam window crashed, attempting to close gracefully');
+            try {
+                if (!crashedWindow.isDestroyed()) {
+                    crashedWindow.destroy();
+                }
+                WindowHandler.examwindow = null;
+                WindowHandler.examDisplayId = null;
+            } catch (err) {
+                log.error('main @ render-process-gone: Error closing exam window:', err);
+            }
+        }
+    }
+    
+    // Don't crash the main process - let it continue
+    event.preventDefault();
+});
+
+// Handle child process crashes (workers, etc.)
+app.on('child-process-gone', (event, details) => {
+    log.error('main @ child-process-gone: Child process crashed');
+    log.error('main @ child-process-gone: Type:', details.type);
+    log.error('main @ child-process-gone: Reason:', details.reason);
+    log.error('main @ child-process-gone: Exit code:', details.exitCode);
+    
+    // Don't crash the main process
+    event.preventDefault();
+});
 
 // Set application name for Windows 10+ notifications
 if (process.platform === 'win32') {  app.setAppUserModelId(app.getName())}
@@ -201,18 +251,40 @@ app.on('web-contents-created', (event, webContents) => {
     webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame, frameProcessId, frameRoutingId) => {
         // Log the error but don't crash the app
         log.warn(`main @ did-fail-load: Error ${errorCode} - ${errorDescription} for URL: ${validatedURL}`);
+
+    });
+    
+    // Handle renderer process crashes for specific webContents (V8 fatal errors, etc.)
+    webContents.on('render-process-gone', (event, details) => {
+        log.error('main @ webContents render-process-gone: Renderer process crashed for specific webContents');
+        log.error('main @ webContents render-process-gone: Reason:', details.reason);
+        log.error('main @ webContents render-process-gone: Exit code:', details.exitCode);
         
-        // Handle specific error codes
-        if (errorCode === -3) {
-            // -3 is ERR_ABORTED, often related to blob URLs or PDF viewers
-            log.warn(`main @ did-fail-load: Aborted load for blob URL or PDF viewer - this is usually safe to ignore`);
-            return;
+        // Try to identify which window this webContents belongs to
+        const allWindows = BrowserWindow.getAllWindows();
+        const crashedWindow = allWindows.find(win => win.webContents.id === webContents.id);
+        
+        if (crashedWindow) {
+            log.error(`main @ webContents render-process-gone: Window title: ${crashedWindow.getTitle()}`);
+            log.error(`main @ webContents render-process-gone: Window URL: ${crashedWindow.webContents.getURL()}`);
+            
+            // For exam window crashes, try to close it gracefully
+            if (crashedWindow === WindowHandler.examwindow) {
+                log.warn('main @ webContents render-process-gone: Exam window crashed, attempting to close gracefully');
+                try {
+                    if (!crashedWindow.isDestroyed()) {
+                        crashedWindow.destroy();
+                    }
+                    WindowHandler.examwindow = null;
+                    WindowHandler.examDisplayId = null;
+                } catch (err) {
+                    log.error('main @ webContents render-process-gone: Error closing exam window:', err);
+                }
+            }
         }
         
-        // For other error codes, log but continue
-        if (errorCode !== -3) {
-            log.error(`main @ did-fail-load: Unexpected error ${errorCode} - ${errorDescription}`);
-        }
+        // Don't crash the main process - let it continue
+        event.preventDefault();
     });
 });
 
