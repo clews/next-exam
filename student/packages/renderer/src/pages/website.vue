@@ -407,9 +407,15 @@ export default {
 
         document.body.removeEventListener('mouseleave', this.sendFocuslost);
         
-        // Clean up webview event listeners
+        // Clean up webview event listeners and set src to about:blank to prevent crashes
         const webview = document.getElementById('webviewmain');
         if (webview) {
+            // Set src to about:blank first to stop any ongoing operations
+            try {
+                webview.setAttribute('src', 'about:blank');
+            } catch (err) {
+                console.warn('website @ beforeUnmount: error setting webview src to about:blank:', err);
+            }
             // Remove webview element listeners
             if (this._onWillNavigate) {
                 webview.removeEventListener('will-navigate', this._onWillNavigate);

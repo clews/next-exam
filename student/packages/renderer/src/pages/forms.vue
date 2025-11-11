@@ -337,9 +337,15 @@ export default {
         this.clockinterval.stop() 
         document.body.removeEventListener('mouseleave', this.sendFocuslost);
         
-        // Clean up webview event listeners
+        // Clean up webview event listeners and set src to about:blank to prevent crashes
         const webview = document.getElementById('gformswebview');
         if (webview) {
+            // Set src to about:blank first to stop any ongoing operations
+            try {
+                webview.setAttribute('src', 'about:blank');
+            } catch (err) {
+                console.warn('forms @ beforeUnmount: error setting webview src to about:blank:', err);
+            }
             if (this._onDomReady) {
                 webview.removeEventListener('dom-ready', this._onDomReady);
             }

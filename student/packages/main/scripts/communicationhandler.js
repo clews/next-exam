@@ -869,6 +869,30 @@ const __dirname = import.meta.dirname;
                     })
                 }   
       
+                // Clean up webviews before closing window to prevent crashes
+                try {
+                    if (WindowHandler.examwindow && !WindowHandler.examwindow.isDestroyed()) {
+                        // Send message to renderer to clean up webviews
+                        WindowHandler.examwindow.webContents.send('cleanup-webviews');
+                        // Wait a bit for cleanup to complete
+                        await this.sleep(100);
+                        // Also clean up any attached webview contents
+                        const allWebContents = WindowHandler.examwindow.webContents.getAllWebContents();
+                        for (const wc of allWebContents) {
+                            if (wc !== WindowHandler.examwindow.webContents && !wc.isDestroyed()) {
+                                try {
+                                    wc.loadURL('about:blank');
+                                } catch (err) {
+                                    log.warn(`communicationhandler @ endExam: error cleaning up webview: ${err}`);
+                                }
+                            }
+                        }
+                        await this.sleep(50);
+                    }
+                } catch (err) {
+                    log.warn(`communicationhandler @ endExam: error during webview cleanup: ${err}`);
+                }
+      
                 WindowHandler.examwindow.close(); 
                 WindowHandler.examwindow.destroy(); 
             }
