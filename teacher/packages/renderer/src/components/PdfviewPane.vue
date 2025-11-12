@@ -1,28 +1,28 @@
 <template>
     <div class="embed-container" @click.stop>
       
-        <ul class="nav nav-tabs position-absolute top-0 start-0 end-0 w-100 bg-white" style="z-index:2000; pointer-events:auto; font-size:1.1rem;">
+        <ul class="nav nav-tabs position-absolute top-0 start-0 end-0 w-100 bg-white" style="z-index:2000; pointer-events:auto; font-size:1.1rem; height:45px;">
 
          
 
       
             <!-- print button -->
             <li class="nav-item" >
-                <div class="nav-link btn btn-light btn-sm unstyled" id="printPDF" style="display: inline-flex" @click="printBase64()" :title="$t('dashboard.print')">
+                <div class="nav-link btn btn-light btn-sm unstyled" id="printPDF" style="display: inline-flex; height:45px !important;" @click="printBase64()" :title="$t('dashboard.print')">
                     <img src="/src/assets/img/svg/print.svg" class="white" >
                 </div>
             </li>
 
             <!-- download button -->
             <li class="nav-item">
-                <div class="nav-link btn btn-light btn-sm unstyled" id="downloadPDF" style="display: inline-flex" @click="downloadFile('current')" :title="$t('dashboard.save')">
+                <div class="nav-link btn btn-light btn-sm unstyled" id="downloadPDF" style="display: inline-flex; height:45px !important;" @click="downloadFile('current')" :title="$t('dashboard.save')">
                     <img src="/src/assets/img/svg/edit-download.svg" class="white">
                  </div>
             </li>
             
           <!-- open button -->
           <li class="nav-item">
-                <div class="nav-link btn btn-light btn-sm unstyled" id="openPDF" style="display: inline-flex" @click="openFileExternal(currentpreviewPath)" :title="$t('dashboard.open')">
+                <div class="nav-link btn btn-light btn-sm unstyled" id="openPDF" style="display: inline-flex; height:45px !important;" @click="openFileExternal(currentpreviewPath)" :title="$t('dashboard.open')">
                     <img src="/src/assets/img/svg/stock_exit_up.svg" class="white">
                  </div>
             </li>
@@ -36,12 +36,12 @@
 
             <!-- close button -->
             <li class="nav-item ms-auto">  
-                <div type="button" id="closePDF" class="nav-link btn btn-light btn-sm" :title="$t('dashboard.close')" @click.stop="closePane"style="width:40px; height:40px; text-align:center; font-weight:bold;">&times;</div> 
+                <div type="button" id="closePDF" class="nav-link btn btn-light btn-sm" :title="$t('dashboard.close')" @click.stop="closePane"style="width:40px; height:45px !important;text-align:center; font-weight:bold;">&times;</div> 
             </li>
 
         </ul>
     
-        <embed src="" id="pdfembed" style="width:100%; height:100%; position:relative; top:0px;" />
+        <embed src="" id="pdfembed" style="width:100%; height:100%; position:relative; top:45px !important;" />
     </div>
   </template>
   
@@ -102,7 +102,7 @@
         background-repeat: no-repeat;
         background-size: contain;
         background-position: center;
-     
+        height: 85vh !important;
     }
 
 </style>

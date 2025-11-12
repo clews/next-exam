@@ -136,6 +136,7 @@ class IpcHandler {
             if (targetUrl.includes("login") && targetUrl.includes("microsoftonline")) return true;
             if (targetUrl.includes("lookup") && targetUrl.includes("google")) return true;
             if (targetUrl.includes("bildung.gv.at") && targetUrl.includes("SAML2")) return true;
+            if (targetUrl.includes("Shibboleth") && targetUrl.includes("SAML2")) return true;
             if (targetUrl.includes("id-austria.gv.at") && targetUrl.includes("authHandler")) return true;
             return false;
         };

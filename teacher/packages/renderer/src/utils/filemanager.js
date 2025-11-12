@@ -146,7 +146,7 @@ function loadPDF(filepath, filename){
 
         const pdfEmbed = document.querySelector("#pdfembed");
         pdfEmbed.style.backgroundImage = '';
-        pdfEmbed.style.height = "90vh";
+        pdfEmbed.style.height = "85vh";
         pdfEmbed.style.width = "67vh";
         pdfEmbed.style.display = 'block';
         
