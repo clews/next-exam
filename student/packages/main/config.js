@@ -26,9 +26,9 @@ const config = {
     virtualized: false,
     isPuavo: false,
     
-    version: '1.1.0.13',
-    buildDate: '20251111',
-    buildNumber: '13',
-    info: 'pre-release'
+    version: '1.1.0.14',
+    buildDate: '20251112',
+    buildNumber: '14',
+    info: 'RC'
 }
 export default config;
