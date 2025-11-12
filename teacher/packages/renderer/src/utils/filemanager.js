@@ -198,7 +198,7 @@ function loadImage(file){
             
             // clear the pdf viewer
             pdfEmbed.setAttribute("src", "about:blank");
-
+            
             const img = new window.Image();
             img.onload = function() {
                 const width = img.width;
@@ -216,6 +216,8 @@ function loadImage(file){
                     pdfEmbed.style.height = '80vh';
                     pdfEmbed.style.width = `calc(80vh * ${aspectRatio})`;
                 }
+
+          
                 pdfEmbed.style.backgroundImage = `url(${this.currentpreview})`;
 
             }.bind(this);
@@ -391,7 +393,7 @@ function showBase64FilePreview(base64, filename){
 
     const pdfEmbed = document.querySelector("#pdfembed");
     pdfEmbed.style.backgroundImage = '';
-    pdfEmbed.style.height = "95vh";
+    pdfEmbed.style.height = "85vh";
     pdfEmbed.style.width = "67vh";
     
     pdfEmbed.setAttribute("src", `${this.currentpreview}#toolbar=0&navpanes=0&scrollbar=0`);

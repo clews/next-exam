@@ -102,7 +102,7 @@
         background-repeat: no-repeat;
         background-size: contain;
         background-position: center;
-        height: 85vh !important;
+       
     }
 
 </style>
