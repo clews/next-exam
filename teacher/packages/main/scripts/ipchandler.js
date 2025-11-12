@@ -355,7 +355,10 @@ class IpcHandler {
 
 
        /**
-         * get number of submissions
+         * get latest submisions from all students
+         * return array of objects with studentname, latestfilepath, latestfilename and submissiondate (timestamp)
+         * @param servername the name of the server to get the submissions from
+         * @return { sender: "server", message:"success", status: "success", submissions: submissions }
          */
        ipcMain.handle('getSumbissions', async (event, servername) => {
             const mcServer = this.config.examServerList[servername]
