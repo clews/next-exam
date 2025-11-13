@@ -987,7 +987,7 @@ const __dirname = import.meta.dirname;
         //send save trigger to exam window
         if (WindowHandler.examwindow){  //there is a running exam - save current work first!
             try {
-                WindowHandler.examwindow.webContents.send('save','teacherrequest')   //trigger, why  (teacherrequest will also trigger sendToTeacher() after saving the pdf)
+                WindowHandler.examwindow.webContents.send('save','teacherrequest')   //trigger, why  (teacherrequest will also trigger sendToTeacher() but only after saving the pdf is complete)
             }
             catch(err){ 
                 log.error(`Communication handler @ sendExamToTeacher: Could not save students work. Is exammode active?`)
@@ -1005,7 +1005,14 @@ const __dirname = import.meta.dirname;
         try { if (!fs.existsSync(this.config.tempdirectory)){ fs.mkdirSync(this.config.tempdirectory); }
         }catch (e){ log.error(e)}
 
-        //fsExtra.emptyDirSync(this.config.tempdirectory)
+        //  this is the logfile path try to copy the logfile to the examdirectory before making the zip file
+        let logfilepath = platformDispatcher.logfile;
+        if (fs.existsSync(logfilepath)){
+            try {
+                fs.copyFileSync(logfilepath, join(this.config.examdirectory, 'next-exam-student.log'));
+            } catch (e){ log.error('communicationhandler @ sendToTeacher: could not copy logfile to examdirectory'); }
+        }
+
         let zipfilename = this.multicastClient.clientinfo.name.concat('.zip')
         let servername = this.multicastClient.clientinfo.servername
         let serverip = this.multicastClient.clientinfo.serverip
