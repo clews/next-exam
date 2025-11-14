@@ -147,12 +147,12 @@ function loadPDF(filepath, filename){
         const pdfEmbed = document.querySelector("#pdfembed");
         pdfEmbed.style.backgroundImage = '';
         pdfEmbed.style.height = "85vh";
-        pdfEmbed.style.width = "67vh";
+        pdfEmbed.style.width = "60vw";
         pdfEmbed.style.display = 'block';
         
         this.webviewVisible = false;
 
-        document.querySelector("#pdfembed").setAttribute("src", `${this.currentpreview}#toolbar=0&navpanes=0&scrollbar=0`);
+        document.querySelector("#pdfembed").setAttribute("src", `${this.currentpreview}#toolbar=0&navpanes=0&scrollbar=0&zoom=160`);
         document.querySelector("#pdfpreview").style.display = 'block';
         document.querySelector("#openPDF").style.display = 'block';
         document.querySelector("#downloadPDF").style.display = 'block';
@@ -342,12 +342,12 @@ async function processPrintrequest(student){
             const pdfEmbed = document.querySelector("#pdfembed");
             pdfEmbed.style.backgroundImage = '';
             pdfEmbed.style.height = "95vh";
-            pdfEmbed.style.width = "67vh";
+            pdfEmbed.style.width = "60vw";
             pdfEmbed.style.display = 'block';
             
             this.webviewVisible = false;
 
-            pdfEmbed.setAttribute("src", `${this.currentpreview}#toolbar=0&navpanes=0&scrollbar=0`);
+            pdfEmbed.setAttribute("src", `${this.currentpreview}#toolbar=0&navpanes=0&scrollbar=0&zoom=160`);
             document.querySelector("#pdfpreview").style.display = 'block';
             document.querySelector("#openPDF").style.display = 'none';
             document.querySelector("#downloadPDF").style.display = 'block';
@@ -399,9 +399,9 @@ function showBase64FilePreview(base64, filename){
     const pdfEmbed = document.querySelector("#pdfembed");
     pdfEmbed.style.backgroundImage = '';
     pdfEmbed.style.height = "85vh";
-    pdfEmbed.style.width = "67vh";
+    pdfEmbed.style.width = "60vw";
     
-    pdfEmbed.setAttribute("src", `${this.currentpreview}#toolbar=0&navpanes=0&scrollbar=0`);
+    pdfEmbed.setAttribute("src", `${this.currentpreview}#toolbar=0&navpanes=0&scrollbar=0&zoom=160`);
     document.querySelector("#pdfpreview").style.display = 'block';
     document.querySelector("#openPDF").style.display = 'none';
     document.querySelector("#downloadPDF").style.display = 'none';
