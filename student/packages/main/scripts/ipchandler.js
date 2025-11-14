@@ -1052,23 +1052,22 @@ class IpcHandler {
 
 
         ipcMain.handle('get-wlan-info', async (event) => {
-            const wifiInfo = await wifi.getCurrentConnections()
-            .then(connections => {
-                if (connections.length > 0) {
-                    //log.info('Aktuell verbundene SSID:', connections[0].ssid); // Die verbundene SSID
-                    return connections[0]
-
-                } else {
-                    // log.info('no wlan connection found')
-                    return false;  // nicht mit wlan verbunden
-                   
+            try {
+                const connections = await Promise.race([
+                    wifi.getCurrentConnections(),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Timeout: WLAN-Info konnte nicht abgerufen werden')), 5000)
+                    )
+                ]);
+                
+                if (connections && connections.length > 0) {
+                    return connections[0];
                 }
-            })
-            .catch(error => {
-                // log.error('ipchandler @ get-wlan-info: Fehler beim Auslesen der WLAN-Verbindung:', error);
-                return false
-            }); 
-            return wifiInfo   
+                return false; // Keine Verbindung
+            } catch (error) {
+                log.error('ipchandler @ get-wlan-info: Fehler beim Auslesen der WLAN-Verbindung:', error.message);
+                return false;
+            }
         });
 
 

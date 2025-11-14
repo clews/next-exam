@@ -1379,7 +1379,7 @@ export default {
             this.loadFilelist() 
         });
         ipcRenderer.on('fileerror', (event, msg) => {
-            console.log('editor @ fileerror: writing/deleting file error received');
+            console.log('editor @ fileerror: ', msg);
  
             if (this.showfileerror) {
                 this.$swal.fire({
