@@ -45,6 +45,8 @@ class IpcHandler {
         this.multicastClient = null
         this.config = null
         this.WindowHandler = null
+        this.wlanErrorCount = 0 // Track WLAN errors
+        this.wlanDisabled = false // Flag to disable WLAN after 5 failures
     }
     init (mc, config, wh, ch) {
         this.multicastClient = mc
@@ -1052,6 +1054,11 @@ class IpcHandler {
 
 
         ipcMain.handle('get-wlan-info', async (event) => {
+            // If WLAN is disabled after 5 failures, return false immediately
+            if (this.wlanDisabled) {
+                return false;
+            }
+
             try {
                 const connections = await Promise.race([
                     wifi.getCurrentConnections(),
@@ -1060,12 +1067,23 @@ class IpcHandler {
                     )
                 ]);
                 
+                // Reset error count on success
+                this.wlanErrorCount = 0;
+                
                 if (connections && connections.length > 0) {
                     return connections[0];
                 }
                 return false; // Keine Verbindung
             } catch (error) {
-                log.error('ipchandler @ get-wlan-info: Fehler beim Auslesen der WLAN-Verbindung:', error.message);
+                this.wlanErrorCount++;
+                log.error(`ipchandler @ get-wlan-info: Fehler beim Auslesen der WLAN-Verbindung (${this.wlanErrorCount}/5):`, error.message);
+                
+                // Disable WLAN after 5 failures
+                if (this.wlanErrorCount >= 5) {
+                    this.wlanDisabled = true;
+                    log.warn('ipchandler @ get-wlan-info: WLAN-Funktion nach 5 Fehlern deaktiviert. Keine weiteren Versuche.');
+                }
+                
                 return false;
             }
         });

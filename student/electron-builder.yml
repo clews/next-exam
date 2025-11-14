@@ -65,6 +65,7 @@ msi:
   shortcutName: Next-Exam Student
 win:
   icon: public/icons/icon.ico
+  manifest: scripts/app.manifest
   target:
     - target: portable
       arch:
