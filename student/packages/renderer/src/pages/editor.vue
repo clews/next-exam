@@ -462,7 +462,8 @@ export default {
             urlForWebview: null,
             showfileerror: true,
             isMac: false,
-            allowedUrls: []
+            allowedUrls: [],
+            lockedSection: 1
         }
     },
     computed: {
@@ -621,6 +622,7 @@ export default {
             this.pincode = this.clientinfo.pin
             this.privateSpellcheck = this.clientinfo.privateSpellcheck
             this.serverstatus =  getinfo.serverstatus
+            this.lockedSection = this.clientinfo.lockedSection
            
            // console.log(this.serverstatus)
             if (this.pincode !== "0000"){this.localLockdown = false}  // pingcode is 0000 only in localmode
@@ -894,14 +896,19 @@ export default {
 
 
         // send direct print request to teacher and append current document as base64
-        printBase64(printrequest=false){        
+        printBase64(printrequest=false){  
+            //get current exam sectioninfo
+
+          
             // this currentpreviewBase64 contains the current visible pdf as base64 string
             const url = `https://${this.serverip}:${this.serverApiPort}/server/control/printrequest/${this.servername}/${this.token}`;
             const payload = {
                 document: this.currentpreviewBase64,
                 printrequest: printrequest,
-                submissionnumber: this.submissionnumber
+                submissionnumber: this.submissionnumber,
+                lockedsection: this.lockedSection  // this is needed to save the current section files to the correct section folder on the server
             }
+
             fetch(url, {
                 method: "POST",
                 cache: "no-store",

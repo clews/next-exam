@@ -941,6 +941,8 @@ router.post('/printrequest/:servername/:studenttoken', async function (req, res,
     const pdfDocument = req.body.document
     const printrequest = req.body.printrequest
     const submissionnumber = req.body.submissionnumber
+    const lockedsection = req.body.lockedsection || 1 // default to section 1 if not provided
+
 
     //check if server exists 
     const mcServer = config.examServerList[servername]
@@ -974,7 +976,7 @@ router.post('/printrequest/:servername/:studenttoken', async function (req, res,
 
 
     try {
-        const filepath = path.join(config.workdirectory, mcServer.serverinfo.servername, student.clientname, 'ABGABE') // target dir
+        const filepath = path.join(config.workdirectory, mcServer.serverinfo.servername, student.clientname, 'ABGABE', lockedsection.toString() ) // target dir
         await fsp.mkdir(filepath, { recursive: true })                                        // ensure dir
         const absoluteFilename = path.join(filepath, filename)                                 // build path
         await fsp.writeFile(absoluteFilename, pdfBuffer)                                       // write main
@@ -983,7 +985,7 @@ router.post('/printrequest/:servername/:studenttoken', async function (req, res,
         // create backup of abgabe
         let backupStatus = 'skipped'                                                           // default backup status
         if (config.backupdirectory) {                                                          // optional backup
-          const backuppath = path.join(config.backupdirectory, mcServer.serverinfo.servername, student.clientname, 'ABGABE')
+          const backuppath = path.join(config.backupdirectory, mcServer.serverinfo.servername, student.clientname, 'ABGABE', lockedsection.toString() )
           await fsp.mkdir(backuppath, { recursive: true })                                     // ensure backup dir
           const absoluteBackupFilename = path.join(backuppath, filename)                       // backup path
           await fsp.writeFile(absoluteBackupFilename, pdfBuffer)                               // write backup

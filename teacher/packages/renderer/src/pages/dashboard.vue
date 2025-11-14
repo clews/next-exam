@@ -80,17 +80,17 @@
                     <!-- other files -->
                     <div v-if="(file.type == 'file' && !(file.ext === '.pdf' || file.ext === '.png'|| file.ext === '.jpg'|| file.ext === '.webp'|| file.ext === '.jpeg' )  )" class="btn btn-info pe-3 ps-3 me-3 mb-2 btn-sm"  style=" max-width: 500px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: default;"><img src="/src/assets/img/svg/document.svg" class="" width="22" height="22" > {{file.name}} </div>
 
-
-                    <!-- send file -->
-                    <div v-if="(file.type == 'file')" :class="lockSendFile ? 'disabledexam':''"    class="btn btn-dark  me-1 mb-2 btn-sm " style="float: right;" @click="dashboardExplorerSendFile(file)" :title="$t('dashboard.send')"><img src="/src/assets/img/svg/document-send.svg" class="" width="22" height="22" ></div>
+                    <!-- delete file -->
+                    <div v-if="(file.type == 'file' || file.type == 'dir')" class="btn btn-dark me-1 mb-2 btn-sm" style="float: right;" @click="fdelete(file)" :title="$t('dashboard.delete')"><img src="/src/assets/img/svg/edit-delete.svg" class="" width="22" height="22" ></div>
                     <!-- download file -->
                     <div v-if="(file.type == 'file')" class="btn btn-dark  me-1 mb-2 btn-sm " style="float: right;" @click="downloadFile(file)" :title="$t('dashboard.download')"><img src="/src/assets/img/svg/edit-download.svg" class="" width="22" height="22" ></div>
+                    <!-- send file -->
+                    <div v-if="(file.type == 'file')" :class="lockSendFile ? 'disabledexam':''"    class="btn btn-dark  me-1 mb-2 btn-sm " style="float: right;" @click="dashboardExplorerSendFile(file)" :title="$t('dashboard.send')"><img src="/src/assets/img/svg/document-send.svg" class="" width="22" height="22" ></div>
                     <!-- preview pdf -->
                     <div v-if="(file.type == 'file' && file.ext === '.pdf')" class="btn btn-dark me-1 mb-2 btn-sm" style="float: right;" @click="loadPDF(file.path, file.name)" :title="$t('dashboard.preview')"><img src="/src/assets/img/svg/eye-fill.svg" class="white" width="22" height="22" ></div>
                     <!-- preview image -->
                     <div v-if="(file.type == 'file' && (file.ext === '.png'|| file.ext === '.jpg'|| file.ext === '.webp'|| file.ext === '.jpeg' ))" class="btn btn-dark me-1 mb-2 btn-sm" style="float: right;" @click="loadImage(file.path)" :title="$t('dashboard.preview')"><img src="/src/assets/img/svg/eye-fill.svg" class="white" width="22" height="22" ></div>
-                    <!-- delete file -->
-                    <div  v-if="(file.type == 'file' || file.type == 'dir')" class="btn btn-dark me-1 mb-2 btn-sm" style="float: right;" @click="fdelete(file)" :title="$t('dashboard.delete')"><img src="/src/assets/img/svg/edit-delete.svg" class="" width="22" height="22" ></div>
+                    
                     <!-- download folder -->
                     <div v-if="(file.type == 'dir')" class="btn btn-dark  me-1 mb-2 btn-sm " style="float: right;" @click="downloadFile(file)" :title="$t('dashboard.download')"><img src="/src/assets/img/svg/edit-download.svg" class="" width="22" height="22" ></div>
                 
@@ -503,8 +503,8 @@
                         </div>
                        
 
-                        <button v-if="submissions.some(s => s.studentName === student.clientname && s.submissionDate)"  
-                            @click='getSpecificSubmissionBase64(submissions.find(s => s.studentName === student.clientname && s.submissionDate).latestFilePath)' 
+                        <button v-if="submissions.find(s => s.studentName === student.clientname)?.sections[serverstatus.activeSection]?.path"  
+                            @click='getSpecificSubmissionBase64(submissions.find(s => s.studentName === student.clientname).sections[serverstatus.activeSection].path)' 
                             @mouseover="showDescription($t('dashboard.showsubmission'))" 
                             @mouseout="hideDescription" 
                             type="button" 
@@ -1663,17 +1663,55 @@ computed: {
             }
         },
 
+        /**
+         * fetch submissions from the server and update the submissionsNumber
+         * for every student there are 4 sections (1-4) so there can be up to 4 submissions per student
+         * 
+         * @param show if true, show the submissions in a popup
+         */
+
+
         async fetchSubmissions(show = false){
             let submissions = await ipcRenderer.invoke('getSumbissions', this.servername)
             this.submissions = submissions
             this.submissionsNumber = 0
-            for (let submission of submissions){
-                if (submission.submissionDate){
-                    this.submissionsNumber++
-                }
+
+
+          
+            for (let student of submissions){
+                // iterate over sections 1-4
+                for (let section = 1; section <= 4; section++) {
+                    if (student.sections[section].path){
+                        this.submissionsNumber++
+                        break    // at this moment we only need to know if the student has at least one submission in any section
+                    }
+                }   
             }
 
             if (show){
+                // build table rows: one row per student section with submission
+                let tableRows = []
+                for (let student of submissions){
+                    let firstSection = true // track if this is the first section for this student
+                    for (let section = 1; section <= 4; section++) {
+                        if (student.sections[section].path) {
+                            let sectionName = this.serverstatus.examSections[section]?.sectionname || `Abschnitt ${section}`
+                            let studentNameCell = firstSection 
+                                ? `<td style="padding: 6px; white-space: nowrap; font-size: 0.9em;"><b>${student.studentName}</b></td>`
+                                : `<td style="padding: 6px; white-space: nowrap; font-size: 0.9em;"></td>`
+                            tableRows.push(`
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    ${studentNameCell}
+                                    <td style="padding: 6px; white-space: nowrap; font-size: 0.9em;">${sectionName}</td>
+                                    <td style="padding: 6px; word-break: break-word; font-size: 0.9em;">${student.sections[section].filename}</td>
+                                    <td style="padding: 6px; white-space: nowrap; font-size: 0.9em;">${student.sections[section].date ? new Date(student.sections[section].date).toLocaleString('de-DE') : ''}</td>
+                                </tr>
+                            `)
+                            firstSection = false
+                        }
+                    }
+                }
+                
                 this.$swal.fire({
                     title: this.$t("control.submissions"),
                     text: `${submissions.length} / ${this.numberOfConnections}`,
@@ -1684,18 +1722,13 @@ computed: {
                             <thead>
                                 <tr style="border-bottom: 2px solid #ddd;">
                                     <th style="text-align: left; padding: 8px; white-space: nowrap;">Student</th>
+                                    <th style="text-align: left; padding: 8px; white-space: nowrap;">Abschnitt</th>
                                     <th style="text-align: left; padding: 8px;">Datei</th>
                                     <th style="text-align: left; padding: 8px; white-space: nowrap;">Datum</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${submissions.map(submission => `
-                                    <tr style="border-bottom: 1px solid #eee;">
-                                        <td style="padding: 6px; white-space: nowrap; font-size: 0.9em;"><b>${submission.studentName}</b></td>
-                                        <td style="padding: 6px; word-break: break-word; font-size: 0.9em;">${submission.latestFileName}</td>
-                                        <td style="padding: 6px; white-space: nowrap; font-size: 0.9em;">${submission.submissionDate ? new Date(submission.submissionDate).toLocaleString('de-DE') : ''}</td>
-                                    </tr>
-                                `).join('')}
+                                ${tableRows.join('')}
                             </tbody>
                         </table>
                     </div>

@@ -367,44 +367,50 @@ class IpcHandler {
                     .map(dirent => dirent.name)
 
                 for (const studentName of folders) { // iterate over directory names
-                    let latestPDFpath = null
-                    let selectedFile = '';
-                    let submissionMtime = null;
+                    if (studentName.toUpperCase() === 'UPLOADS') { // ignore UPLOADS directory
+                        continue
+                    }
+                    
+                    let sections = {}
                     let submissionDir = join(dir, studentName, "ABGABE")
-                    if (fs.existsSync(submissionDir)) {
-                        let submissionFiles = fs.readdirSync(submissionDir)
-                        if (submissionFiles.length > 0) {
-                            let latestSubmission = submissionFiles
-                                .map(file => {
-                                    let filePath = join(submissionDir, file)
-                                    return { file, mtime: fs.statSync(filePath).mtime }
-                                })
-                                .sort((a, b) => b.mtime - a.mtime)[0]
                     
-                            latestPDFpath = join(submissionDir, latestSubmission.file)
-                            selectedFile = latestSubmission.file
-                            submissionMtime = latestSubmission.mtime
+                    // iterate over exam sections 1-4
+                    for (let section = 1; section <= 4; section++) {
+                        let sectionDir = join(submissionDir, String(section))
+                        
+                        // initialize section with default values
+                        sections[section] = {
+                            path: null,
+                            filename: "",
+                            date: false
+                        }
+                        
+                        if (fs.existsSync(sectionDir)) {
+                            let sectionFiles = fs.readdirSync(sectionDir, { withFileTypes: true })
+                                .filter(dirent => dirent.isFile()) // only files, not directories
+                                .map(dirent => dirent.name)
+                            
+                            if (sectionFiles.length > 0) {
+                                let latestSubmission = sectionFiles
+                                    .map(file => {
+                                        let filePath = join(sectionDir, file)
+                                        return { file, mtime: fs.statSync(filePath).mtime }
+                                    })
+                                    .sort((a, b) => b.mtime - a.mtime)[0]
+                                
+                                sections[section] = {
+                                    path: join(sectionDir, latestSubmission.file),
+                                    filename: latestSubmission.file,
+                                    date: latestSubmission.mtime
+                                }
+                            }
                         }
                     }
-                    else {
-                        if (studentName.toUpperCase() !== 'UPLOADS') {
-                            submissions.push({ 
-                                studentName: studentName, 
-                                latestFilePath: null, 
-                                latestFileName: "",
-                                submissionDate: false 
-                            })
-                        }
-                    }
                     
-                    if (fs.existsSync(latestPDFpath)) { 
-                        submissions.push({ 
-                            studentName: studentName, 
-                            latestFilePath: latestPDFpath, 
-                            latestFileName: selectedFile,
-                            submissionDate: submissionMtime 
-                        })
-                    }
+                    submissions.push({
+                        studentName: studentName,
+                        sections: sections
+                    })
                 }
             }
             return submissions
