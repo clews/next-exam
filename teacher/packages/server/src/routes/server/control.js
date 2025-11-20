@@ -735,7 +735,7 @@ router.post('/setstudentstatus/:servername/:csrfservertoken/:studenttoken', func
             for (let student of mcServer.studentList){ 
                 if (delfolder)  { student.status.delfolder = true   } // on the next update cycle the student gets informed to delete workfolder
                 if (group) {student.status.group = group; }
-                if (msofficeshare) {student.status.msofficeshare = msofficeshare; }   // we need to set this to false for every student to trigger a new upload of the msOfficeFile on section change
+                if (typeof msofficeshare !== 'undefined') {student.status.msofficeshare = msofficeshare; }   // we need to set this to false for every student to trigger a new upload of the msOfficeFile on section change
             }
         }
         else {
@@ -757,6 +757,7 @@ router.post('/setstudentstatus/:servername/:csrfservertoken/:studenttoken', func
                 }
                 if (removeprintrequest == true){ student.printrequest = false }  // unset printrequest so that dashboard fetchInfo (which fetches the studentlist) doesnt trigger it again
                 if (group) {student.status.group = group; }
+                if (typeof msofficeshare !== 'undefined') {student.status.msofficeshare = msofficeshare; }
                 if (kicked) { student.status.kicked = true }
 
 
