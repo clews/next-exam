@@ -42,12 +42,12 @@ body:
     validations:
       required: false
   - type: textarea
-    id: actual-behavior
+    id: tech-hints
     attributes:
-      label: Tatsächliches Verhalten
-      description: Was passiert stattdessen?
+      label: Technische Hinweise
+      description: Lösungsvorschläge, weitere technische Hinweise.
       placeholder: |
         Beispiel:
-        Es erscheint nur eine leere Seite und ich kann die Prüfung nicht starten.
+        Es dürfte sich um ein Problem mit der Chromuium-Version handeln.
     validations:
       required: false
