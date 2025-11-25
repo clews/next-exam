@@ -160,6 +160,16 @@ class IpcHandler {
             if (targetUrl.includes("bildung.gv.at") && targetUrl.includes("SAML2")) return true;
             if (targetUrl.includes("Shibboleth") && targetUrl.includes("SAML2")) return true;
             if (targetUrl.includes("id-austria.gv.at") && targetUrl.includes("authHandler")) return true;
+            
+            if (targetUrl.includes("eu-mobile.events.data") && targetUrl.includes("microsoft")) return true;   // LMS
+            if (targetUrl.includes("gstatic.com")) return true;   // LMS
+            if (targetUrl.includes("aadcdn") && targetUrl.includes("microsoftonline")) return true;   // LMS
+            if (targetUrl.includes("login") && targetUrl.includes("live.com")) return true;   // LMS
+            if (targetUrl.includes("login") && targetUrl.includes("msftauth.net")) return true;   // LMS
+            if (targetUrl.includes("aadcdn") && targetUrl.includes("msftauth.net")) return true;   // LMS
+
+
+
             return false;
         };
 
