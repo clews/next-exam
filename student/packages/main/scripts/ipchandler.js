@@ -160,6 +160,16 @@ class IpcHandler {
             if (targetUrl.includes("bildung.gv.at") && targetUrl.includes("SAML2")) return true;
             if (targetUrl.includes("Shibboleth") && targetUrl.includes("SAML2")) return true;
             if (targetUrl.includes("id-austria.gv.at") && targetUrl.includes("authHandler")) return true;
+            
+            if (targetUrl.includes("eu-mobile.events.data") && targetUrl.includes("microsoft")) return true;   // LMS
+            if (targetUrl.includes("gstatic.com")) return true;   // LMS
+            if (targetUrl.includes("aadcdn") && targetUrl.includes("microsoftonline")) return true;   // LMS
+            if (targetUrl.includes("login") && targetUrl.includes("live.com")) return true;   // LMS
+            if (targetUrl.includes("login") && targetUrl.includes("msftauth.net")) return true;   // LMS
+            if (targetUrl.includes("aadcdn") && targetUrl.includes("msftauth.net")) return true;   // LMS
+
+
+
             return false;
         };
 
@@ -753,12 +763,15 @@ class IpcHandler {
          */ 
         ipcMain.on('collapse-browserview', (event) => {
             const mainWindow = this.WindowHandler.examwindow
+            if (!mainWindow){ return }
             const contentView = mainWindow.getBrowserView(0); // assuming it's the 1st added view
             contentView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
+            
         });
         ipcMain.on('restore-browserview', (event) => {
             const mainWindow = this.WindowHandler.examwindow
-            const menuHeight = this.WindowHandler.examwindow.menuHeight;
+            if (!mainWindow){ return }
+            const menuHeight = mainWindow.menuHeight;
             const newBounds = mainWindow.getBounds(); // Get the current bounds of the mainWindow
             const contentView = mainWindow.getBrowserView(0); // assuming it's the 1st added view
             // Set the new bounds of the contentView

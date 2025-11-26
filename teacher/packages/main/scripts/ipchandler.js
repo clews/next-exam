@@ -484,7 +484,7 @@ class IpcHandler {
         /**
          * get system printers
          */
-        ipcMain.handle('getprinters', async (event, arg) => {
+        ipcMain.handle('getprinters', async () => {
             const printers = await this.WindowHandler.mainwindow.webContents.getPrintersAsync();
             //log.info('ipchandler @ getprinters: printers', printers)
             const printerData = printers.map(printer => ({
