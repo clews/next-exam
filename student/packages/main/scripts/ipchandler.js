@@ -763,12 +763,15 @@ class IpcHandler {
          */ 
         ipcMain.on('collapse-browserview', (event) => {
             const mainWindow = this.WindowHandler.examwindow
+            if (!mainWindow){ return }
             const contentView = mainWindow.getBrowserView(0); // assuming it's the 1st added view
             contentView.setBounds({ x: 0, y: 0, width: 0, height: 0 });
+            
         });
         ipcMain.on('restore-browserview', (event) => {
             const mainWindow = this.WindowHandler.examwindow
-            const menuHeight = this.WindowHandler.examwindow.menuHeight;
+            if (!mainWindow){ return }
+            const menuHeight = mainWindow.menuHeight;
             const newBounds = mainWindow.getBounds(); // Get the current bounds of the mainWindow
             const contentView = mainWindow.getBrowserView(0); // assuming it's the 1st added view
             // Set the new bounds of the contentView
