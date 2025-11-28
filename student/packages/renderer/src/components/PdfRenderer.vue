@@ -355,7 +355,7 @@ export default {
 
 .interactive-input.cloze {
     border-bottom: 0;
-    background-color: rgba(0, 255, 0, 0.767);
+    background-color: rgba(0, 255, 0, 0.1);
 }
 
 .interactive-input.cloze:focus {

@@ -52,7 +52,7 @@ if (userAgent.indexOf(' electron/') > -1) {
 const routes = [ // to load a specific view just replace the component at path: /
     { path: '/',                    name:"index",        component: student,      beforeEnter: [addParams]            },    // default component "student"
     { path: '/student',             name:"student",      component: student,      beforeEnter: [addParams]            },
-    { path: '/editor/:token',       name:"editor",       component: activesheets,       beforeEnter: [addParams, fetchInfo] },  
+    { path: '/editor/:token',       name:"editor",       component: editor,       beforeEnter: [addParams, fetchInfo] },  
     { path: '/math/:token',         name:"math",         component: geogebra,     beforeEnter: [addParams, fetchInfo] },
     { path: '/gforms/:token',       name:"gforms",       component: gforms,       beforeEnter: [addParams, fetchInfo] },
     { path: '/eduvidual/:token',    name:"eduvidual",    component: eduvidual,    beforeEnter: [addParams, fetchInfo] },

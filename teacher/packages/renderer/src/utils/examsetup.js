@@ -155,6 +155,119 @@ async function configureMath(){
 
 
 /**
+ * Active Sheets (PDF Forms)
+ * @param {boolean} forceDialog - If true, show dialog even if PDF already exists
+ */
+async function configureActivesheets(forceDialog = false){
+    // If PDF already exists and not forcing dialog, show it directly without dialog
+    if (this.serverstatus.examSections[this.serverstatus.activeSection].activesheetsPdf && !forceDialog) {
+        this.activesheetsPreviewPdf = this.serverstatus.examSections[this.serverstatus.activeSection].activesheetsPdf;
+        
+        // Show the PDF preview pane and hide other preview components
+        const pdfPreview = document.querySelector("#pdfpreview");
+        if (pdfPreview) {
+            pdfPreview.style.display = 'block';
+            // Hide WebviewPane
+            this.webviewVisible = false;
+            // Hide other preview components (PdfviewPane buttons and embed)
+            const openPDF = document.querySelector("#openPDF");
+            const downloadPDF = document.querySelector("#downloadPDF");
+            const printPDF = document.querySelector("#printPDF");
+            const closePDF = document.querySelector("#closePDF");
+            const pdfembed = document.querySelector("#pdfembed");
+            
+            if (openPDF) openPDF.style.display = 'none';
+            if (downloadPDF) downloadPDF.style.display = 'none';
+            if (printPDF) printPDF.style.display = 'none';
+            if (closePDF) closePDF.style.display = 'none';
+            if (pdfembed) pdfembed.style.display = 'none';
+        }
+        return;
+    }
+    
+    // No PDF exists yet, show file selection dialog
+    this.$swal.fire({
+        customClass: {
+            popup: 'my-popup',
+            title: 'my-title',
+            content: 'my-content',
+            input: 'my-custom-input',
+            inputLabel: 'my-input-label',
+            actions: 'my-swal2-actions'
+        },
+        title: this.$t("dashboard.activesheets") || "Active Sheets",
+        html: `
+            <div class="my-content">
+                ${this.$t("dashboard.activesheetshint") || "Bitte wählen Sie eine PDF-Datei aus, die interaktive Formularfelder enthält."}
+            </div>
+        `,
+        icon: 'question',
+        input: 'file',
+        showCancelButton: true,
+        cancelButtonText: this.$t("dashboard.cancel"),
+        inputAttributes: {
+            type: "file",
+            name: "pdfFile",
+            id: "swalPdfFile",
+            class: "form-control",
+            accept: ".pdf"
+        },
+        inputValidator: (value) => {
+            if (!value) {
+                return this.$t("dashboard.nopdfselected") || "Bitte wählen Sie eine PDF-Datei aus!";
+            }
+            const file = value;
+            if (!file.type.includes("pdf") && !file.name.toLowerCase().endsWith('.pdf')) {
+                return this.$t("dashboard.invalidpdf") || "Ungültige PDF-Datei!";
+            }
+        }
+    }).then(async (input) => {
+        if (!input.value) {
+            this.serverstatus.examSections[this.serverstatus.activeSection].examtype = "math";
+            return;
+        }
+
+        const file = input.value;
+        
+        try {
+            // Convert PDF to Base64
+            const base64Content = await readFileAsBase64(file);
+            
+            // Store the Base64 PDF content in preview (not yet saved)
+            this.activesheetsPreviewPdf = base64Content;
+            this.activesheetsPreviewFilename = file.name; // Store filename temporarily until accepted
+            
+            // Show the PDF preview pane and hide other preview components
+            const pdfPreview = document.querySelector("#pdfpreview");
+            if (pdfPreview) {
+                pdfPreview.style.display = 'block';
+                // Hide WebviewPane
+                this.webviewVisible = false;
+                // Hide other preview components (PdfviewPane buttons and embed)
+                const openPDF = document.querySelector("#openPDF");
+                const downloadPDF = document.querySelector("#downloadPDF");
+                const printPDF = document.querySelector("#printPDF");
+                const closePDF = document.querySelector("#closePDF");
+                const pdfembed = document.querySelector("#pdfembed");
+                
+                if (openPDF) openPDF.style.display = 'none';
+                if (downloadPDF) downloadPDF.style.display = 'none';
+                if (printPDF) printPDF.style.display = 'none';
+                if (closePDF) closePDF.style.display = 'none';
+                if (pdfembed) pdfembed.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('examsetup @ configureActivesheets: Error processing PDF:', error);
+            this.$swal.fire({
+                title: this.$t("dashboard.error") || "Fehler",
+                text: this.$t("dashboard.pdfprocessingerror") || "Fehler beim Verarbeiten der PDF-Datei.",
+                icon: "error"
+            });
+        }
+    });
+}
+
+/**
  * RDP
  */
 async function configureRDP(){
@@ -675,37 +788,17 @@ function defineMaterials(who) {
                     });
                 }
 
-                const base64Content = await readFileAsBase64(file); // Read file as Base64
-                const checksum = await calculateMD5(file); // Calculate MD5 checksum
-                
-                let filetype = ""
-                if  (file.type.includes("pdf")){  filetype="pdf" }         //pdf
-                else if  (file.type.includes("bak")){  filetype="bak" }   // editor| backup file to replace editor content
-                else if  (file.type.includes("openxml")){  filetype="docx" }   // editor| content file (from teacher) to replace content and continue writing
-                else if  (file.type.includes("ggb")){  filetype="ggb" }  // geogebra
-                else if  (file.type.includes("audio") || file.type.includes("ogg") || file.type.includes("wav") ){ filetype="audio" }  // audio
-                else if  (file.type.includes("jpg") ||file.type.includes("jpeg") || file.type.includes("png") || file.type.includes("gif") ){ filetype="image" }  // images
-
-                if (file.type=="" && file.name.includes("ggb")){ filetype = "ggb"}  // geogebra does not have a mime type
-
-                const fileObject = {   // Create file object
-                    filename: file.name,
-                    filetype: filetype,
-                    filecontent: base64Content,
-                    checksum: checksum
-                };
-
-                if (activeGroup === "a" || activeGroup === "all") {
-                    //TODO:  check if file already exists and ask to overwrite
-                    this.serverstatus.examSections[this.serverstatus.activeSection].groupA.examInstructionFiles.push(fileObject);
-                }
-                if (activeGroup === "b" || activeGroup === "all") {
-                    //TODO:  check if file already exists and ask to overwrite
-                    this.serverstatus.examSections[this.serverstatus.activeSection].groupB.examInstructionFiles.push(fileObject);
-                }
+                // Use the shared function to add file as exam material (replaces existing file with same name)
+                await addFileAsExamMaterial(
+                    file,
+                    null, // filename not needed when using File object
+                    activeGroup,
+                    this.serverstatus,
+                    this.serverstatus.activeSection
+                );
                
             } catch (error) {
-                log.error(`exammanagement @ defineMaterials: Error processing file ${file.name}:`, error);
+                console.error(`exammanagement @ defineMaterials: Error processing file ${file.name}:`, error);
             }
         }
 
@@ -725,7 +818,7 @@ function readFileAsBase64(file) {
     });
 }
 
-// Helper function to calculate MD5 checksum
+// Helper function to calculate MD5 checksum from File
 async function calculateMD5(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -738,6 +831,121 @@ async function calculateMD5(file) {
         reader.onerror = reject;
         reader.readAsArrayBuffer(file);
     });
+}
+
+// Helper function to calculate MD5 checksum from Base64 string
+function calculateMD5FromBase64(base64Content) {
+    const commaIndex = base64Content.indexOf(',');
+    const pureBase64 = commaIndex >= 0 ? base64Content.slice(commaIndex + 1) : base64Content;
+    const binaryString = atob(pureBase64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    const wordArray = CryptoJS.lib.WordArray.create(bytes);
+    return CryptoJS.MD5(wordArray).toString();
+}
+
+// Helper function to determine filetype from file or filename
+function determineFiletype(file, filename) {
+    let filetype = "";
+    if (file && file.type) {
+        if (file.type.includes("pdf")) { filetype = "pdf"; }
+        else if (file.type.includes("bak")) { filetype = "bak"; }
+        else if (file.type.includes("openxml")) { filetype = "docx"; }
+        else if (file.type.includes("ggb")) { filetype = "ggb"; }
+        else if (file.type.includes("audio") || file.type.includes("ogg") || file.type.includes("wav")) { filetype = "audio"; }
+        else if (file.type.includes("jpg") || file.type.includes("jpeg") || file.type.includes("png") || file.type.includes("gif")) { filetype = "image"; }
+    }
+    
+    // Fallback to filename if filetype not determined from file.type
+    if (!filetype && filename) {
+        const lowerName = filename.toLowerCase();
+        if (lowerName.endsWith('.pdf')) { filetype = "pdf"; }
+        else if (lowerName.endsWith('.bak')) { filetype = "bak"; }
+        else if (lowerName.endsWith('.docx')) { filetype = "docx"; }
+        else if (lowerName.endsWith('.ggb')) { filetype = "ggb"; }
+        else if (lowerName.endsWith('.ogg') || lowerName.endsWith('.wav') || lowerName.endsWith('.mp3')) { filetype = "audio"; }
+        else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || lowerName.endsWith('.png') || lowerName.endsWith('.gif')) { filetype = "image"; }
+    }
+    
+    // Special case: geogebra does not have a mime type
+    if (!filetype && filename && filename.includes("ggb")) { filetype = "ggb"; }
+    
+    return filetype;
+}
+
+/**
+ * Add a file as exam material to the specified groups
+ * Can work with either a File object or Base64 string + filename
+ * @param {File|string} fileOrBase64 - Either a File object or Base64 string
+ * @param {string} filename - Filename (required if fileOrBase64 is Base64 string)
+ * @param {string} activeGroup - Group to add to: "a", "b", or "all"
+ * @param {Object} serverstatus - The serverstatus object
+ * @param {number} activeSection - The active section number
+ * @returns {Promise<Object>} The created fileObject
+ */
+async function addFileAsExamMaterial(fileOrBase64, filename, activeGroup, serverstatus, activeSection) {
+    let base64Content;
+    let checksum;
+    let finalFilename;
+    let filetype;
+    
+    if (fileOrBase64 instanceof File) {
+        // Handle File object
+        finalFilename = fileOrBase64.name;
+        base64Content = await readFileAsBase64(fileOrBase64);
+        checksum = await calculateMD5(fileOrBase64);
+        filetype = determineFiletype(fileOrBase64, finalFilename);
+    } else {
+        // Handle Base64 string
+        finalFilename = filename || false;
+        base64Content = fileOrBase64;
+        checksum = calculateMD5FromBase64(base64Content);
+        filetype = determineFiletype(null, finalFilename);
+    }
+    
+    // If no filename is provided, don't add anything
+    if (!finalFilename || finalFilename === false) {
+        return null;
+    }
+    
+    // Check if file with same name already exists and remove it (replace with new version)
+    const groupAFiles = serverstatus.examSections[activeSection].groupA.examInstructionFiles;
+    const groupBFiles = serverstatus.examSections[activeSection].groupB.examInstructionFiles;
+    
+    // Remove existing file with same name from groups we're adding to
+    if (activeGroup === "a" || activeGroup === "all") {
+        const indexA = groupAFiles.findIndex(file => file.filename === finalFilename);
+        if (indexA !== -1) {
+            groupAFiles.splice(indexA, 1);
+        }
+    }
+    if (activeGroup === "b" || activeGroup === "all") {
+        const indexB = groupBFiles.findIndex(file => file.filename === finalFilename);
+        if (indexB !== -1) {
+            groupBFiles.splice(indexB, 1);
+        }
+    }
+    
+    // Create file object (same structure as in defineMaterials)
+    const fileObject = {
+        filename: finalFilename,
+        filetype: filetype,
+        filecontent: base64Content,
+        checksum: checksum
+    };
+    
+    // Add to groups based on activeGroup
+    if (activeGroup === "a" || activeGroup === "all") {
+        serverstatus.examSections[activeSection].groupA.examInstructionFiles.push(fileObject);
+    }
+    if (activeGroup === "b" || activeGroup === "all") {
+        serverstatus.examSections[activeSection].groupB.examInstructionFiles.push(fileObject);
+    }
+    
+    return fileObject;
 }
 
 
@@ -802,4 +1010,4 @@ function openAllowedUrl(allowedUrl){
 
 
 
-export { getTestURL, getTestID, getFormsID, configureEditor, configureMath, configureRDP, extractDomainAndId, isValidMoodleDomainName, isValidFullDomainName, defineMaterials, handleAllowedUrlRemove, openAllowedUrl }
+export { getTestURL, getTestID, getFormsID, configureEditor, configureMath, configureActivesheets, configureRDP, extractDomainAndId, isValidMoodleDomainName, isValidFullDomainName, defineMaterials, handleAllowedUrlRemove, openAllowedUrl, addFileAsExamMaterial }

@@ -159,7 +159,7 @@ export default {
             _onPreviewClick: null,
             internetCheckCounter:0,
             
-            pdfBase64: null
+            pdfBase64: this.$route.params.serverstatus.examSections[this.$route.params.serverstatus.lockedSection].activesheetsPdf,  
         }
     }, 
     components: { ExamHeader, PdfviewPane, WebviewPane, PdfOverlay },  
@@ -246,7 +246,7 @@ export default {
                 this.pdfBase64 = null;
 
                 // 1. Get PDF Data
-                const pdfData = await ipcRenderer.invoke('getPdfFromPublic', 'demo1.pdf');
+                const pdfData = await ipcRenderer.invoke('getPdfFromPublic', 'demo3.pdf');
                 if (!pdfData) throw new Error('PDF file not found');
 
                 this.pdfBase64 = pdfData;
