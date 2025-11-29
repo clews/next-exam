@@ -365,6 +365,7 @@ export default {
 .interactive-input.table-cell {
     background-color: rgba(0, 255, 0, 0.05);
     border: none;
+    padding: 5px;
 }
 
 .interactive-input.table-cell:focus {

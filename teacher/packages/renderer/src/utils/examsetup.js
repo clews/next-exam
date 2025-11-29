@@ -159,33 +159,26 @@ async function configureMath(){
  * @param {boolean} forceDialog - If true, show dialog even if PDF already exists
  */
 async function configureActivesheets(forceDialog = false){
-    // If PDF already exists and not forcing dialog, show it directly without dialog
-    if (this.serverstatus.examSections[this.serverstatus.activeSection].activesheetsPdf && !forceDialog) {
-        this.activesheetsPreviewPdf = this.serverstatus.examSections[this.serverstatus.activeSection].activesheetsPdf;
-        
-        // Show the PDF preview pane and hide other preview components
-        const pdfPreview = document.querySelector("#pdfpreview");
-        if (pdfPreview) {
-            pdfPreview.style.display = 'block';
-            // Hide WebviewPane
-            this.webviewVisible = false;
-            // Hide other preview components (PdfviewPane buttons and embed)
-            const openPDF = document.querySelector("#openPDF");
-            const downloadPDF = document.querySelector("#downloadPDF");
-            const printPDF = document.querySelector("#printPDF");
-            const closePDF = document.querySelector("#closePDF");
-            const pdfembed = document.querySelector("#pdfembed");
-            
-            if (openPDF) openPDF.style.display = 'none';
-            if (downloadPDF) downloadPDF.style.display = 'none';
-            if (printPDF) printPDF.style.display = 'none';
-            if (closePDF) closePDF.style.display = 'none';
-            if (pdfembed) pdfembed.style.display = 'none';
-        }
-        return;
+    let htmlcontent = `<div class="my-content"> 
+        ${this.$t("dashboard.activesheetshint") || "Bitte wählen Sie eine PDF-Datei aus, die interaktive Formularfelder enthält."} <br>
+        <span style="font-size:0.8em;">(.pdf)</span>
+        </div>`
+
+    // Show group selection buttons only if groups are enabled
+    if (this.serverstatus.examSections[this.serverstatus.activeSection].groups) {
+        htmlcontent = `<div class="my-content"> 
+            ${this.$t("dashboard.activesheetshint") || "Bitte wählen Sie eine PDF-Datei aus, die interaktive Formularfelder enthält."} <br>
+            <span style="font-size:0.8em;">(.pdf)</span>
+            <br>  <br> 
+            Gruppe<br>
+            <button id="fbtnA" class="swal2-button btn btn-info m-2" style="width: 42px; height: 42px;">A</button>
+            <button id="fbtnB" class="swal2-button btn btn-warning m-2" style="width: 42px; height: 42px;filter: grayscale(90%);">B</button>
+            <button id="fbtnC" class="swal2-button btn btn-warning m-2" style="padding:0px;width: 42px; height: 42px;filter: grayscale(90%); background: linear-gradient(-60deg, #0dcaf0 50%, #ffc107 50%);">AB</button>
+        </div>`
     }
-    
-    // No PDF exists yet, show file selection dialog
+         
+    let activeGroup = this.serverstatus.examSections[this.serverstatus.activeSection].groups ? "a" : "all"  // Default to group A if groups enabled, otherwise "all"
+
     this.$swal.fire({
         customClass: {
             popup: 'my-popup',
@@ -193,78 +186,136 @@ async function configureActivesheets(forceDialog = false){
             content: 'my-content',
             input: 'my-custom-input',
             inputLabel: 'my-input-label',
-            actions: 'my-swal2-actions'
+            actions: 'my-swal2-actions',
+            htmlContainer: 'my-html-container'
         },
         title: this.$t("dashboard.activesheets") || "Active Sheets",
-        html: `
-            <div class="my-content">
-                ${this.$t("dashboard.activesheetshint") || "Bitte wählen Sie eine PDF-Datei aus, die interaktive Formularfelder enthält."}
-            </div>
-        `,
-        icon: 'question',
+        html: htmlcontent,
+        icon: "success",
         input: 'file',
         showCancelButton: true,
         cancelButtonText: this.$t("dashboard.cancel"),
         inputAttributes: {
             type: "file",
-            name: "pdfFile",
-            id: "swalPdfFile",
+            name: "files",
+            id: "swalFile",
             class: "form-control",
+            multiple: "multiple",
             accept: ".pdf"
+        },
+        didRender: () => {
+            const btnA = document.getElementById('fbtnA');
+            const btnB = document.getElementById('fbtnB');
+            const btnC = document.getElementById('fbtnC');
+            if (btnA && !btnA.dataset.listenerAdded) {
+                btnA.addEventListener('click', () => {
+                    btnA.style.filter = "grayscale(0%)"
+                    btnB.style.filter = "grayscale(90%)"
+                    btnC.style.filter = "grayscale(90%)"
+                    activeGroup = "a"
+                });
+                btnA.dataset.listenerAdded = 'true';
+            }
+            if (btnB && !btnB.dataset.listenerAdded) {
+                btnB.addEventListener('click', () => {
+                    btnA.style.filter = "grayscale(90%)"
+                    btnB.style.filter = "grayscale(0%)"
+                    btnC.style.filter = "grayscale(90%)"
+                    activeGroup = "b"
+                });
+                btnB.dataset.listenerAdded = 'true';
+            }
+            if (btnC && !btnC.dataset.listenerAdded) {
+                btnC.addEventListener('click', () => {
+                    btnA.style.filter = "grayscale(90%)"
+                    btnB.style.filter = "grayscale(90%)"
+                    btnC.style.filter = "grayscale(0%)"
+                    activeGroup = "all"
+                });
+                btnC.dataset.listenerAdded = 'true';
+            }
         },
         inputValidator: (value) => {
             if (!value) {
                 return this.$t("dashboard.nopdfselected") || "Bitte wählen Sie eine PDF-Datei aus!";
             }
-            const file = value;
-            if (!file.type.includes("pdf") && !file.name.toLowerCase().endsWith('.pdf')) {
-                return this.$t("dashboard.invalidpdf") || "Ungültige PDF-Datei!";
+            const files = value;
+            // Handle FileList (array-like object) or single File
+            const fileArray = files.length !== undefined ? Array.from(files) : [files];
+            for (const file of fileArray) {
+                if (!(file.type && file.type.includes("pdf")) && !file.name.toLowerCase().endsWith('.pdf')) {
+                    return this.$t("dashboard.invalidpdf") || "Ungültige PDF-Datei!";
+                }
             }
-        }
-    }).then(async (input) => {
-        if (!input.value) {
-            this.serverstatus.examSections[this.serverstatus.activeSection].examtype = "math";
-            return;
+        },
+    })
+    .then(async (input) => {
+        if (!input.value) {   return;   } // no further processing if no files are selected
+
+        this.status(this.$t("dashboard.processingfiles") || "Dateien werden verarbeitet...");
+        // Handle FileList (array-like object) or single File or Array
+        const files = Array.isArray(input.value) 
+            ? input.value 
+            : input.value.length !== undefined 
+                ? Array.from(input.value) 
+                : [input.value];
+
+        // Process each file
+        let firstFileBase64 = null;
+        let firstFileName = null;
+        for (const file of files) {
+            try {
+                // Check file size and warn if larger than 8 MB
+                const maxSizeBytes = 8 * 1024 * 1024; // 8 MB in bytes
+                if (file.size > maxSizeBytes) {
+                    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                    this.$swal.fire({
+                        customClass: {
+                            popup: 'my-popup',
+                            title: 'my-title',
+                            content: 'my-content',
+                            actions: 'my-swal2-actions'
+                        },
+                        title: this.$t("dashboard.filesizewarning"),
+                        html: `<div style="text-align: left;">${this.$t("dashboard.filesizewarningtext", { filename: file.name, size: fileSizeMB })}</div>`,
+                        icon: 'warning',
+                    
+                        showConfirmButton: true,
+                        confirmButtonText: 'OK'
+                    });
+                }
+
+                // Convert first file to Base64 for preview
+                if (!firstFileBase64) {
+                    firstFileBase64 = await readFileAsBase64(file);
+                    firstFileName = file.name;
+                }
+
+                // Use the shared function to add file as exam material with IsActiveSheet flag
+                await addFileAsExamMaterial(
+                    file,
+                    null, // filename not needed when using File object
+                    activeGroup,
+                    this.serverstatus,
+                    this.serverstatus.activeSection,
+                    true // isActiveSheet = true
+                );
+               
+            } catch (error) {
+                console.error(`examsetup @ configureActivesheets: Error processing file ${file.name}:`, error);
+            }
         }
 
-        const file = input.value;
+        this.setServerStatus()
         
-        try {
-            // Convert PDF to Base64
-            const base64Content = await readFileAsBase64(file);
-            
-            // Store the Base64 PDF content in preview (not yet saved)
-            this.activesheetsPreviewPdf = base64Content;
-            this.activesheetsPreviewFilename = file.name; // Store filename temporarily until accepted
-            
-            // Show the PDF preview pane and hide other preview components
-            const pdfPreview = document.querySelector("#pdfpreview");
-            if (pdfPreview) {
-                pdfPreview.style.display = 'block';
-                // Hide WebviewPane
-                this.webviewVisible = false;
-                // Hide other preview components (PdfviewPane buttons and embed)
-                const openPDF = document.querySelector("#openPDF");
-                const downloadPDF = document.querySelector("#downloadPDF");
-                const printPDF = document.querySelector("#printPDF");
-                const closePDF = document.querySelector("#closePDF");
-                const pdfembed = document.querySelector("#pdfembed");
-                
-                if (openPDF) openPDF.style.display = 'none';
-                if (downloadPDF) downloadPDF.style.display = 'none';
-                if (printPDF) printPDF.style.display = 'none';
-                if (closePDF) closePDF.style.display = 'none';
-                if (pdfembed) pdfembed.style.display = 'none';
+        // Show PdfRenderer for the first file if available
+        if (firstFileBase64 && firstFileName) {
+            // Call showBase64PdfInRenderer if available (it should be available in dashboard.vue context)
+            if (typeof this.showBase64PdfInRenderer === 'function') {
+                this.showBase64PdfInRenderer(firstFileBase64, firstFileName);
             }
-        } catch (error) {
-            console.error('examsetup @ configureActivesheets: Error processing PDF:', error);
-            this.$swal.fire({
-                title: this.$t("dashboard.error") || "Fehler",
-                text: this.$t("dashboard.pdfprocessingerror") || "Fehler beim Verarbeiten der PDF-Datei.",
-                icon: "error"
-            });
         }
-    });
+    });    
 }
 
 /**
@@ -886,7 +937,7 @@ function determineFiletype(file, filename) {
  * @param {number} activeSection - The active section number
  * @returns {Promise<Object>} The created fileObject
  */
-async function addFileAsExamMaterial(fileOrBase64, filename, activeGroup, serverstatus, activeSection) {
+async function addFileAsExamMaterial(fileOrBase64, filename, activeGroup, serverstatus, activeSection, isActiveSheet = false) {
     let base64Content;
     let checksum;
     let finalFilename;
@@ -929,6 +980,20 @@ async function addFileAsExamMaterial(fileOrBase64, filename, activeGroup, server
         }
     }
     
+    // If this is an Active Sheet, remove all existing Active Sheets from the target groups
+    if (isActiveSheet) {
+        if (activeGroup === "a" || activeGroup === "all") {
+            // Remove all files with IsActiveSheet: true from group A
+            serverstatus.examSections[activeSection].groupA.examInstructionFiles = 
+                serverstatus.examSections[activeSection].groupA.examInstructionFiles.filter(file => !file.IsActiveSheet);
+        }
+        if (activeGroup === "b" || activeGroup === "all") {
+            // Remove all files with IsActiveSheet: true from group B
+            serverstatus.examSections[activeSection].groupB.examInstructionFiles = 
+                serverstatus.examSections[activeSection].groupB.examInstructionFiles.filter(file => !file.IsActiveSheet);
+        }
+    }
+    
     // Create file object (same structure as in defineMaterials)
     const fileObject = {
         filename: finalFilename,
@@ -936,6 +1001,11 @@ async function addFileAsExamMaterial(fileOrBase64, filename, activeGroup, server
         filecontent: base64Content,
         checksum: checksum
     };
+    
+    // Add IsActiveSheet flag if specified
+    if (isActiveSheet) {
+        fileObject.IsActiveSheet = true;
+    }
     
     // Add to groups based on activeGroup
     if (activeGroup === "a" || activeGroup === "all") {

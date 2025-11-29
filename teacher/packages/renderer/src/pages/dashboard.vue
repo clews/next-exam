@@ -129,8 +129,6 @@
             :pdfBase64="activesheetsPreviewPdf"
             :loading="false"
             @close="discardActivesheetsPdf"
-            @accept="acceptActivesheetsPdf"
-            @selectOtherPdf="selectOtherActivesheetsPdf"
         />
     </div>
     <!-- pdf preview end -->
@@ -181,9 +179,22 @@
                 {{serverstatus.examSections[serverstatus.activeSection].domainname}}
                 </div>
 
-                <!-- Active Sheets PDF Info (only show if PDF was accepted) -->
-                <div v-if="isExamType('activesheets') && serverstatus.examSections[serverstatus.activeSection].activesheetsPdf && serverstatus.examSections[serverstatus.activeSection].activesheetsFilename" class="small text-white-50 text-truncate">
-                {{serverstatus.examSections[serverstatus.activeSection].activesheetsFilename}}
+
+                <!-- Active Sheets Info -->
+                <div v-if="isExamType('activesheets')" class="small text-white-50 text-truncate ms-1">    <!--  show one or both files that are defined as IsActiveSheet:true in examInstructionFiles of group A and B -->
+                    <div v-if="serverstatus.examSections[serverstatus.activeSection].groups">
+                        <!--  show both filenames if groups are enabled -->
+                        <div v-if="serverstatus.examSections[serverstatus.activeSection].groupA.examInstructionFiles.some(file => file.IsActiveSheet === true) && serverstatus.examSections[serverstatus.activeSection].groupB.examInstructionFiles.some(file => file.IsActiveSheet === true)">
+                            {{truncatedClientName(serverstatus.examSections[serverstatus.activeSection].groupA.examInstructionFiles.find(file => file.IsActiveSheet === true).filename, 20)}} <br>
+                            {{truncatedClientName(serverstatus.examSections[serverstatus.activeSection].groupB.examInstructionFiles.find(file => file.IsActiveSheet === true).filename, 20)}}
+                        </div>
+                    </div>
+                    <div v-else>
+                        <!-- show only the filename for group A if groups are disabled -->
+                        <div v-if="serverstatus.examSections[serverstatus.activeSection].groupA.examInstructionFiles.some(file => file.IsActiveSheet === true)">
+                            {{truncatedClientName(serverstatus.examSections[serverstatus.activeSection].groupA.examInstructionFiles.find(file => file.IsActiveSheet === true).filename, 20)}}
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Microsoft365 Buttons -->
@@ -224,6 +235,7 @@
                 :examSection="serverstatus.examSections[serverstatus.activeSection]" 
                 @remove-file="handleFileRemove" 
                 @show-preview="(base64, filename) => showBase64FilePreview.call(this, base64, filename)" 
+                @show-pdf-in-renderer="(base64, filename) => showBase64PdfInRenderer.call(this, base64, filename)"
                 @show-image-preview="showBase64ImagePreview" 
                 @play-audio-file="playAudioFile"
                 @remove-allowed-url="handleAllowedUrlRemove"
@@ -378,12 +390,12 @@
             <div style="display:inline-block; margin-top:4px; margin-left:4px; width:70px; font-size:0.8em;"> {{numberOfConnections}} {{$t('dashboard.stopexam')}} </div>
         </div>
 
-        <div v-if="(!serverstatus.exammode && numberOfConnections == 1)" class="btn btn-teal m-1 mt-0 text-start ms-0"  @click="startExam();hideDescription();"  @mouseover="showDescription($t('dashboard.startexamdesc'))" @mouseout="hideDescription" :class="((serverstatus.examSections[serverstatus.activeSection].examtype === 'microsoft365' && (!this.config.accessToken || !serverstatus.examSections[serverstatus.activeSection].msOfficeFile)) || (serverstatus.examSections[serverstatus.activeSection].examtype === 'activesheets' && !serverstatus.examSections[serverstatus.activeSection].activesheetsPdf))? 'disabledgreen':''" style="width:128px; height:62px; display:inline-flex">  
+        <div v-if="(!serverstatus.exammode && numberOfConnections == 1)" class="btn btn-teal m-1 mt-0 text-start ms-0"  @click="startExam();hideDescription();"  @mouseover="showDescription($t('dashboard.startexamdesc'))" @mouseout="hideDescription" :class="((serverstatus.examSections[serverstatus.activeSection].examtype === 'microsoft365' && (!this.config.accessToken || !serverstatus.examSections[serverstatus.activeSection].msOfficeFile)) || (serverstatus.examSections[serverstatus.activeSection].examtype === 'activesheets' && !hasActiveSheetsPdf))? 'disabledgreen':''" style="width:128px; height:62px; display:inline-flex">  
             <img src="/src/assets/img/svg/shield-lock.svg" class="white mt-2" width="28" height="28" style="vertical-align: top;"> 
             <div style="display:inline-block; margin-top:4px; margin-left:4px; width:70px; font-size:0.8em;">{{numberOfConnections}} {{$t('dashboard.startexamsingle')}}</div>
         </div>
 
-        <div v-if="(!serverstatus.exammode && numberOfConnections != 1)" class="btn btn-teal m-1 mt-0 text-start ms-0"  @click="startExam();hideDescription();"  @mouseover="showDescription($t('dashboard.startexamdesc'))" @mouseout="hideDescription" :class="((serverstatus.examSections[serverstatus.activeSection].examtype === 'microsoft365' && (!this.config.accessToken || !serverstatus.examSections[serverstatus.activeSection].msOfficeFile)) || (serverstatus.examSections[serverstatus.activeSection].examtype === 'activesheets' && !serverstatus.examSections[serverstatus.activeSection].activesheetsPdf))? 'disabledgreen':''" style="width:128px; height:62px; display:inline-flex">  
+        <div v-if="(!serverstatus.exammode && numberOfConnections != 1)" class="btn btn-teal m-1 mt-0 text-start ms-0"  @click="startExam();hideDescription();"  @mouseover="showDescription($t('dashboard.startexamdesc'))" @mouseout="hideDescription" :class="((serverstatus.examSections[serverstatus.activeSection].examtype === 'microsoft365' && (!this.config.accessToken || !serverstatus.examSections[serverstatus.activeSection].msOfficeFile)) || (serverstatus.examSections[serverstatus.activeSection].examtype === 'activesheets' && !hasActiveSheetsPdf))? 'disabledgreen':''" style="width:128px; height:62px; display:inline-flex">  
             <img src="/src/assets/img/svg/shield-lock.svg" class="white mt-2" width="28" height="28" style="vertical-align: top;"> 
             <div style="display:inline-block; margin-top:4px; margin-left:4px; width:70px; font-size:0.8em;">{{numberOfConnections}} {{$t('dashboard.startexam')}}</div>
         </div>
@@ -574,7 +586,7 @@ import PdfRenderer from '../components/PdfRenderer.vue'
 
 import { uploadselect, onedriveUpload, onedriveUploadSingle, uploadAndShareFile, createSharingLink, fileExistsInAppFolder, downloadFilesFromOneDrive} from '../msalutils/onedrive'
 import { handleDragEndItem, handleMoveItem, sortStudentWidgets, initializeStudentwidgets} from '../utils/dragndrop'
-import { loadFilelist, getLatest, processPrintrequest,  loadImage, loadPDF, dashboardExplorerSendFile, downloadFile, showWorkfolder, fdelete,  openLatestFolder, printBase64, showBase64FilePreview, showBase64ImagePreview } from '../utils/filemanager'
+import { loadFilelist, getLatest, processPrintrequest,  loadImage, loadPDF, dashboardExplorerSendFile, downloadFile, showWorkfolder, fdelete,  openLatestFolder, printBase64, showBase64FilePreview, showBase64ImagePreview, showBase64PdfInRenderer } from '../utils/filemanager'
 import { activateSpellcheckForStudent, delfolderquestion, stopserver, sendFiles, lockscreens, getFiles, startExam, endExam, kick, restore } from '../utils/exammanagement.js'
 import { getTestURL, getTestID, getFormsID, configureEditor, configureMath, configureActivesheets, configureRDP, defineMaterials, handleAllowedUrlRemove, openAllowedUrl, addFileAsExamMaterial } from '../utils/examsetup.js'
 
@@ -819,6 +831,32 @@ computed: {
     lockSettings() {
         const examType = this.serverstatus.examSections[this.serverstatus.activeSection].examtype;
         return examType === 'math' ;
+    },
+
+    hasActiveSheetsPdf() {
+        if (this.serverstatus.examSections[this.serverstatus.activeSection].examtype !== 'activesheets') {
+            return true; // Not activesheets mode, so no restriction
+        }
+        const section = this.serverstatus.examSections[this.serverstatus.activeSection];
+        const groupAFiles = section.groupA?.examInstructionFiles || [];
+        const groupBFiles = section.groupB?.examInstructionFiles || [];
+        // Check if there's at least one PDF with IsActiveSheet: true in BOTH groups
+        const hasGroupA = groupAFiles.some(file => file.IsActiveSheet === true && file.filetype === 'pdf');
+        const hasGroupB = groupBFiles.some(file => file.IsActiveSheet === true && file.filetype === 'pdf');
+        return hasGroupA && hasGroupB;
+    },
+
+    activeSheetsPdfFilename() {
+        if (this.serverstatus.examSections[this.serverstatus.activeSection].examtype !== 'activesheets') {
+            return null;
+        }
+        const section = this.serverstatus.examSections[this.serverstatus.activeSection];
+        const groupAFiles = section.groupA?.examInstructionFiles || [];
+        const groupBFiles = section.groupB?.examInstructionFiles || [];
+        // Find first PDF with IsActiveSheet: true
+        const activeSheetFile = groupAFiles.find(file => file.IsActiveSheet === true && file.filetype === 'pdf') ||
+                               groupBFiles.find(file => file.IsActiveSheet === true && file.filetype === 'pdf');
+        return activeSheetFile ? activeSheetFile.filename : null;
     }
 
 },
@@ -860,6 +898,7 @@ computed: {
         openLatestFolder:openLatestFolder,                          // opens the newest folder that belongs to the current visible student
         showBase64FilePreview:showBase64FilePreview,                // displays a base64 encoded pdf in the preview panel
         showBase64ImagePreview:showBase64ImagePreview,              // displays a base64 encoded image in the preview panel
+        showBase64PdfInRenderer:showBase64PdfInRenderer,            // displays a base64 encoded pdf in PdfRenderer component
 
         /**
          * Exam Managment functions
@@ -1268,50 +1307,11 @@ computed: {
         hidepreview() {
             document.querySelector("#pdfpreview").style.display = 'none';
         },
-        // accept activesheets PDF
-        async acceptActivesheetsPdf(base64Content) {
-            // Save filename and PDF content (only when accepted)
-            const filename = this.activesheetsPreviewFilename || false;
-            if (filename && filename !== false) {
-                this.serverstatus.examSections[this.serverstatus.activeSection].activesheetsFilename = filename;
-            }
-            this.serverstatus.examSections[this.serverstatus.activeSection].activesheetsPdf = base64Content;
-            
-            // Also add as exam material using the shared function (replaces existing file with same name)
-            // Only if filename is provided
-            if (filename && filename !== false) {
-                try {
-                    await addFileAsExamMaterial(
-                        base64Content,
-                        filename,
-                        'all', // Add to both groups
-                        this.serverstatus,
-                        this.serverstatus.activeSection
-                    );
-                } catch (error) {
-                    console.error('dashboard @ acceptActivesheetsPdf: Error adding PDF as exam material:', error);
-                }
-            }
-            
-            this.setServerStatus();
-            this.activesheetsPreviewPdf = null;
-            this.activesheetsPreviewFilename = null;
-            this.hidepreview();
-        },
         // discard activesheets PDF
         discardActivesheetsPdf() {
             this.activesheetsPreviewPdf = null;
             this.activesheetsPreviewFilename = null;
             this.hidepreview();
-        },
-        // select other activesheets PDF
-        selectOtherActivesheetsPdf() {
-            // Close current preview first
-            this.activesheetsPreviewPdf = null;
-            this.activesheetsPreviewFilename = null;
-            this.hidepreview();
-            // Open dialog to select new PDF (forceDialog = true)
-            this.configureActivesheets(true);
         },
         //show pincode 
         showinfo(){

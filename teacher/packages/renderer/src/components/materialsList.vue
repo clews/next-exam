@@ -8,7 +8,8 @@
               <div v-for="(file, index) in examSection.groupA.examInstructionFiles" :key="'A' + index" class="input-group"  style="">
                   <div class="btn btn-sm btn-secondary mt-1" @click="removeFile('A', index)" style="padding:4px 8px;">x</div>
                   
-                  <div v-if="file.filetype == 'pdf'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64FilePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>   
+                  <div v-if="file.filetype == 'pdf' && file.IsActiveSheet === true" class="btn btn-sm btn-warning mt-1 filename-button" :title="file.filename" @click="showBase64PdfInRenderer(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>
+                  <div v-else-if="file.filetype == 'pdf'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64FilePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>   
                   <div v-else-if="file.filetype == 'image'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64ImagePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
                   <div v-else-if="file.filetype == 'audio'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="playAudioFile(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
                   <div v-else-if="file.filetype == 'ggb'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div> 
@@ -37,7 +38,8 @@
               <div v-for="(file, index) in examSection.groupB.examInstructionFiles" :key="'B' + index" class="input-group" style="">
                   <div class="btn btn-sm btn-secondary mt-1" @click="removeFile('B', index)" style="padding:4px 8px;">x</div>
 
-                  <div v-if="file.filetype == 'pdf'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64FilePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>   
+                  <div v-if="file.filetype == 'pdf' && file.IsActiveSheet === true" class="btn btn-sm btn-warning mt-1 filename-button" :title="file.filename" @click="showBase64PdfInRenderer(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>
+                  <div v-else-if="file.filetype == 'pdf'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64FilePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>   
                   <div v-else-if="file.filetype == 'image'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64ImagePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
                   <div v-else-if="file.filetype == 'audio'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="playAudioFile(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
                   <div v-else-if="file.filetype == 'ggb'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div> 
@@ -67,7 +69,8 @@
             <div v-for="(file, index) in examSection.groupA.examInstructionFiles":key="index" class="input-group" style="">
             <div class="btn btn-sm btn-secondary mt-1" @click="removeFile('A', index)" style="padding:4px 8px;">x</div>
  
-                <div v-if="file.filetype == 'pdf'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64FilePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>   
+                <div v-if="file.filetype == 'pdf' && file.IsActiveSheet === true" class="btn btn-sm btn-warning mt-1 filename-button" :title="file.filename" @click="showBase64FilePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>
+                <div v-else-if="file.filetype == 'pdf'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64FilePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div>   
                 <div v-else-if="file.filetype == 'image'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="showBase64ImagePreview(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
                 <div v-else-if="file.filetype == 'audio'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click="playAudioFile(file.filecontent, file.filename)"> {{ getFilenameWithoutExtension(file.filename) }} </div> 
                 <div v-else-if="file.filetype == 'ggb'" class="btn btn-sm btn-cyan mt-1 filename-button" :title="file.filename" @click=""> {{ getFilenameWithoutExtension(file.filename) }} </div> 
@@ -126,6 +129,10 @@
 
       showBase64FilePreview(base64, filename){
         this.$emit('show-preview', base64, filename);
+      },
+
+      showBase64PdfInRenderer(base64, filename){
+        this.$emit('show-pdf-in-renderer', base64, filename);
       },
 
       showBase64ImagePreview(base64, filename){

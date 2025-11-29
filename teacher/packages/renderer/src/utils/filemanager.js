@@ -412,6 +412,37 @@ function showBase64FilePreview(base64, filename){
 
 
 
+// show base64 encoded PDF in PdfRenderer component
+function showBase64PdfInRenderer(base64, filename){
+    // Set the preview PDF data for PdfRenderer component
+    this.activesheetsPreviewPdf = base64;
+    this.activesheetsPreviewFilename = filename;
+    
+    // Hide other preview components
+    this.webviewVisible = false;
+    const pdfEmbed = document.querySelector("#pdfembed");
+    if (pdfEmbed) {
+        pdfEmbed.setAttribute("src", "about:blank");
+        pdfEmbed.style.display = 'none';
+    }
+    
+    // Hide other preview buttons
+    const openPDF = document.querySelector("#openPDF");
+    const downloadPDF = document.querySelector("#downloadPDF");
+    const printPDF = document.querySelector("#printPDF");
+    const closePDF = document.querySelector("#closePDF");
+    if (openPDF) openPDF.style.display = 'none';
+    if (downloadPDF) downloadPDF.style.display = 'none';
+    if (printPDF) printPDF.style.display = 'none';
+    if (closePDF) closePDF.style.display = 'none';
+    
+    // Show the PDF preview pane (PdfRenderer will be shown if activesheetsPreviewPdf is set)
+    const pdfPreview = document.querySelector("#pdfpreview");
+    if (pdfPreview) {
+        pdfPreview.style.display = 'block';
+    }
+}
+
 // show base64 encoded image in preview panel
 function showBase64ImagePreview(base64, filename){
 
@@ -512,4 +543,4 @@ function loadFilelist(directory){
     }).catch(err => { log.error(err)});
 }
  
-export {loadFilelist, getLatest, processPrintrequest, loadImage, loadPDF, dashboardExplorerSendFile, downloadFile, showWorkfolder, fdelete, openLatestFolder, printBase64, showBase64FilePreview, showBase64ImagePreview}
+export {loadFilelist, getLatest, processPrintrequest, loadImage, loadPDF, dashboardExplorerSendFile, downloadFile, showWorkfolder, fdelete, openLatestFolder, printBase64, showBase64FilePreview, showBase64ImagePreview, showBase64PdfInRenderer}

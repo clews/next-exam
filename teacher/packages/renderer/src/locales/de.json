@@ -269,6 +269,7 @@
         "warningMessage2": "Dies deutet darauf hin, dass es sich um ein gescanntes PDF handelt, das keine aktiven Formularfelder oder Tabellen enthält.",
         "understood": "Verstanden",
         "page": "Seite",
-        "pages": "Seiten"
+        "pages": "Seiten",
+        "activesheets": "Bitte überprüfen Sie die Darstellung und Positionierung der aktiven Formularfelder vor dem Start der Prüfung!"
     }
 }
