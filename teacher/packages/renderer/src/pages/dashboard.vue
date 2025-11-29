@@ -233,6 +233,7 @@
             <div class="btn btn-sm m-1 btn-cyan plusbutton " @click="defineMaterials('all');hideDescription();" @mouseover="showDescription($t('dashboard.definematerials'))" @mouseout="hideDescription"  style="">+</div>
             <MaterialsList class="m-1" 
                 :examSection="serverstatus.examSections[serverstatus.activeSection]" 
+                :exammode="serverstatus.exammode"
                 @remove-file="handleFileRemove" 
                 @show-preview="(base64, filename) => showBase64FilePreview.call(this, base64, filename)" 
                 @show-pdf-in-renderer="(base64, filename) => showBase64PdfInRenderer.call(this, base64, filename)"

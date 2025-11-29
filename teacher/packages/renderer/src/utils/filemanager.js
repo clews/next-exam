@@ -158,6 +158,7 @@ function loadPDF(filepath, filename){
         document.querySelector("#downloadPDF").style.display = 'block';
         document.querySelector("#printPDF").style.display = 'block';
         document.querySelector("#closePDF").style.display = 'block';
+        document.querySelector("#pdfrenderer").style.display = 'none';
 
     }).catch(err => { log.error(err) });     
 }
@@ -231,6 +232,7 @@ function loadImage(file){
             document.querySelector("#downloadPDF").style.display = 'block';
             document.querySelector("#printPDF").style.display = 'block'; 
             document.querySelector("#closePDF").style.display = 'block';
+            document.querySelector("#pdfrenderer").style.display = 'none';
         }).catch(err => { log.error(err)});     
 }
 
@@ -353,6 +355,7 @@ async function processPrintrequest(student){
             document.querySelector("#downloadPDF").style.display = 'block';
             document.querySelector("#printPDF").style.display = 'block';
             document.querySelector("#closePDF").style.display = 'block';
+            document.querySelector("#pdfrenderer").style.display = 'none';
         }
         else {
             this.setStudentStatus({printdenied:true}, student.token)  //inform student that request was denied
@@ -407,6 +410,7 @@ function showBase64FilePreview(base64, filename){
     document.querySelector("#downloadPDF").style.display = 'none';
     document.querySelector("#pdfembed").style.display = 'block';
     document.querySelector("#printPDF").style.display = 'none';
+    document.querySelector("#pdfrenderer").style.display = 'none';
     document.querySelector("#closePDF").style.display = 'block';
 }
 
@@ -431,6 +435,12 @@ function showBase64PdfInRenderer(base64, filename){
     const downloadPDF = document.querySelector("#downloadPDF");
     const printPDF = document.querySelector("#printPDF");
     const closePDF = document.querySelector("#closePDF");
+    const pdfRenderer = document.querySelector("#pdfrenderer");
+    if (pdfRenderer) {
+        pdfRenderer.style.display = 'block';
+    }
+
+
     if (openPDF) openPDF.style.display = 'none';
     if (downloadPDF) downloadPDF.style.display = 'none';
     if (printPDF) printPDF.style.display = 'none';
@@ -487,6 +497,7 @@ function showBase64ImagePreview(base64, filename){
     document.querySelector("#downloadPDF").style.display = 'none';
     document.querySelector("#printPDF").style.display = 'none';
     document.querySelector("#closePDF").style.display = 'block';
+    document.querySelector("#pdfrenderer").style.display = 'none';
 }
 
 

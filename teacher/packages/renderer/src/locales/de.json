@@ -120,6 +120,7 @@
         "virtualized": "virtualiserte Arbeitsumgebung",
         "delete": "löschen",
         "filedelete": "Wollen Sie die Datei/den Ordner wirklich löschen?",
+        "cannotDeleteActiveSheet": "Active Sheet kann während der Prüfung nicht gelöscht werden",
         "exitdelete": "Prüfungsdaten auf SchülerPCs löschen",
         "spellcheck": "Rechtschreibhilfe",
         "spellcheckactivate": "Rechtschreibhilfe aktivieren",

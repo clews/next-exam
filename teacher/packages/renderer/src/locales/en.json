@@ -121,6 +121,7 @@
         "virtualized": "virtual environment detected",
         "delete": "delete",
         "filedelete": "Do you really want to delete this file/folder?",
+        "cannotDeleteActiveSheet": "Active Sheet cannot be deleted during exam",
         "exitdelete": "Delete all exam-related files on students devices",
         "spellcheck": "Spellcheck",
         "spellcheckactivate": "activate spellcheck",
