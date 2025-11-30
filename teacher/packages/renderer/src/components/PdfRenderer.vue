@@ -406,10 +406,10 @@ export default {
    
     background-color: rgba(0, 255, 0, 0.05);
     border: 1px solid rgba(0, 0, 0, 0.2);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cline x1='10' y1='90' x2='90' y2='10' stroke='%23000' stroke-width='6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cline x1='0' y1='100' x2='100' y2='0' stroke='%23000' stroke-width='8'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 80% 80%;
+    background-size: 100% 100%;
 }
 
 .interactive-input.cloze {

@@ -382,7 +382,7 @@ class PdfParser {
                 
                 // Create extra large checkbox that covers the letter
                 // Size: 1.7x the font size for better visibility
-                const checkboxSize = fontSize * 1.7;
+                const checkboxSize = fontSize * 1.1;
                 const checkboxLeft = itemX + prefixWidth - (checkboxSize - letterWidth) / 2; // Center over letter
                 const checkboxTop = itemY - fontSize - (checkboxSize - fontSize) / 2 + 2; // Center vertically, shifted 2px down
                 

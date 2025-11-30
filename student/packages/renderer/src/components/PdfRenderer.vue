@@ -58,7 +58,7 @@
                 <div
                     v-for="cloze in page.clozeFields"
                     :key="cloze.id"
-                    :class="['input-overlay', cloze.type === 'checkbox' ? 'checkbox-overlay' : '']"
+                    :class="['input-overlay', cloze.type === 'checkbox' || cloze.type === 'deselect' ? 'checkbox-overlay' : '']"
                     :id="cloze.id + '_wrapper'"
                     :style="cloze.style"
                 >
@@ -69,6 +69,14 @@
                         :name="cloze.id"
                         :id="cloze.id"
                         class="interactive-input checkbox"
+                    />
+                    <input
+                        v-else-if="cloze.type === 'deselect'"
+                        type="checkbox"
+                        :checked="cloze.checked || false"
+                        :name="cloze.id"
+                        :id="cloze.id"
+                        class="interactive-input checkbox deselect-checkbox"
                     />
                     <input
                         v-else
@@ -351,6 +359,21 @@ export default {
     background-repeat: no-repeat;
     background-position: center;
     background-size: 70% 70%;
+}
+
+.interactive-input.checkbox.deselect-checkbox {
+    background-color: rgba(0, 255, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0;
+}
+
+.interactive-input.checkbox.deselect-checkbox:checked {
+    background-color: rgba(0, 255, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cline x1='0' y1='100' x2='100' y2='0' stroke='%23000' stroke-width='8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% 100%;
 }
 
 .interactive-input.cloze {
