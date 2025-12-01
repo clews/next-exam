@@ -1500,7 +1500,7 @@ export default {
         this.fetchinfointerval.start();
 
         this.saveContentCallback = () => this.saveContent(true, 'auto');  // wegs 2 parameter muss dieser umweg genommen werden sonst kann ich den eventlistener nicht mehr entfernen
-        this.saveinterval = new SchedulerService(4000);
+        this.saveinterval = new SchedulerService(20000);
         this.saveinterval.addEventListener('action', this.saveContentCallback );  // Event-Listener hinzufügen, der auf das 'action'-Event reagiert (reagiert nur auf 'action' von dieser instanz und interferiert nicht)
         this.saveinterval.start();
 
