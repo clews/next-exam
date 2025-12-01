@@ -65,6 +65,7 @@ class IpcHandler {
         this.multicastClient = null
         this.config = null
         this.WindowHandler = null
+        this.isPrintingPdf = false // flag to prevent closing window while printing
     }
     init (mc, config, wh, ch) {
         this.multicastClient = mc
@@ -635,8 +636,21 @@ class IpcHandler {
          * ATTENTION there is a similar method in communicationhandler.js that also generates a pdf but retuns a base64 version of the pdf
          */ 
         ipcMain.on('printpdf', (event, args) => { 
+            // do not print if exam mode is not active anymore
+            if (!this.multicastClient?.clientinfo?.exammode){
+                log.warn("ipchandler @ printpdf: exammode is false - skipping print")
+                event.reply("fileerror", { sender: "client", message:"exam not active" , status:"error" } )
+                return
+            }
+
+            if (this.isPrintingPdf){
+                log.warn("ipchandler @ printpdf: print already in progress - skipping new request")
+                event.reply("fileerror", { sender: "client", message:"print in progress" , status:"error" } )
+                return
+            }
+
             if (this.WindowHandler.examwindow){
-                var options = { // define print options
+                const options = { // define print options
                     margins: {top:0.5, right:0, bottom:0.5, left:0 },
                     pageSize: 'A4',
                     printBackground: false,
@@ -671,8 +685,19 @@ class IpcHandler {
                 } 
                 catch(err) { log.error(`ipchandler @ printpdf: ${err.message}`);  }
 
+                const examWindow = this.WindowHandler.examwindow
+                const webContents = examWindow?.webContents
+
+                if (!webContents){
+                    log.error("ipchandler @ printpdf: no webContents found for examwindow")
+                    event.reply("fileerror", { sender: "client", message:"no webContents" , status:"error" } )
+                    return
+                }
+
+                this.isPrintingPdf = true
+
                 // print the exam window to pdf
-                this.WindowHandler.examwindow.webContents.printToPDF(options).then(data => {
+                webContents.printToPDF(options).then(data => {
                     // delete the old pdf file if it exists
                     try { if (fs.existsSync(pdffilepath)) { fs.unlinkSync(pdffilepath); }}
                     catch(err) { log.error(`ipchandler @ printpdf: ${err.message}`);  }
@@ -704,6 +729,8 @@ class IpcHandler {
                 }).catch(error => { 
                     log.error(`ipchandler @ printpdf: ${error.message}`)
                     event.reply("fileerror", { sender: "client", message:error.message , status:"error" } )
+                }).finally(() => {
+                    this.isPrintingPdf = false
                 });
             }
         })

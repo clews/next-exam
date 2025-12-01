@@ -23,6 +23,7 @@ import extract from 'extract-zip'
 import { join } from 'path'
 import { screen, ipcMain, app, BrowserWindow, webContents } from 'electron'
 import WindowHandler from './windowhandler.js'
+import IpcHandler from './ipchandler.js'
 import { execSync } from 'child_process';
 import log from 'electron-log';
 import {SchedulerService} from './schedulerservice.ts'
@@ -781,6 +782,10 @@ const __dirname = import.meta.dirname;
      * @param serverstatus contains information about exammode, examtype, and other settings from the teacher instance
      */
     async startExam(serverstatus){
+        // check if any dialog is open and log warning
+        if (WindowHandler.exitWarningOpen || WindowHandler.exitQuestionOpen || WindowHandler.minimizeWarningOpen) {
+            log.warn("communicationhandler @ startExam: Dialog is still open - exam will start anyway")
+        }
   
         let displays = screen.getAllDisplays()
         let primary = screen.getPrimaryDisplay()
@@ -839,7 +844,15 @@ const __dirname = import.meta.dirname;
      * disables restrictions and blur 
      */
     async endExam(serverstatus){
+        
+        WindowHandler.removeBlurListener();
       
+        //only disable restrictions if not in exam mode ( seriosuly.. how could this ever happen? )
+        if (this.multicastClient.clientinfo.exammode){
+            this.multicastClient.clientinfo.exammode = false
+            disableRestrictions()
+        }
+
         // delete students work on students pc (makes sense if exam is written on school property)
         if (serverstatus && serverstatus.delfolderonexit === true){
             log.info("communicationhandler @ endExam: cleaning exam workfolder on exit")
@@ -850,12 +863,7 @@ const __dirname = import.meta.dirname;
                 }
             } catch (error) { log.error("communicationhandler @ endExam: ",error); }
         }
-        WindowHandler.removeBlurListener();
-      
-        //only disable restrictions if not in exam mode
-        if (this.multicastClient.clientinfo.exammode){ 
-            disableRestrictions()
-        }
+
 
         if (WindowHandler.examwindow){ // in some edge cases in development this is set but still unusable - use try/catch   
             try {  //send save trigger to exam window
@@ -876,16 +884,10 @@ const __dirname = import.meta.dirname;
                     }
                     // Wait for all DevTools to be closed before closing the exam window
                     await this.sleep(1000)                                                       // ensure all closeDevTools() calls are completed
-                    if (WindowHandler.examwindow){
-                        WindowHandler.examwindow.close(); 
-                        WindowHandler.examwindow.destroy(); 
-                    }
+                    this.closeExamWindowSafely()
                 }   
                 else {
-                    if (WindowHandler.examwindow){
-                        WindowHandler.examwindow.close(); 
-                        WindowHandler.examwindow.destroy(); 
-                    }
+                    this.closeExamWindowSafely()
                 }
             }
             catch(e){ log.error('communicationhandler @ endExam: ',e)}
@@ -903,7 +905,7 @@ const __dirname = import.meta.dirname;
         }
         WindowHandler.blockwindows = []
         WindowHandler.examwindow = null;
-        this.multicastClient.clientinfo.exammode = false
+        
         this.multicastClient.clientinfo.msofficeshare = false
         this.multicastClient.clientinfo.focus = true
         this.multicastClient.clientinfo.localLockdown = false;
@@ -913,6 +915,21 @@ const __dirname = import.meta.dirname;
         }
         // ask student to quit app after finishing exam
         await WindowHandler.showExitQuestion()
+    }
+
+    /**
+     * Closes examwindow only when no printToPDF operation is running
+     */
+    closeExamWindowSafely(){
+        if (IpcHandler.isPrintingPdf){
+            log.warn("communicationhandler @ closeExamWindowSafely: printToPDF in progress - retry in 1s")
+            setTimeout(() => { this.closeExamWindowSafely() }, 1000) // retry until printing is finished
+            return
+        }
+        if (WindowHandler.examwindow){
+            WindowHandler.examwindow.close(); 
+            WindowHandler.examwindow.destroy(); 
+        }
     }
 
 
