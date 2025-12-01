@@ -160,12 +160,12 @@ export default {
         },
         parsedPages: {
             handler(newPages) {
-                if (newPages && newPages.length > 0 && !this.warningShown) {
-                    const pagesWithWarning = newPages.filter(page => page.hasWarning);
-                    if (pagesWithWarning.length > 0) {
-                        this.showWarningDialog(pagesWithWarning);
-                    }
-                }
+                // if (newPages && newPages.length > 0 && !this.warningShown) {
+                //     const pagesWithWarning = newPages.filter(page => page.hasWarning);
+                //     if (pagesWithWarning.length > 0) {
+                //         this.showWarningDialog(pagesWithWarning);
+                //     }
+                // }
             },
             immediate: false
         }

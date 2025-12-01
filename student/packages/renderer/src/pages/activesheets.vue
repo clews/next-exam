@@ -758,8 +758,20 @@ export default {
     
 }
 </script>
+<style >
+@media print {
+    #vuexambody {
+            position:absolute !important;   /* position:absolute is required for printing of pdfs with multiple pages*/
+    }
+}
+
+</style>
+
 
 <style scoped lang="scss">
+
+
+
 #toolbar {
     z-index: 10001;
     background-color: rgba(var(--bs-dark-rgb))
@@ -825,15 +837,7 @@ export default {
         box-shadow: none !important;
     }
 
-    #vueexambody {
-        overflow: visible !important;
-        height: auto !important;
-        max-height: none !important;
-        border-radius:0px !important;
-        background-color: white !important;
-        box-shadow: none !important;
-        position:absolute !important;
-    }
+
 
     #app {
         display:block !important;
@@ -847,6 +851,7 @@ export default {
         overflow: visible !important;
         height: auto !important;
         max-height: none !important;
+        position:absolute !important;
     }
 
     ::-webkit-scrollbar {
