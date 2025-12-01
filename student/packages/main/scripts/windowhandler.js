@@ -50,7 +50,10 @@ class WindowHandler {
       this.bipwindow = null
       this.config = null
       this.multicastClient = null
-      this.exitDialogOpen = false  // prevent multiple exit dialogs from opening
+    
+      this.exitWarningOpen = false  // track if exit warning dialog is open
+      this.exitQuestionOpen = false  // track if exit question dialog is open
+      this.minimizeWarningOpen = false  // track if minimize warning dialog is open
     }
 
     init (mc, config) {
@@ -743,8 +746,7 @@ class WindowHandler {
             if (this.multicastClient.clientinfo.exammode) {
                 if (!this.config.development) { e.preventDefault(); }
             }
-            else {
-                languageToolServer.stopServer(); // Kill LanguageTool server when exam window is closed
+            else {              
                 this.examwindow.destroy(); 
                 this.examwindow = null;
                 this.examDisplayId = null  // reset reserved display ID when exam window is closed
@@ -881,23 +883,28 @@ class WindowHandler {
 
 
     async showExitWarning(message){
+        this.exitWarningOpen = true
         this.mainwindow.allowexit = true
-        await dialog.showMessageBox(this.mainwindow, {
-            type: 'warning',
-            buttons: ['Ok'],
-            title: 'Programm Beenden',
-            message: message,
-            cancelId: 1
-        });
-        app.quit()
+        try {
+            await dialog.showMessageBox(this.mainwindow, {
+                type: 'warning',
+                buttons: ['Ok'],
+                title: 'Programm Beenden',
+                message: message,
+                cancelId: 1
+            });
+            app.quit()
+        } finally {
+            this.exitWarningOpen = false
+        }
     }
 
     async showExitQuestion(){
-        if (this.exitDialogOpen) {
+        if (this.exitQuestionOpen) {
             log.info("Windowhandler @ showExitQuestion: dialog already open, skipping")
             return
         }
-        this.exitDialogOpen = true
+        this.exitQuestionOpen = true
         try {
             let choice = await dialog.showMessageBox(this.mainwindow, {
                 type: 'question',
@@ -914,18 +921,23 @@ class WindowHandler {
                 app.quit()
             }
         } finally {
-            this.exitDialogOpen = false
+            this.exitQuestionOpen = false
         }
     }
 
     async showMinimizeWarning(){
-        await dialog.showMessageBox(this.mainwindow, {
-            type: 'info',
-            buttons: ['OK'],
-            title: 'Minimize to System Tray',
-            message: 'Die Anwendung Next-Exam wurde minimiert!',
-    
-        });
+        this.minimizeWarningOpen = true
+        try {
+            await dialog.showMessageBox(this.mainwindow, {
+                type: 'info',
+                buttons: ['OK'],
+                title: 'Minimize to System Tray',
+                message: 'Die Anwendung Next-Exam wurde minimiert!',
+        
+            });
+        } finally {
+            this.minimizeWarningOpen = false
+        }
     }
 
 

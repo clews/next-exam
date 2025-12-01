@@ -20,7 +20,7 @@
         "registered": "registered",
         "connected": "connected",
         "disconnected": "disconnected",
-        "registeredinfo": "Successfully registered on server",
+        "registeredinfo": "Successfully registered on server! \n\nPlease wait for the activation of the exam mode by the teacher!",
         "started": "search started",
         "nopw": "wrong username or pin",
         "nouser":"no username given",

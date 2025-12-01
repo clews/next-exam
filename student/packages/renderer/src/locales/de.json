@@ -20,7 +20,7 @@
         "registered": "angemeldet",
         "connected": "verbunden",
         "disconnected": "Verbindung unterbrochen",
-        "registeredinfo": "Sie haben sich erfolgreich am Server registriert!",
+        "registeredinfo": "Sie haben sich erfolgreich am Server registriert! \n\nBitte warten Sie auf die Aktivierung des Prüfungsmodus durch die Lehrperson!",
         "started": "Suche gestartet",
         "nopw": "Falscher Benutzername oder Pincode",
         "nouser": "Benutzername fehlt",

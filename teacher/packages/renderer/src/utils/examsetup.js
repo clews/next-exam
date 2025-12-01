@@ -74,9 +74,9 @@ async function getTestID(){
             document.getElementById('swal2-input').value = this.serverstatus.examSections[this.serverstatus.activeSection].moodleURL
         },
         inputValidator: (value) => {
-            if (!value || !isValidMoodleDomainName(value) ) {return 'No valid domain given!'}
+            if (!value || !isValidMoodleDomainName(value) ) {return this.$t("dashboard.moodleInvalidDomain")}
             let { moodledomain, testid } = extractDomainAndId(value);
-            if ( !testid) { return 'No valid ID given!'}
+            if ( !testid) { return this.$t("dashboard.moodleInvalidId")}
         }
     }).then((input) => {
         if (!input.value ) {
@@ -122,7 +122,7 @@ async function getFormsID(){
         </span>
         </div>`,
         inputValidator: (value) => {
-            if (!value) {return 'No ID given!'}
+            if (!value) {return this.$t("dashboard.moodleInvalidId")}
         }
     }).then((input) => {
         if (!input.value) { this.serverstatus.examSections[this.serverstatus.activeSection].examtype = "math"}
@@ -436,7 +436,7 @@ async function configureEditor(){
             <div> 
                 <h6>${this.$t("dashboard.fontfamily")}</h6>
                 <label><input type="radio" name="fontfamily" value="serif"/> serif</label> &nbsp;
-                <label><input type="radio" name="fontfamily" value="sans" checked/> sans-serif</label> &nbsp;
+                <label><input type="radio" name="fontfamily" value="sans-serif" checked/> sans-serif</label> &nbsp;
             </div>
 
             <div>
@@ -781,11 +781,11 @@ function defineMaterials(who) {
             }
         },
         inputValidator: (value) => {
-            
             const allowedURLElement = document.getElementById('allowedURL');
             const allowedURL = allowedURLElement ? allowedURLElement.value : '';
-            if (allowedURL !== "" && !isValidFullDomainName(allowedURL)) {return 'Invalid Domain!'}
-          
+            if (allowedURL !== "" && !isValidFullDomainName(allowedURL)) {
+                return this.$t('dashboard.invalidDomain'); // invalid domain message
+            }
         },
         preConfirm: () => {
             // Save allowedURL value before dialog closes (Electron 39 compatibility)

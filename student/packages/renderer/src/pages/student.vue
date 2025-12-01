@@ -986,9 +986,9 @@ export default {
                 if (IPCresponse.status === "success") {
                         this.$swal.fire({
                             title: "OK",
-                            text: this.$t("student.registeredinfo"),
+                            html: `<div style="white-space: pre-line;">${this.$t("student.registeredinfo")}</div>`,
                             icon: 'success',
-                            timer: 3000,
+                            timer: 6000,
                             showCancelButton: false,
                             didOpen: () => { this.$swal.showLoading(); },
                         })
