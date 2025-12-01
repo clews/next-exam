@@ -4,6 +4,16 @@ import os from 'os';
 
 const execAsync = promisify(exec);
 
+// Convert RSSI in dBm to a quality percentage between 0 and 100.
+function dbmToQualityPercent(dbm) {
+    if (dbm === null || Number.isNaN(dbm)) return null;
+    const minDbm = -100;
+    const maxDbm = -30;
+    const clamped = Math.max(minDbm, Math.min(maxDbm, dbm));
+    const percent = ((clamped - minDbm) / (maxDbm - minDbm)) * 100;
+    return Math.round(percent);
+}
+
 /**
  * Get current WLAN information (SSID, BSSID, Quality)
  * @returns {Promise<{ssid: string|null, bssid: string|null, quality: number|null}>}
@@ -37,7 +47,7 @@ async function getWlanInfoLinux() {
         // First try to get active device directly (faster than listing all networks)
         try {
             const { stdout } = await execAsync('nmcli -t -f active,ssid,bssid,signal device wifi list', {
-                timeout: 2000,
+                timeout: 4000,
                 maxBuffer: 1024 * 64
             });
             if (!stdout) {
@@ -99,12 +109,13 @@ async function getWlanInfoLinux() {
                 const bssid = bssidMatch ? bssidMatch[1].toUpperCase() : null;
                 
                 const signalMatch = iwlinkStdout ? iwlinkStdout.match(/signal:\s+(-?\d+)/) : null;
-                const signal = signalMatch ? (parseInt(signalMatch[1], 10) || null) : null;
+                const signalDbm = signalMatch ? (parseInt(signalMatch[1], 10) || null) : null;
+                const quality = signalDbm !== null ? dbmToQualityPercent(signalDbm) : null;
                 
                 return {
                     ssid,
                     bssid,
-                    quality: signal
+                    quality
                 };
             } catch (iwError) {
                 // Last fallback: iwconfig (deprecated but widely available)
@@ -136,7 +147,7 @@ async function getWlanInfoLinux() {
                     return {
                         ssid,
                         bssid,
-                        quality: signal
+                        quality: dbmToQualityPercent(signal)
                     };
                 } catch (iwconfigError) {
                     // All methods failed, return empty object
@@ -223,7 +234,8 @@ async function getWlanInfoMacOS() {
             
             let ssid = null;
             let bssid = null;
-            let signal = null;
+            let rssiDbm = null;
+            let signalPercent = null;
             
             for (const line of lines) {
                 if (line.startsWith('SSID:')) {
@@ -236,22 +248,29 @@ async function getWlanInfoMacOS() {
                     // RSSI in dBm (negative value)
                     const rssiStr = line.replace('agrCtlRSSI:', '').trim();
                     const rssi = rssiStr ? (parseInt(rssiStr, 10) || null) : null;
-                    signal = rssi;
+                    rssiDbm = rssi;
                 } else if (line.startsWith('link auth:')) {
                     // Alternative: signal strength as percentage (if available)
                     const signalMatch = line.match(/(\d+)%/);
-                    if (signalMatch && !signal) {
+                    if (signalMatch && signalPercent === null) {
                         const parsed = parseInt(signalMatch[1], 10);
-                        signal = isNaN(parsed) ? null : parsed;
+                        signalPercent = isNaN(parsed) ? null : parsed;
                     }
                 }
             }
             
-            if (ssid || bssid || signal !== null) {
+            let quality = null;
+            if (signalPercent !== null) {
+                quality = signalPercent;
+            } else if (rssiDbm !== null) {
+                quality = dbmToQualityPercent(rssiDbm);
+            }
+            
+            if (ssid || bssid || quality !== null) {
                 return {
                     ssid: ssid || null,
                     bssid: bssid || null,
-                    quality: signal
+                    quality
                 };
             }
         } catch (airportError) {
@@ -312,4 +331,5 @@ async function getWlanInfoMacOS() {
 }
 
 export default { getWlanInfo };
+
 
