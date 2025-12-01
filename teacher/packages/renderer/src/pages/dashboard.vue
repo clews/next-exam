@@ -336,6 +336,12 @@
                 <!-- Icon für den Standarddrucker -->
                 <img v-if="printer.printerName === defaultPrinter" src="/src/assets/img/svg/games-solve.svg" class="printercheck" width="22" height="22" />
             </div>
+
+       
+       
+
+
+
             <div v-if="currentpreviewPath && defaultPrinter">
                 <button id="printButton" class="btn btn-dark mt-1 mb-0" @click="printBase64();hideSetup()"><img src="/src/assets/img/svg/print.svg" class="" width="22" height="22" > Print: {{ currentpreviewname }} </button>
             </div> 
@@ -2057,6 +2063,9 @@ computed: {
     background-color: white;
     box-shadow: 0 0 1em rgba(0, 0, 0, 0.5);
     width: 400px;
+    max-height: 700px;      /* limit dialog height */
+    overflow-y: auto;       /* enable scrolling if content is taller */
+    overflow-x: hidden;     /* prevent horizontal scrolling */
     z-index: 1000000;
 }
 
