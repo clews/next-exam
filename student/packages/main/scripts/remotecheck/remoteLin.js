@@ -41,7 +41,6 @@ async function checkProcesses() {
 
 async function checkPorts() {
   const foundPorts = []
-  const correctlyFormattedPorts = suspiciousPorts.map(p => `:${p} `);
 
   try {
     const { stdout } = await execAsync('lsof -i -n -P', { 
@@ -52,12 +51,12 @@ async function checkPorts() {
     
     const out = stdout.toLowerCase()
     
-    for (let i = 0; i < correctlyFormattedPorts.length; i++) {
-      const formattedPort = correctlyFormattedPorts[i]
-      const originalPort = suspiciousPorts[i]
-      
-      if (out.includes(formattedPort)) {
-        foundPorts.push(originalPort)
+    for (const port of suspiciousPorts) {
+      // Match exact port number: :PORT followed by space, ->, (, or end of line
+      // This prevents matching :53 inside :535543
+      const portRegex = new RegExp(`:${port}(?:\\s|->|\\(|$)`, 'i');
+      if (portRegex.test(out)) {
+        foundPorts.push(port)
       }
     }
     

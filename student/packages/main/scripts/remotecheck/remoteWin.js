@@ -53,6 +53,7 @@ async function checkPorts() {
     
     for (const port of suspiciousPorts) {
       // Regex to find :PORT followed by a space (ensures exact port match, e.g., :5938 )
+      // This prevents matching :53 inside :535543
       const regex = new RegExp(`:${port}\\s`, 'g') 
       if (regex.test(stdout)) {
         foundPorts.push(port)
