@@ -617,11 +617,11 @@ function defineMaterials(who) {
             }
         },
         inputValidator: (value) => {
-            
             const allowedURLElement = document.getElementById('allowedURL');
             const allowedURL = allowedURLElement ? allowedURLElement.value : '';
-            if (allowedURL !== "" && !isValidFullDomainName(allowedURL)) {return 'Invalid Domain!'}
-          
+            if (allowedURL !== "" && !isValidFullDomainName(allowedURL)) {
+                return this.$t('dashboard.invalidDomain'); // invalid domain message
+            }
         },
         preConfirm: () => {
             // Save allowedURL value before dialog closes (Electron 39 compatibility)

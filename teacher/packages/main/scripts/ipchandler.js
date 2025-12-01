@@ -569,13 +569,18 @@ class IpcHandler {
                             horizontal: 1200,
                             vertical: 1200
                         }
-                    }, () => {
+                    }, (success, failureReason) => {
+                        // log if print job was handed over to OS or failed
+                        if (!success) {
+                            log.error(`ipchandler @ printbase64: print job failed for printer ${printerName}: ${failureReason || 'unknown reason'}`);
+                        } else {
+                            log.info(`ipchandler @ printbase64: print job successfully handed over to OS for printer ${printerName}`);
+                        }
                         if (hiddenWin && !hiddenWin.isDestroyed()) {
                             hiddenWin.close();
                         }
                     });
-                }
-                else {
+                } else {
                     log.error('ipchandler @ printbase64: Rendering/Print failed!');
                 }
             });

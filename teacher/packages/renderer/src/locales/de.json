@@ -138,6 +138,7 @@
         "gformshint": "Bitte geben Sie eine gültige Google Forms ID ein!",
         "eduvidualdomain": "Sollte ihre Moodleinstanz unter einer anderen Domain erreichbar sein, geben Sie diese an",
         "moodleInvalidDomain": "Bitte geben Sie eine gültige Moodle-Domain an!",
+        "invalidDomain": "Bitte geben Sie eine gültige Domain ein!",
         "moodleInvalidId": "Bitte geben Sie eine gültige Test-ID an!",
         "lock":"Bildschirme sperren",
         "unlock":"Bildschirme freigeben",
