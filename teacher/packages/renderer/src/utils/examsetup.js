@@ -74,9 +74,9 @@ async function getTestID(){
             document.getElementById('swal2-input').value = this.serverstatus.examSections[this.serverstatus.activeSection].moodleURL
         },
         inputValidator: (value) => {
-            if (!value || !isValidMoodleDomainName(value) ) {return 'No valid domain given!'}
+            if (!value || !isValidMoodleDomainName(value) ) {return this.$t("dashboard.moodleInvalidDomain")}
             let { moodledomain, testid } = extractDomainAndId(value);
-            if ( !testid) { return 'No valid ID given!'}
+            if ( !testid) { return this.$t("dashboard.moodleInvalidId")}
         }
     }).then((input) => {
         if (!input.value ) {
@@ -122,7 +122,7 @@ async function getFormsID(){
         </span>
         </div>`,
         inputValidator: (value) => {
-            if (!value) {return 'No ID given!'}
+            if (!value) {return this.$t("dashboard.moodleInvalidId")}
         }
     }).then((input) => {
         if (!input.value) { this.serverstatus.examSections[this.serverstatus.activeSection].examtype = "math"}
