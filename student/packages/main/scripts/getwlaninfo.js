@@ -292,8 +292,9 @@ async function getWlanInfoWindows() {
         
         for (const line of lines) {
             // SSID parsing - more flexible, handles various formats
-            if (line.match(/SSID\s*:/i)) {
-                const match = line.match(/SSID\s*:\s*(.+)/i);
+            // Use negative lookbehind to ensure we don't match "BSSID" (which contains "SSID")
+            if (line.match(/(?<!B)SSID\s*:/i)) {
+                const match = line.match(/(?<!B)SSID\s*:\s*(.+)/i);
                 if (match) {
                     const extracted = match[1].trim();
                     // Only set if not empty and not "N/A" or similar
@@ -340,6 +341,24 @@ async function getWlanInfoWindows() {
             message: null
         };
     } catch (error) {
+        // Check if error is due to location permissions (might be in stderr or error message)
+        const errorMessage = (error.message || '').toLowerCase();
+        const errorStdout = (error.stdout || '').toLowerCase();
+        const errorStderr = (error.stderr || '').toLowerCase();
+        const combinedErrorOutput = errorMessage + ' ' + errorStdout + ' ' + errorStderr;
+        
+        // Check for Windows 11 location permission requirement (various language versions)
+        if (combinedErrorOutput.includes('standortberechtigungen') ||
+            combinedErrorOutput.includes('standort') && (combinedErrorOutput.includes('benötigen') || combinedErrorOutput.includes('benötigt')) ||
+            combinedErrorOutput.includes('location permissions') ||
+            combinedErrorOutput.includes('location') && combinedErrorOutput.includes('required') ||
+            combinedErrorOutput.includes('positionsdienste') ||
+            combinedErrorOutput.includes('datenschutz') && combinedErrorOutput.includes('standort') ||
+            combinedErrorOutput.includes('privacy') && combinedErrorOutput.includes('location') ||
+            combinedErrorOutput.includes('netzwerkshellbefehle') && combinedErrorOutput.includes('standort')) {
+            return { ssid: null, bssid: null, quality: null, message: 'nopermissions' };
+        }
+        
         // Log error when command execution fails (timeout, permission, etc.)
         log.error('getWlanInfoWindows: Error executing netsh command:', error.message || error);
         return { ssid: null, bssid: null, quality: null, message: 'error' };
