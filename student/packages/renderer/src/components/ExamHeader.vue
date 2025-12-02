@@ -78,6 +78,21 @@
   export default {
     name: 'ExamHeader',
     props: ['serverstatus','clientinfo','online', 'clientname', 'exammode', 'servername', 'pincode', 'battery', 'currenttime','timesinceentry','componentName','localLockdown','wlanInfo','hostip'],
+    data() {
+      return {
+        lastShownMessage: null
+      };
+    },
+    watch: {
+      'wlanInfo.message'(newMessage) {
+        if (newMessage && newMessage !== this.lastShownMessage) {
+          this.showWlanMessage(newMessage);
+          this.lastShownMessage = newMessage;
+        } else if (!newMessage) {
+          this.lastShownMessage = null;
+        }
+      }
+    },
     methods: {
       reconnect() {
         // Methode zur Wiederherstellung der Verbindung
@@ -88,6 +103,53 @@
         // Methode zum sauberen Beenden des abgesicherten Modus
         this.$emit('gracefullyExit');
       },
+      showWlanMessage(message) {
+        let title = '';
+        let text = '';
+        let icon = 'warning';
+        
+        // additional messages: 'nointerface', 'givingup'  - not handled here for now - just silently ignore them
+
+        switch (message) {
+          case 'error':
+            title = 'WLAN-Fehler';
+            text = 'Es konnte keine WLAN-Information abgerufen werden. Bitte überprüfen Sie die Netzwerkverbindung.';
+            icon = 'error';
+            break;
+
+          case 'nopermissions':
+            title = 'Standortberechtigung erforderlich';
+            text = 'Windows benötigt Standortberechtigungen, um WLAN-Informationen abzurufen. Bitte aktivieren Sie die Positionsdienste in den Datenschutz- und Sicherheitseinstellungen.';
+            icon = 'warning';
+            break;
+          default:
+            return;
+        }
+        
+        this.$swal.fire({
+          title: title,
+          text: text,
+          icon: icon,
+          confirmButtonText: 'OK',
+          allowEscapeKey: true,
+          didOpen: (popup) => {
+            // Transitions deaktivieren (wie im globalen Hook)
+            const elementsToControl = [
+              popup,
+              document.querySelector('.swal2-container'),
+            ];
+            
+            elementsToControl
+              .filter(el => el)
+              .forEach(el => {
+                el.style.transition = 'none';
+                el.style.animation = 'none';
+                el.style.webkitAnimation = 'none';
+                el.style.webkitTransition = 'none';
+              });
+          }
+        });
+      }
     },
   }
 </script>

@@ -5,6 +5,10 @@ import log from 'electron-log';
 
 const execAsync = promisify(exec);
 
+// Counter for failed attempts - skip execution after 4 consecutive failures
+let failureCounter = 0;
+const MAX_FAILURES = 3;
+
 // Convert RSSI in dBm to a quality percentage between 0 and 100.
 function dbmToQualityPercent(dbm) {
     if (dbm === null || Number.isNaN(dbm)) return null;
@@ -17,25 +21,47 @@ function dbmToQualityPercent(dbm) {
 
 /**
  * Get current WLAN information (SSID, BSSID, Quality)
- * @returns {Promise<{ssid: string|null, bssid: string|null, quality: number|null}>}
+ * @returns {Promise<{ssid: string|null, bssid: string|null, quality: number|null, message: string|null}>}
+ * @description message can be: "error" (on error), "nointerface" (no interface available), "nopermissions" (location permissions missing on Windows), or null (success)
  */
 export async function getWlanInfo() {
+    // Skip execution if we've had too many consecutive failures
+    if (failureCounter >= MAX_FAILURES) {
+        return { ssid: null, bssid: null, quality: null, message: 'givingup' };
+    }
+    
     try {
         const platform = os.platform();
+        let result;
         
         switch (platform) {
             case 'linux':
-                return await getWlanInfoLinux();
+                result = await getWlanInfoLinux();
+                break;
             case 'win32':
-                return await getWlanInfoWindows();
+                result = await getWlanInfoWindows();
+                break;
             case 'darwin':
-                return await getWlanInfoMacOS();
+                result = await getWlanInfoMacOS();
+                break;
             default:
-                return { ssid: null, bssid: null, quality: null };
+                failureCounter++;
+                return { ssid: null, bssid: null, quality: null, message: 'givingup' };
         }
+        
+        // Reset counter on successful result (has data)
+        if (result.ssid || result.bssid || result.quality !== null) {
+            failureCounter = 0;
+        } else {
+            // Increment counter on failure
+            failureCounter++;
+        }
+        
+        return result;
     } catch (error) {
         // Return empty object instead of throwing to prevent app crash
-        return { ssid: null, bssid: null, quality: null };
+        failureCounter++;
+        return { ssid: null, bssid: null, quality: null, message: 'error' };
     }
 }
 
@@ -47,11 +73,25 @@ async function getWlanInfoLinux() {
         // Try nmcli first (most common on modern Linux)
         // First try to get active device directly (faster than listing all networks)
         try {
-            const { stdout } = await execAsync('nmcli -t -f active,ssid,bssid,signal device wifi list', {
-                timeout: 4000,
-                maxBuffer: 1024 * 64
-            });
-            if (!stdout) {
+            let stdout = null;
+            try {
+                const result = await execAsync('nmcli -t -f active,ssid,bssid,signal device wifi list', {
+                    timeout: 4000,
+                    maxBuffer: 1024 * 64
+                });
+                stdout = result.stdout;
+            
+            } catch (execError) {
+                // Even if execAsync throws an error, check if stdout contains valid data
+                // nmcli sometimes returns non-zero exit code but still provides valid output
+                if (execError.stdout && execError.stdout.trim().length > 0) {
+                    stdout = execError.stdout;
+                } else {
+                    throw execError;
+                }
+            }
+            
+            if (!stdout || stdout.trim().length === 0) {
                 throw new Error('No output from nmcli');
             }
             const lines = stdout.trim().split('\n');
@@ -85,7 +125,8 @@ async function getWlanInfoLinux() {
                     return {
                         ssid: ssid || null,
                         bssid: bssid || null,
-                        quality: signal
+                        quality: signal,
+                        message: null
                     };
                 }
             }
@@ -123,7 +164,8 @@ async function getWlanInfoLinux() {
                 return {
                     ssid,
                     bssid,
-                    quality
+                    quality,
+                    message: null
                 };
             } catch (iwError) {
                 // Only log if it's a real error
@@ -161,7 +203,8 @@ async function getWlanInfoLinux() {
                     return {
                         ssid,
                         bssid,
-                        quality: dbmToQualityPercent(signal)
+                        quality: dbmToQualityPercent(signal),
+                        message: null
                     };
                 } catch (iwconfigError) {
                     // Only log if all methods failed with real errors (command not found, timeout)
@@ -175,12 +218,19 @@ async function getWlanInfoLinux() {
     } catch (error) {
         // Log unexpected errors during WLAN info retrieval
         log.error('getWlanInfoLinux: Unexpected error:', error.message || error);
+        return {
+            ssid: null,
+            bssid: null,
+            quality: null,
+            message: 'error'
+        };
     }
     
     return {
         ssid: null,
         bssid: null,
-        quality: null
+        quality: null,
+        message: 'nointerface'
     };
 }
 
@@ -208,18 +258,30 @@ async function getWlanInfoWindows() {
             combinedOutput.includes('is not running') ||
             combinedOutput.includes('service is not running') ||
             combinedOutput.includes('der dienst') && combinedOutput.includes('wird nicht ausgeführt')) {
-            return { ssid: null, bssid: null, quality: null };
+            return { ssid: null, bssid: null, quality: null, message: 'nointerface' };
+        }
+        
+        // Check for Windows 11 location permission requirement (various language versions)
+        if (combinedOutput.includes('standortberechtigungen') ||
+            combinedOutput.includes('standort') && (combinedOutput.includes('benötigen') || combinedOutput.includes('benötigt')) ||
+            combinedOutput.includes('location permissions') ||
+            combinedOutput.includes('location') && combinedOutput.includes('required') ||
+            combinedOutput.includes('positionsdienste') ||
+            combinedOutput.includes('datenschutz') && combinedOutput.includes('standort') ||
+            combinedOutput.includes('privacy') && combinedOutput.includes('location') ||
+            combinedOutput.includes('netzwerkshellbefehle') && combinedOutput.includes('standort')) {
+            return { ssid: null, bssid: null, quality: null, message: 'nopermissions' };
         }
         
         if (!stdout || stdout.trim().length === 0) {
-            return { ssid: null, bssid: null, quality: null };
+            return { ssid: null, bssid: null, quality: null, message: 'nointerface' };
         }
         
         // Check if there are no interfaces available
         if (stdout.includes('There is no wireless interface') || 
             stdout.includes('Es gibt keine Drahtlos-Schnittstelle') ||
             stdout.match(/No wireless/i)) {
-            return { ssid: null, bssid: null, quality: null };
+            return { ssid: null, bssid: null, quality: null, message: 'nointerface' };
         }
         
         const lines = stdout.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -274,12 +336,13 @@ async function getWlanInfoWindows() {
         return {
             ssid: (ssid && ssid.length > 0) ? ssid : null,
             bssid: (bssid && bssid.length > 0) ? bssid : null,
-            quality: signal
+            quality: signal,
+            message: null
         };
     } catch (error) {
         // Log error when command execution fails (timeout, permission, etc.)
         log.error('getWlanInfoWindows: Error executing netsh command:', error.message || error);
-        return { ssid: null, bssid: null, quality: null };
+        return { ssid: null, bssid: null, quality: null, message: 'error' };
     }
 }
 
@@ -341,7 +404,8 @@ async function getWlanInfoMacOS() {
                 return {
                     ssid: ssid || null,
                     bssid: bssid || null,
-                    quality
+                    quality,
+                    message: null
                 };
             }
         } catch (airportError) {
@@ -361,7 +425,7 @@ async function getWlanInfoMacOS() {
             
             if (!interfaceName) {
                 // No Wi-Fi interface is not an error, just return null
-                return { ssid: null, bssid: null, quality: null };
+                return { ssid: null, bssid: null, quality: null, message: 'nointerface' };
             }
             
             const { stdout: info } = await execAsync(`networksetup -getairportnetwork "${interfaceName}"`, {
@@ -386,14 +450,16 @@ async function getWlanInfoMacOS() {
                 return {
                     ssid,
                     bssid,
-                    quality: null
+                    quality: null,
+                    message: null
                 };
             } catch (profilerError) {
                 // system_profiler failure is not critical, just return what we have
                 return {
                     ssid,
                     bssid: null,
-                    quality: null
+                    quality: null,
+                    message: null
                 };
             }
         } catch (networksetupError) {
@@ -403,9 +469,10 @@ async function getWlanInfoMacOS() {
     } catch (error) {
         // Log unexpected errors during WLAN info retrieval
         log.error('getWlanInfoMacOS: Unexpected error:', error.message || error);
+        return { ssid: null, bssid: null, quality: null, message: 'error' };
     }
     
-    return { ssid: null, bssid: null, quality: null };
+    return { ssid: null, bssid: null, quality: null, message: 'nointerface' };
 }
 
 export default { getWlanInfo };
