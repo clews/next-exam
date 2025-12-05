@@ -434,56 +434,60 @@ async function getWlanInfoMacOS() {
             }
         }
         
-        // Fallback: networksetup (more reliable, no special permissions needed)
+        // Fallback: networksetup and ipconfig (for newer macOS where airport is not available)  // system_profiler is way to heavy and needs a looooot of time to process
+        // this is a simple calculation.. we can't rely on a process that takes 10s to complete and blocks the whole system
         try {
-            const { stdout: currentInterface } = await execAsync('networksetup -listallhardwareports | grep -A 1 "Wi-Fi" | grep "Device:" | awk \'{print $2}\'', {
+            // Determine WLAN interface using networksetup
+            const { stdout: interfaceOutput } = await execAsync('networksetup -listallhardwareports | awk \'/Wi-Fi|AirPort/{getline; print $NF}\'', {
                 timeout: 2000,
                 maxBuffer: 1024 * 64
             });
-            const interfaceName = currentInterface.trim();
+            const interfaceName = interfaceOutput.trim();
             
             if (!interfaceName) {
-                // No Wi-Fi interface is not an error, just return null
+                // No Wi-Fi interface found
                 return { ssid: null, bssid: null, quality: null, message: 'nointerface' };
             }
             
-            const { stdout: info } = await execAsync(`networksetup -getairportnetwork "${interfaceName}"`, {
-                timeout: 2000,
-                maxBuffer: 1024 * 64
-            });
-            // Match any text before colon followed by SSID (works for "Current Wi-Fi Network:" and localized versions)
-            const ssidMatch = info.match(/:\s*(.+)/);
-            const ssid = ssidMatch ? ssidMatch[1].trim() : null;
-            
-            // Get BSSID and signal using system_profiler (alternative method)
+            // Get SSID using ipconfig getsummary
+            let ssid = null;
             try {
-                const { stdout: profilerOut } = await execAsync('system_profiler SPAirPortDataType | grep -A 10 -i "network information"', {
-                    timeout: 3000,
-                    maxBuffer: 1024 * 128
+                const { stdout: ssidOutput } = await execAsync(`ipconfig getsummary "${interfaceName}" | awk -F' SSID : ' '/ SSID : / {print $2}'`, {
+                    timeout: 2000,
+                    maxBuffer: 1024 * 64
                 });
-                // Match MAC Address in any language (look for pattern: text : MAC address format)
-                const bssidMatch = profilerOut.match(/:\s*([a-f0-9]{2}(?::[a-f0-9]{2}){5})/i);
-                const bssid = bssidMatch ? bssidMatch[1].toUpperCase() : null;
-                
-                // Signal strength might not be available via system_profiler
-                return {
-                    ssid,
-                    bssid,
-                    quality: null,
-                    message: null
-                };
-            } catch (profilerError) {
-                // system_profiler failure is not critical, just return what we have
-                return {
-                    ssid,
-                    bssid: null,
-                    quality: null,
-                    message: null
-                };
+                ssid = ssidOutput.trim() || null;
+            } catch (ssidError) {
+                // SSID extraction failed, continue with BSSID
             }
+            
+            // Get BSSID using ipconfig getsummary
+            let bssid = null;
+            try {
+                const { stdout: bssidOutput } = await execAsync(`ipconfig getsummary "${interfaceName}" | grep 'BSSID :' | awk '{print $3}'`, {
+                    timeout: 2000,
+                    maxBuffer: 1024 * 64
+                });
+                const bssidStr = bssidOutput.trim();
+                // Validate BSSID format (MAC address)
+                if (bssidStr && /^[a-f0-9]{2}(?::[a-f0-9]{2}){5}$/i.test(bssidStr)) {
+                    bssid = bssidStr.toUpperCase();
+                }
+            } catch (bssidError) {
+                // BSSID extraction failed
+            }
+            
+            // Quality set to 50 when using fallback (airport not available)
+            return {
+                ssid: ssid || null,
+                bssid: bssid || null,
+                quality: 50,
+                message: null
+            };
         } catch (networksetupError) {
             // Log error if networksetup fails with a real error
-            log.error('getWlanInfoMacOS: networksetup command failed:', networksetupError.message || networksetupError);
+            log.error('getWlanInfoMacOS: networksetup/ipconfig fallback failed:', networksetupError.message || networksetupError);
+            // If fallback completely fails, return null
         }
     } catch (error) {
         // Log unexpected errors during WLAN info retrieval
