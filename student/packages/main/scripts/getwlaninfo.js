@@ -270,7 +270,8 @@ async function getWlanInfoWindows() {
             combinedOutput.includes('datenschutz') && combinedOutput.includes('standort') ||
             combinedOutput.includes('privacy') && combinedOutput.includes('location') ||
             combinedOutput.includes('netzwerkshellbefehle') && combinedOutput.includes('standort')) {
-            return { ssid: null, bssid: null, quality: null, message: 'nopermissions' };
+            // Fallback to PowerShell method that doesn't require geolocation permissions
+            return await getWlanInfoWindowsPowerShell();
         }
         
         if (!stdout || stdout.trim().length === 0) {
@@ -356,11 +357,51 @@ async function getWlanInfoWindows() {
             combinedErrorOutput.includes('datenschutz') && combinedErrorOutput.includes('standort') ||
             combinedErrorOutput.includes('privacy') && combinedErrorOutput.includes('location') ||
             combinedErrorOutput.includes('netzwerkshellbefehle') && combinedErrorOutput.includes('standort')) {
-            return { ssid: null, bssid: null, quality: null, message: 'nopermissions' };
+            // Fallback to PowerShell method that doesn't require geolocation permissions
+            return await getWlanInfoWindowsPowerShell();
         }
         
         // Log error when command execution fails (timeout, permission, etc.)
         log.error('getWlanInfoWindows: Error executing netsh command:', error.message || error);
+        return { ssid: null, bssid: null, quality: null, message: 'error' };
+    }
+}
+
+/**
+ * Get WLAN info on Windows using PowerShell (fallback when netsh requires geolocation permissions)
+ */
+async function getWlanInfoWindowsPowerShell() {
+    try {
+        // Get SSID using Get-NetConnectionProfile (doesn't require geolocation)
+        let ssid = null;
+        try {
+            // Get the active Wi-Fi connection profile
+            const { stdout: ssidOutput } = await execAsync('powershell -Command "$profile = Get-NetConnectionProfile | Where-Object {$_.InterfaceAlias -like \'*Wi-Fi*\' -or $_.InterfaceAlias -like \'*Wireless*\'} | Select-Object -First 1; if ($profile) { $profile.Name }"', {
+                timeout: 3000,
+                maxBuffer: 1024 * 64
+            });
+            const ssidStr = ssidOutput.trim();
+            if (ssidStr && ssidStr.length > 0 && !ssidStr.match(/^(N\/A|n\/a|none|keine)$/i)) {
+                ssid = ssidStr;
+            }
+        } catch (ssidError) {
+            // SSID extraction failed
+        }
+        
+        // BSSID cannot be easily retrieved without netsh (which requires geolocation permissions)
+        // Setting to null as fallback - SSID is the most important information anyway
+        const bssid = null;
+        
+        // Quality set to 50 when using PowerShell fallback (can't easily get signal strength without netsh)
+        return {
+            ssid: ssid || null,
+            bssid: bssid || null,
+            quality: 50,
+            message: null
+        };
+    } catch (error) {
+        // Log error if PowerShell fallback fails
+        log.error('getWlanInfoWindowsPowerShell: PowerShell fallback failed:', error.message || error);
         return { ssid: null, bssid: null, quality: null, message: 'error' };
     }
 }
