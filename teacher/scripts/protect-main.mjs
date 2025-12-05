@@ -47,7 +47,19 @@ const createObfuscatedCjs = async () => {
 };
 
 const compileBytecode = async () => {
+  // Remove any existing bytecode files to prevent cachedDataRejected errors
   await fs.rm(bytecodePath, { force: true });
+  // Also remove any .jsc files in the directory to ensure clean build
+  try {
+    const files = await fs.readdir(distMainDir);
+    for (const file of files) {
+      if (file.endsWith('.jsc')) {
+        await fs.rm(path.join(distMainDir, file), { force: true });
+      }
+    }
+  } catch (err) {
+    // Directory might not exist yet, that's ok
+  }
   await bytenode.compileFile({
     filename: obfuscatedEntryPath,
     output: bytecodePath,
