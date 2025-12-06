@@ -62,14 +62,18 @@ jobs:
           path: |
             ./teacher/.npm
             ./teacher/node_modules
-          key: ${{ runner.os }}-node-s-${{ hashFiles('./teacher/**/package-lock.json') }}
+          key: ${{ runner.os }}-node-s-x64-${{ hashFiles('./teacher/**/package-lock.json') }}
 
       - name: Teacher install dependencies
         working-directory: ./teacher
         env:
           npm_config_arch: x64
+          npm_config_target_arch: x64
+          npm_config_platform: darwin
         run: |
           npm install
+          # Force reinstall electron with correct architecture if needed
+          ELECTRON_ARCH=x64 npm install electron@38.1.2 --force
           mkdir dist
 
       - name: Teacher build
@@ -98,7 +102,7 @@ jobs:
           path: |
             ./student/.npm
             ./student/node_modules
-          key: ${{ runner.os }}-node-s-${{ hashFiles('./student/**/package-lock.json') }}
+          key: ${{ runner.os }}-node-s-x64-${{ hashFiles('./student/**/package-lock.json') }}
 
       - name: Cache node-gyp
         uses: actions/cache@v4
@@ -106,14 +110,18 @@ jobs:
           path: |
             ~/.cache/node-gyp
             ~/.npm/_libvips
-          key: ${{ runner.os }}-gyp-${{ hashFiles('student/package-lock.json') }}
+          key: ${{ runner.os }}-gyp-x64-${{ hashFiles('student/package-lock.json') }}
 
       - name: Student install dependencies
         working-directory: ./student
         env:
           npm_config_arch: x64
+          npm_config_target_arch: x64
+          npm_config_platform: darwin
         run: |
           npm install
+          # Force reinstall electron with correct architecture if needed
+          ELECTRON_ARCH=x64 npm install electron@38.1.2 --force
           mkdir dist
 
       - name: Student build

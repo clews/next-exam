@@ -49,6 +49,12 @@ export async function getWlanInfo() {
                 return { ssid: null, bssid: null, quality: null, message: 'givingup' };
         }
         
+        // Ensure result is always an object
+        if (!result || typeof result !== 'object') {
+            failureCounter++;
+            return { ssid: null, bssid: null, quality: null, message: 'error' };
+        }
+        
         // Reset counter on successful result (has data)
         if (result.ssid || result.bssid || result.quality !== null) {
             failureCounter = 0;
@@ -392,12 +398,13 @@ async function getWlanInfoWindowsPowerShell() {
         // Setting to null as fallback - SSID is the most important information anyway
         const bssid = null;
         
-        // Quality set to 50 when using PowerShell fallback (can't easily get signal strength without netsh)
+        // Quality set to null when using PowerShell fallback (can't easily get signal strength without netsh)
+        // Return nopermissions message so frontend can show the warning
         return {
             ssid: ssid || null,
             bssid: bssid || null,
-            quality: 50,
-            message: null
+            quality: null,
+            message: 'nopermissions'
         };
     } catch (error) {
         // Log error if PowerShell fallback fails
@@ -518,17 +525,18 @@ async function getWlanInfoMacOS() {
                 // BSSID extraction failed
             }
             
-            // Quality set to 50 when using fallback (airport not available)
+            // Quality set to null when using fallback (airport not available, can't get signal strength)
             return {
                 ssid: ssid || null,
                 bssid: bssid || null,
-                quality: 50,
+                quality: null,
                 message: null
             };
         } catch (networksetupError) {
             // Log error if networksetup fails with a real error
             log.error('getWlanInfoMacOS: networksetup/ipconfig fallback failed:', networksetupError.message || networksetupError);
-            // If fallback completely fails, return null
+            // If fallback completely fails, return error object
+            return { ssid: null, bssid: null, quality: null, message: 'error' };
         }
     } catch (error) {
         // Log unexpected errors during WLAN info retrieval
