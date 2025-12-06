@@ -99,20 +99,34 @@ const compileBytecode = async () => {
   const electronPath = await getElectronPath();
   process.env.ELECTRON_EXEC_PATH = electronPath;
   console.log(`Setting ELECTRON_EXEC_PATH=${electronPath}`);
-  // Verify the binary is executable
+  // Verify the binary is executable and check architecture
   try {
     const stats = await fs.stat(electronPath);
     if (!stats.isFile()) {
       throw new Error(`Electron path is not a file: ${electronPath}`);
     }
     console.log(`Electron binary is accessible and is a file`);
+    // Check binary architecture on macOS
+    if (process.platform === 'darwin') {
+      const { execSync } = await import('child_process');
+      try {
+        const arch = execSync(`file "${electronPath}"`, { encoding: 'utf-8' });
+        console.log(`Electron binary architecture: ${arch.trim()}`);
+        const systemArch = execSync('uname -m', { encoding: 'utf-8' }).trim();
+        console.log(`System architecture: ${systemArch}`);
+      } catch (err) {
+        console.log(`Could not check binary architecture: ${err.message}`);
+      }
+    }
   } catch (err) {
     throw new Error(`Cannot access Electron binary: ${err.message}`);
   }
+  // Use both ELECTRON_EXEC_PATH env var and electronPath parameter for maximum compatibility
   await bytenode.compileFile({
     filename: obfuscatedEntryPath,
     output: bytecodePath,
-    electron: true
+    electron: true,
+    electronPath: electronPath
   });
   await fs.rm(obfuscatedEntryPath, { force: true });
 };
