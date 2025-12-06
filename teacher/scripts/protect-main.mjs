@@ -1,9 +1,12 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 import JavaScriptObfuscator from 'javascript-obfuscator';
 import { transform } from 'esbuild';
 import bytenode from 'bytenode';
+
+const require = createRequire(import.meta.url);
 
 const __filename = fileURLToPath(import.meta.url);
 const projectRoot = path.resolve(path.dirname(__filename), '..');
@@ -22,6 +25,23 @@ const ensurePaths = async () => {
     throw new Error('Missing obfuscator.config.json, aborting protection step.');
   }
   await fs.access(entryPath);
+};
+
+const getElectronPath = async () => {
+  let electronPath;
+  if (process.platform === 'darwin') {
+    const electronDir = path.dirname(require.resolve('electron'));
+    electronPath = path.join(electronDir, 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+  } else {
+    electronPath = require.resolve('electron');
+  }
+  // Validate that the path exists and is accessible
+  try {
+    await fs.access(electronPath);
+  } catch (err) {
+    throw new Error(`Electron executable not found at: ${electronPath}. Error: ${err.message}`);
+  }
+  return electronPath;
 };
 
 const createObfuscatedCjs = async () => {
@@ -60,10 +80,13 @@ const compileBytecode = async () => {
   } catch (err) {
     // Directory might not exist yet, that's ok
   }
+  // Get and validate Electron path, then pass directly to bytenode to fix spawn error -86 on macOS Intel runners
+  const electronPath = await getElectronPath();
   await bytenode.compileFile({
     filename: obfuscatedEntryPath,
     output: bytecodePath,
-    electron: true
+    electron: true,
+    electronPath: electronPath
   });
   await fs.rm(obfuscatedEntryPath, { force: true });
 };
