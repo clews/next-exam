@@ -820,7 +820,8 @@ computed: {
     
     lockDownload() {
         const examType = this.serverstatus.examSections[this.serverstatus.activeSection].examtype;
-        return examType === 'eduvidual' || examType === 'gforms' || examType === 'website';
+        const section = this.serverstatus.examSections[this.serverstatus.activeSection];
+        return examType === 'eduvidual' || examType === 'gforms' || examType === 'website' || (examType === 'microsoft365' && !section.msOfficeFile);
     },
     
     lockPdfSummary() {
