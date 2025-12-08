@@ -577,7 +577,7 @@ export default {
                 console.error('activesheets @ sendExamToTeacher: Invalid section data');
                 return;
             }
-            let response = await ipcRenderer.invoke('getPDFbase64', {landscape: false, servername: this.servername, clientname: this.clientname, submissionnumber: this.submissionnumber, sectionname: this.serverstatus.examSections[this.lockedSection].sectionname})
+            let response = await ipcRenderer.invoke('getPDFbase64', {landscape: false, servername: this.servername, clientname: this.clientname, submissionnumber: this.submissionnumber, sectionname: this.serverstatus.examSections[this.lockedSection].sectionname, printBackground: true})
 
             if (response?.status == "success"){
                 let base64pdf = response.base64pdf

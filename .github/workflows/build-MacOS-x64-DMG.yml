@@ -62,7 +62,7 @@ jobs:
           path: |
             ./teacher/.npm
             ./teacher/node_modules
-          key: ${{ runner.os }}-node-s-x64-${{ hashFiles('./teacher/**/package-lock.json') }}
+          key: ${{ runner.os }}-node-t-x64-${{ hashFiles('./teacher/**/package-lock.json') }}
 
       - name: Teacher install dependencies
         working-directory: ./teacher
