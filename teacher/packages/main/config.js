@@ -34,7 +34,7 @@ const config = {
         editor: true,
         math: true,
         microsoft365: true,
-        activesheets: false
+        activesheets: true
     },
 
     version: '1.1.0.18',

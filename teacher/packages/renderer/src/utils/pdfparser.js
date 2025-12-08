@@ -29,7 +29,7 @@ import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
  * Handles parsing of PDF documents and extraction of interactive elements
  */
 class PdfParser {
-    constructor() {
+    constructor(options = {}) {
         // Manual lookup for op codes to be safe
         this.OP_CODE = { moveTo: 13, lineTo: 14, rectangle: 19, transform: 12, save: 0, restore: 1 };
         this.DUPLICATE_TOLERANCE_PX = 12; // px tolerance for duplicate boxes
@@ -41,11 +41,90 @@ class PdfParser {
         this.debugClozeFonts = false;
         this.pendingFontLogs = new Set();
         this.debugBoxExtraction = false;
+
+
+        // python3 pdf-parser.py -o 8 lückentextmitpunkten.pdf	Liefert den /Widths Array (die horizontalen Breiten) sowie die Referenz für den FontDescriptor (12 0 R) und das Encoding-Dictionary (17 0 R).
+        // python3 pdf-parser.py -o 12 lückentextmitpunkten.pdf	Liefert die globalen Metriken: /Ascent, /Descent, /CapHeight, /XHeight und /FontWeight.
+        // python3 pdf-parser.py -o 17 lückentextmitpunkten.pdf	Liefert die /BaseEncoding /WinAnsiEncoding und den /Differences-Array. Dies bestätigt das Mapping von Code 32 zu space und Code 133 zu ellipsis.
+
+
         this.fontAdjustments = {
-            'HelveticaNeueLTPro-Lt': { family: 'hv, Helvetica Neue, Helvetica, Arial, sans-serif', scale: 1 },
-            'ArialMT': { family: 'Arial, Helvetica, sans-serif', scale: 1 },
-            'TimesNewRomanPSMT': { family: 'Times New Roman, Times, serif', scale: 1 }
+            'HelveticaNeueLTPro-Lt': { 
+                family: 'hv, Helvetica Neue, Helvetica, Arial, sans-serif', 
+                scale: 1
+            },
+            'ArialMT': { 
+                family: 'Arial, Helvetica, sans-serif', 
+                scale: 1 
+            },
+            'TimesNewRomanPSMT': { 
+                family: 'Times New Roman, Times, serif', 
+                scale: 1 
+            },
+            'PoloBasisTB-Leicht': { 
+                family: 'Arial, Helvetica, sans-serif', 
+                scale: 1,
+                // Global kerning compensation per character (empirical value, may need calibration)
+                kerningCompensationEm: 0.022, // Compensates for missing negative kerning in advance widths
+                // PDF encoding from Font (obj 8) - /Encoding 17 0 R
+                encoding: {
+                    baseEncoding: 'WinAnsiEncoding',
+                    // Differences starting at code 26: [26 /approxequal /fl /fi /currency /greaterequal /minus]
+                    // Codes 26-31 are mapped to Differences array indices 0-5
+                    // Code 32 (space) and above use WinAnsiEncoding standard mapping
+                    differences: {
+                        26: 0, // /approxequal -> widths[0]
+                        27: 1, // /fl -> widths[1]
+                        28: 2, // /fi -> widths[2]
+                        29: 3, // /currency -> widths[3]
+                        30: 4, // /greaterequal -> widths[4]
+                        31: 5  // /minus -> widths[5]
+                    }
+                },
+                // PDF glyph widths from Font (obj 8) - /Widths array with /FirstChar 26, /LastChar 252
+                glyphWidths: {
+                    widths: [486, 567, 567, 595, 486, 486, 243, 0, 0, 0, 495, 0, 587, 0, 324, 324, 0, 486, 203, 277, 203, 375, 486, 412, 486, 486, 486, 486, 486, 465, 486, 486, 243, 220, 486, 486, 486, 385, 0, 587, 608, 547, 628, 527, 466, 628, 648, 0, 284, 547, 466, 830, 648, 648, 527, 648, 567, 527, 466, 628, 547, 830, 526, 506, 506, 284, 0, 284, 0, 608, 0, 506, 547, 446, 547, 506, 324, 542, 547, 243, 223, 466, 243, 830, 547, 527, 547, 547, 344, 425, 344, 527, 466, 749, 446, 446, 446, 0, 283, 0, 0, 0, 0, 0, 0, 0, 319, 1009, 0, 0, 0, 1142, 0, 0, 0, 0, 0, 0, 0, 0, 0, 319, 0, 0, 486, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 883, 0, 0, 0, 0, 0, 0, 342, 0, 301, 0, 0, 0, 0, 283, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 587, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 648, 0, 668, 0, 0, 0, 628, 0, 0, 567, 0, 0, 0, 0, 506, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 527, 0, 0, 0, 0, 0, 527],
+                    firstChar: 26,
+                    lastChar: 252
+                }
+            },
+            'PoloBasisTB-Krftg': {
+                family: 'Arial, Helvetica, sans-serif',
+                scale: 1,
+                // Global kerning compensation per character (empirical value, may need calibration)
+                kerningCompensationEm: 0.022, // Bolder fonts typically need more compensation
+                // PDF encoding from Font (obj 21) - /Encoding 4 0 R
+                encoding: {
+                    baseEncoding: 'WinAnsiEncoding',
+                    // Differences starting at code 27: [27 /fi /fl /approxequal /minus /currency]
+                    // Codes 27-31 are mapped to Differences array indices 0-4
+                    // Code 32 (space) and above use WinAnsiEncoding standard mapping
+                    differences: {
+                        27: 0, // /fi -> widths[0]
+                        28: 1, // /fl -> widths[1]
+                        29: 2, // /approxequal -> widths[2]
+                        30: 3, // /minus -> widths[3]
+                        31: 4  // /currency -> widths[4]
+                    }
+                },
+                // PDF glyph widths from Font (obj 21) - /Widths array with /FirstChar 27, /LastChar 252
+                glyphWidths: {
+                    widths: [596, 599, 486, 486, 598, 243, 311, 0, 0, 0, 770, 0, 0, 321, 321, 0, 486, 235, 287, 235, 387, 486, 412, 486, 486, 486, 486, 486, 470, 486, 486, 263, 253, 486, 486, 486, 405, 0, 600, 608, 524, 633, 527, 487, 632, 641, 295, 294, 574, 468, 858, 652, 625, 556, 618, 567, 525, 470, 628, 556, 854, 0, 0, 496, 0, 0, 0, 0, 0, 0, 507, 547, 415, 545, 506, 333, 529, 547, 253, 253, 508, 253, 833, 547, 526, 545, 545, 351, 435, 355, 537, 454, 739, 473, 456, 431, 0, 0, 0, 0, 0, 0, 0, 0, 0, 351, 1339, 0, 0, 0, 1134, 0, 0, 0, 0, 0, 0, 0, 0, 0, 375, 0, 0, 486, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 337, 0, 336, 336, 0, 0, 0, 303, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 600, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 625, 0, 0, 0, 0, 0, 628, 0, 0, 572, 0, 0, 0, 0, 507, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 526, 0, 0, 0, 0, 0, 537],
+                    firstChar: 27,
+                    lastChar: 252
+                }
+            }
         };
+        
+        // Feature flags - all enabled by default (true) for backward compatibility
+        // Standard values are explicitly set to true for better visibility
+        this.detectCheckboxes = options.detectCheckboxes ?? true; // Unicode checkboxes (☐, ☑, ☒)
+        this.detectUnderscores = options.detectUnderscores ?? true; // Underscore gaps (____)
+        this.detectDots = options.detectDots ?? true; // Dot gaps (....)
+        this.detectDeselectFields = options.detectDeselectFields ?? true; // Standalone capital letters
+        this.detectIsolatedLines = options.detectIsolatedLines ?? true; // Isolated horizontal lines
+        this.detectFormFields = options.detectFormFields ?? true; // PDF form fields (AcroForms)
+        this.detectBoxFields = options.detectBoxFields ?? true; // Drawn rectangles and tables
     }
     generateElementId(prefix = 'el') {
         this.elementCounter += 1;
@@ -160,10 +239,11 @@ class PdfParser {
             const fontInfo = this.getFontInfo(page, fontName);
             let effectiveFontFamily = baseFontFamily;
             let fontScale = 1;
+            let customAdjust = null;
             if (fontInfo) {
                 // Try baseFont first (most specific), then fontName as fallback
-                const customAdjust = this.findFontAdjustmentByName(fontInfo.baseFont) || 
-                                     this.findFontAdjustmentByName(fontInfo.fontName);
+                customAdjust = this.findFontAdjustmentByName(fontInfo.baseFont) || 
+                               this.findFontAdjustmentByName(fontInfo.fontName);
                 if (customAdjust) {
                     if (customAdjust.family) {
                         effectiveFontFamily = customAdjust.family;
@@ -171,6 +251,14 @@ class PdfParser {
                     if (typeof customAdjust.scale === 'number') {
                         fontScale = customAdjust.scale;
                     }
+                } else {
+                    // Debug: log when font adjustment is not found
+                    console.log(`pdfparser @ font adjustment not found:`, {
+                        baseFont: fontInfo.baseFont,
+                        fontName: fontInfo.fontName,
+                        family: fontInfo.family,
+                        currentEffectiveFont: effectiveFontFamily
+                    });
                 }
             }
             measureCtx.font = `${fontSize}px ${effectiveFontFamily}`;
@@ -210,27 +298,20 @@ class PdfParser {
             const useScale = usesExtremeSpacing && Math.abs(widthScale - 1) > 0.15;
 
             // Find cloze text patterns (____)
-            const regex = /(_+)/g;
-            let match;
-            
-            while ((match = regex.exec(text)) !== null) {
+            if (this.detectUnderscores) {
+                const regex = /(_+)/g;
+                let match;
+                
+                while ((match = regex.exec(text)) !== null) {
                 const underscoreStr = match[0];
                 const startIndex = match.index;
                 
                 // Calculate width of text before the underscore
                 const prefixText = text.substring(0, startIndex);
-                let prefixWidth = measureCtx.measureText(prefixText).width;
-                if (useScale) {
-                    prefixWidth *= widthScale;
-                }
-                prefixWidth *= fontScale;
+                let prefixWidth = this.measureTextWidthWithMetrics(prefixText, measureCtx, fontSize, useScale, widthScale, fontScale, customAdjust);
                 
                 // Calculate width of the underscore string (this is the input width)
-                let underscoreWidth = measureCtx.measureText(underscoreStr).width;
-                if (useScale) {
-                    underscoreWidth *= widthScale;
-                }
-                underscoreWidth *= fontScale;
+                let underscoreWidth = this.measureTextWidthWithMetrics(underscoreStr, measureCtx, fontSize, useScale, widthScale, fontScale, customAdjust);
                 
                 // Calculate final X position: startX + width of preceding text
                 const finalX = itemX + prefixWidth;
@@ -247,18 +328,91 @@ class PdfParser {
                         zIndex: 10
                     }
                 });
+                }
+            }
+            
+            // Find cloze text patterns with dots (.... or … or combinations) - minimum 4 dots total
+            // Handles both single dots (.) and ellipsis characters (… = 3 dots)
+            // Excludes: exactly 3 single dots, exactly 1 ellipsis (3 dots)
+            // Field starts at the beginning of the sequence, includes all dots
+            if (this.detectDots) {
+                // Match sequences of dots (.) and ellipsis (…) - at least one character
+                const dotRegex = /([.…]+)/g;
+                let dotMatch;
+                let lastIndex = 0; // Track last processed position to avoid overlaps
+                
+                while ((dotMatch = dotRegex.exec(text)) !== null) {
+                    const dotStr = dotMatch[0];
+                    const startIndex = dotMatch.index;
+                    
+                    // Skip if we've already processed this position (shouldn't happen, but safety check)
+                    if (startIndex < lastIndex) {
+                        continue;
+                    }
+                    
+                    // Count total dots: single dots (.) = 1, ellipsis (…) = 3
+                    let totalDotCount = 0;
+                    for (let i = 0; i < dotStr.length; i++) {
+                        if (dotStr[i] === '.') {
+                            totalDotCount += 1;
+                        } else if (dotStr[i] === '…') {
+                            totalDotCount += 3;
+                        }
+                    }
+                    
+                    // Skip if exactly 3 single dots or exactly 1 ellipsis (3 dots total)
+                    if (totalDotCount === 3 && dotStr === '...') {
+                        lastIndex = startIndex + dotStr.length;
+                        continue; // Skip exactly 3 single dots
+                    }
+                    if (totalDotCount === 3 && dotStr === '…') {
+                        lastIndex = startIndex + dotStr.length;
+                        continue; // Skip exactly 1 ellipsis
+                    }
+                    
+                    // Only process if at least 4 dots total
+                    if (totalDotCount < 4) {
+                        lastIndex = startIndex + dotStr.length;
+                        continue;
+                    }
+                    
+                    // Field includes ALL dots from the beginning of the sequence
+                    // Calculate width of text before the dots (everything before startIndex)
+                    const prefixText = text.substring(0, startIndex);
+                    // Use precise glyph width calculation
+                    let prefixWidth = this.measureTextWidthWithMetrics(prefixText, measureCtx, fontSize, useScale, widthScale, fontScale, customAdjust);
+                    
+                    // Calculate width of the ENTIRE dot string (includes all dots from start)
+                    let dotWidth = this.measureTextWidthWithMetrics(dotStr, measureCtx, fontSize, useScale, widthScale, fontScale, customAdjust);
+                    
+                    
+                    // Calculate final X position: startX + width of preceding text
+                    // This positions the field at the very beginning of the dot sequence
+                    const finalX = itemX + prefixWidth;
+                    
+                    clozeFields.push({
+                        id: this.generateElementId('cloze'),
+                        type: 'text',
+                        style: {
+                            position: 'absolute',
+                            left: `${finalX}px`, // Starts at beginning of sequence
+                            top: `${itemY - fontSize}px`, // Adjust Y for baseline alignment
+                            width: `${dotWidth}px`, // Width includes ALL dots
+                            height: `${fontSize + 2}px`,
+                            zIndex: 10
+                        }
+                    });
+                    
+                    lastIndex = startIndex + dotStr.length;
+                }
             }
             
             // Find Unicode checkboxes (☐, ☑, ☒)
-            if (text.includes('☐') || text.includes('☑') || text.includes('☒')) {
+            if (this.detectCheckboxes && (text.includes('☐') || text.includes('☑') || text.includes('☒'))) {
                 for (let i = 0; i < text.length; i++) {
                     if (text[i] === '☐' || text[i] === '☑' || text[i] === '☒') {
                         const prefixText = text.substring(0, i);
-                        let prefixWidth = measureCtx.measureText(prefixText).width;
-                        if (useScale) {
-                            prefixWidth *= widthScale;
-                        }
-                        prefixWidth *= fontScale;
+                        let prefixWidth = this.measureTextWidthWithMetrics(prefixText, measureCtx, fontSize, useScale, widthScale, fontScale, customAdjust);
                         
                         clozeFields.push({
                             id: this.generateElementId('cloze'),
@@ -279,12 +433,16 @@ class PdfParser {
         });
         
         // Extract standalone capital letters as deselect fields
-        const deselectFields = await this.extractDeselectFields(page, viewport);
-        clozeFields.push(...deselectFields);
+        if (this.detectDeselectFields) {
+            const deselectFields = await this.extractDeselectFields(page, viewport);
+            clozeFields.push(...deselectFields);
+        }
         
         // Find isolated horizontal lines and create cloze fields
-        const isolatedLineFields = await this.findIsolatedHorizontalLines(page, viewport);
-        clozeFields.push(...isolatedLineFields);
+        if (this.detectIsolatedLines) {
+            const isolatedLineFields = await this.findIsolatedHorizontalLines(page, viewport);
+            clozeFields.push(...isolatedLineFields);
+        }
         
         return clozeFields;
     }
@@ -461,9 +619,10 @@ class PdfParser {
             const fontInfo = this.getFontInfo(page, fontName);
             let effectiveFontFamily = baseFontFamily;
             let fontScale = 1;
+            let customAdjust = null;
             if (fontInfo) {
-                const customAdjust = this.findFontAdjustmentByName(fontInfo.baseFont) || 
-                                     this.findFontAdjustmentByName(fontInfo.fontName);
+                customAdjust = this.findFontAdjustmentByName(fontInfo.baseFont) || 
+                               this.findFontAdjustmentByName(fontInfo.fontName);
                 if (customAdjust) {
                     if (customAdjust.family) {
                         effectiveFontFamily = customAdjust.family;
@@ -512,18 +671,10 @@ class PdfParser {
                 
                 // Calculate position similar to cloze fields
                 const prefixText = text.substring(0, startIndex);
-                let prefixWidth = measureCtx.measureText(prefixText).width;
-                if (useScale) {
-                    prefixWidth *= widthScale;
-                }
-                prefixWidth *= fontScale;
+                let prefixWidth = this.measureTextWidthWithMetrics(prefixText, measureCtx, fontSize, useScale, widthScale, fontScale, customAdjust);
                 
                 // Calculate width of the letter for positioning
-                let letterWidth = measureCtx.measureText(letter).width;
-                if (useScale) {
-                    letterWidth *= widthScale;
-                }
-                letterWidth *= fontScale;
+                let letterWidth = this.measureTextWidthWithMetrics(letter, measureCtx, fontSize, useScale, widthScale, fontScale, customAdjust);
                 
                 // Create extra large checkbox that covers the letter
                 // Size: 1.7x the font size for better visibility
@@ -1202,9 +1353,9 @@ class PdfParser {
         
         // Extract all field types in parallel (they will be in corrected coordinates)
         const [formFields, clozeFields, rawBoxFields] = await Promise.all([
-            this.extractFormFields(page, viewport, pageNum),
+            this.detectFormFields ? this.extractFormFields(page, viewport, pageNum) : Promise.resolve([]),
             this.extractClozeFields(page, viewport),
-            this.extractBoxFields(page, viewport)
+            this.detectBoxFields ? this.extractBoxFields(page, viewport) : Promise.resolve([])
         ]);
         if (this.debugBoxExtraction) {
             console.log(`processPage: rawBoxFields=${rawBoxFields.length}`);
@@ -1373,14 +1524,141 @@ class PdfParser {
         }
         return null;
     }
+
+    /**
+     * Map Unicode character code to PDF Character Code using WinAnsiEncoding + Differences
+     * @param {number} unicodeCharCode - Unicode character code (e.g. from charCodeAt)
+     * @param {Object} encoding - Encoding object with baseEncoding and differences
+     * @returns {number} PDF Character Code
+     */
+    mapUnicodeToPdfCharCode(unicodeCharCode, encoding) {
+        if (!encoding || encoding.baseEncoding !== 'WinAnsiEncoding') {
+            return unicodeCharCode;
+        }
+
+        // Special mappings for WinAnsiEncoding
+        if (unicodeCharCode === 32) {
+            // Space - standard WinAnsiEncoding code 32
+            return 32;
+        } else if (unicodeCharCode === 8230) {
+            // Ellipsis (…) - standard WinAnsiEncoding code 133
+            return 133;
+        }
+
+        // Check if character is in Differences array (codes 26-31 for Leicht, 27-31 for Krftg)
+        if (encoding.differences) {
+            // Differences override standard mapping for specific codes
+            // For codes in Differences, the PDF code maps directly to the array index
+            // For other codes, use standard WinAnsiEncoding mapping
+            const diffCodes = Object.keys(encoding.differences).map(Number);
+            if (diffCodes.includes(unicodeCharCode)) {
+                // This code is in Differences - return as-is (it's already the PDF code)
+                return unicodeCharCode;
+            }
+        }
+
+        // Standard WinAnsiEncoding: ASCII 32-126 maps 1:1, extended ASCII 128-255 also maps
+        if (unicodeCharCode >= 32 && unicodeCharCode <= 255) {
+            return unicodeCharCode;
+        }
+
+        // Fallback: return as-is
+        return unicodeCharCode;
+    }
+
+    /**
+     * Measure text width using glyph widths from fontAdjustments if available, otherwise use canvas measurement
+     * @param {string} text - Text to measure
+     * @param {CanvasRenderingContext2D} measureCtx - Canvas context
+     * @param {number} fontSize - Font size in pixels
+     * @param {boolean} useScale - Whether to use width scale
+     * @param {number} widthScale - Width scale factor
+     * @param {number} fontScale - Font scale factor
+     * @param {Object|null} customAdjust - Font adjustment object from fontAdjustments
+     * @returns {number} Text width in pixels
+     */
+    measureTextWidthWithMetrics(text, measureCtx, fontSize, useScale, widthScale, fontScale, customAdjust) {
+        // Use glyph widths from fontAdjustments if available
+        let glyphWidths = null;
+        if (customAdjust && customAdjust.glyphWidths) {
+            glyphWidths = customAdjust.glyphWidths;
+        }
+        
+        // If glyph widths are available, use them for precise calculation
+        if (glyphWidths && glyphWidths.widths && Array.isArray(glyphWidths.widths)) {
+            const encoding = customAdjust?.encoding;
+            
+            // Calculate total glyph width in font units
+            let totalGlyphWidth = 0;
+            
+            for (let i = 0; i < text.length; i++) {
+                const unicodeCharCode = text.charCodeAt(i);
+                // Map Unicode to PDF Character Code using WinAnsiEncoding + Differences
+                const pdfCharCode = this.mapUnicodeToPdfCharCode(unicodeCharCode, encoding);
+                const glyphIndex = pdfCharCode - glyphWidths.firstChar;
+                
+                if (glyphIndex >= 0 && glyphIndex < glyphWidths.widths.length) {
+                    const glyphWidth = glyphWidths.widths[glyphIndex];
+                    if (glyphWidth > 0) {
+                        totalGlyphWidth += glyphWidth;
+                    } else {
+                        // Zero width glyph - fallback to canvas measurement
+                        totalGlyphWidth += (measureCtx.measureText(text[i]).width / fontSize) * 1000;
+                    }
+                } else {
+                    // Character outside range - fallback to canvas measurement
+                    totalGlyphWidth += (measureCtx.measureText(text[i]).width / fontSize) * 1000;
+                }
+            }
+            
+            // Convert from font units to pixels
+            // PDF Type1 fonts use 1000 font units = 1em
+            const fontUnitsPerEm = 1000;
+            let totalWidth = (totalGlyphWidth / fontUnitsPerEm) * fontSize;
+            
+            // Apply kerning compensation to correct for missing negative kerning in advance widths
+            // This compensates the excess width caused by summing advance widths without kerning table
+            if (customAdjust && typeof customAdjust.kerningCompensationEm === 'number') {
+                // Compensation in pixels = kerningCompensationEm * number of characters * fontSize
+                totalWidth += customAdjust.kerningCompensationEm * text.length * fontSize;
+            }
+            
+            // Apply existing scale factors
+            if (useScale) {
+                totalWidth *= widthScale;
+            }
+            totalWidth *= fontScale;
+            
+            return totalWidth;
+        }
+        
+        // Fallback to standard canvas measurement
+        let width = measureCtx.measureText(text).width;
+        
+        // Apply existing scale factors
+        if (useScale) {
+            width *= widthScale;
+        }
+        width *= fontScale;
+        
+        return width;
+    }
 }
 
 /**
  * Parse PDF data and extract interactive elements
  * @param {Uint8Array|ArrayBuffer} pdfData - Raw PDF file data
+ * @param {Object} options - Optional configuration object to enable/disable features
+ * @param {boolean} options.detectCheckboxes - Enable/disable Unicode checkbox detection (default: true)
+ * @param {boolean} options.detectUnderscores - Enable/disable underscore gap detection (default: true)
+ * @param {boolean} options.detectDots - Enable/disable dot gap detection (default: true)
+ * @param {boolean} options.detectDeselectFields - Enable/disable deselect field detection (default: true)
+ * @param {boolean} options.detectIsolatedLines - Enable/disable isolated line detection (default: true)
+ * @param {boolean} options.detectFormFields - Enable/disable PDF form field detection (default: true)
+ * @param {boolean} options.detectBoxFields - Enable/disable drawn rectangle/table detection (default: true)
  * @returns {Promise<Array>} Array of page objects with form fields, cloze fields, and box fields
  */
-export async function parsePdfToPages(pdfData) {
-    const parser = new PdfParser();
+export async function parsePdfToPages(pdfData, options = {}) {
+    const parser = new PdfParser(options);
     return await parser.parse(pdfData);
 }

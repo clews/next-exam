@@ -254,6 +254,15 @@ export default {
     font-style: normal;
     font-display: swap;
 }
+
+@font-face {
+    font-family: 'pl';
+    src: url('/src/assets/fonts/PoloBasisTB-Leicht_subset.otf') format('opentype');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
+}
+
 </style>
 
 <style scoped>
