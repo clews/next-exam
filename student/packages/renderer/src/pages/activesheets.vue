@@ -94,6 +94,7 @@
         <PdfOverlay
             :loading="isLoading"
             :pdf-base64="pdfBase64"
+            :custom-fields="customFields"
         />
     
     </div>
@@ -169,6 +170,7 @@ export default {
             activeSheetPdfFilename: null,  // Filename of the Active Sheet PDF being displayed
             currentpreviewBase64: null,  // Base64 PDF for preview/submission
             submissionnumber: 0,  // Submission counter
+            customFields: [],
         }
     }, 
     components: { ExamHeader, PdfviewPane, WebviewPane, PdfOverlay },  
@@ -420,10 +422,12 @@ export default {
                 if (activeSheetFile && activeSheetFile.filecontent) {
                     this.pdfBase64 = activeSheetFile.filecontent;
                     this.activeSheetPdfFilename = activeSheetFile.filename;  // Store the PDF filename
+                    this.customFields = activeSheetFile.customFields ? JSON.parse(JSON.stringify(activeSheetFile.customFields)) : [];
                 } else {
                     console.warn('No Active Sheet PDF found for group:', targetGroup);
                     this.pdfBase64 = null;
                     this.activeSheetPdfFilename = null;
+                    this.customFields = [];
                 }
                 
                 this.isLoading = false;

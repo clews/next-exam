@@ -115,6 +115,35 @@
                         :id="box.id"
                     />
                 </div>
+
+                <div
+                    v-for="customField in getCustomFieldsForPage(pageIndex)"
+                    :key="customField.id"
+                    class="input-overlay"
+                    :id="customField.id + '_wrapper'"
+                    :style="customField.style"
+                >
+                    <textarea
+                        v-if="!customField.type || customField.type === 'textarea'"
+                        class="interactive-input textarea"
+                        :name="customField.id"
+                        :id="customField.id"
+                    ></textarea>
+                    <input
+                        v-else-if="customField.type === 'checkbox'"
+                        type="checkbox"
+                        class="interactive-input checkbox"
+                        :name="customField.id"
+                        :id="customField.id"
+                    />
+                    <input
+                        v-else
+                        type="checkbox"
+                        class="interactive-input checkbox deselect-checkbox"
+                        :name="customField.id"
+                        :id="customField.id"
+                    />
+                </div>
             </div>
         </div>
         <div v-else class="pdf-empty-state">
@@ -124,7 +153,7 @@
 </template>
 
 <script>
-import { parsePdfToPages } from '../utils/pdfparser.js';
+import { parsePdfToPages } from '../utils/pdfparser/index.js';
 import Swal from 'sweetalert2';
 
 export default {
@@ -137,6 +166,10 @@ export default {
         loading: {
             type: Boolean,
             default: false
+        },
+        customFields: {
+            type: Array,
+            default: () => []
         }
     },
     data() {
@@ -225,6 +258,12 @@ export default {
             }).then(() => {
                 this.warningShown = false;
             });
+        },
+        getCustomFieldsForPage(pageIndex) {
+            if (!this.customFields || !Array.isArray(this.customFields)) {
+                return [];
+            }
+            return this.customFields.filter(field => field.pageIndex === pageIndex);
         }
     }
 };
@@ -349,7 +388,8 @@ export default {
     padding: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 255, 0, 0.05);
+    background-color: rgba(0, 38, 255, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     appearance: none;
 }
 

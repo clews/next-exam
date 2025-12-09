@@ -33,6 +33,35 @@
                 <div type="button" id="closePDF" class="nav-link btn btn-light btn-sm" :title="$t('dashboard.close')" @click.stop="closePane" style="width:40px; height:45px !important;text-align:center; font-weight:bold;">&times;</div> 
             </li>
         </ul>
+        <div v-if="editMode" class="edit-floating-menu">
+            <button
+                type="button"
+                class="btn btn-sm"
+                :class="drawMode === 'textarea' ? 'btn-primary' : 'btn-outline-primary'"
+                @click.stop="setDrawMode('textarea')"
+                title="Textfeld zeichnen"
+            >
+                ▭
+            </button>
+            <button
+                type="button"
+                class="btn btn-sm ms-2"
+                :class="drawMode === 'checkbox' ? 'btn-primary' : 'btn-outline-primary'"
+                @click.stop="setDrawMode('checkbox')"
+                title="Checkbox platzieren"
+            >
+                ☑
+            </button>
+            <button
+                type="button"
+                class="btn btn-sm ms-2"
+                :class="drawMode === 'deselect' ? 'btn-primary' : 'btn-outline-primary'"
+                @click.stop="setDrawMode('deselect')"
+                title="Deselect platzieren"
+            >
+                ╳
+            </button>
+        </div>
         <div v-if="effectiveLoading" class="overlay">
             <div class="spinner"></div>
             <p>Loading PDF...</p>
@@ -161,10 +190,25 @@
                     :style="customField.style"
                 >
                     <textarea
+                        v-if="!customField.type || customField.type === 'textarea'"
                         class="interactive-input textarea"
                         :name="customField.id"
                         :id="customField.id"
                     ></textarea>
+                    <input
+                        v-else-if="customField.type === 'checkbox'"
+                        type="checkbox"
+                        class="interactive-input checkbox"
+                        :name="customField.id"
+                        :id="customField.id"
+                    />
+                    <input
+                        v-else
+                        type="checkbox"
+                        class="interactive-input checkbox deselect-checkbox"
+                        :name="customField.id"
+                        :id="customField.id"
+                    />
                 </div>
 
                 <div
@@ -181,7 +225,7 @@
 </template>
 
 <script>
-import { parsePdfToPages } from '../utils/pdfparser.js';
+import { parsePdfToPages } from '../utils/pdfparser/index.js';
 import Swal from 'sweetalert2';
 
 export default {
@@ -208,6 +252,7 @@ export default {
             editMode: false,
             localCustomFields: [],
             customFieldCounter: 0,
+            drawMode: 'textarea',
             isDrawing: false,
             drawStart: null,
             currentRect: null
@@ -324,9 +369,42 @@ export default {
                 this.cancelDrawing();
             }
         },
+        setDrawMode(mode) {
+            this.drawMode = mode;
+        },
         startDrawing(event, pageIndex) {
             event.preventDefault();
             event.stopPropagation();
+
+            // Checkbox placement mode: place checkbox instantly at click position
+            if (this.drawMode === 'checkbox' || this.drawMode === 'deselect') {
+                const pageWrapper = event.currentTarget;
+                const rect = pageWrapper.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                this.customFieldCounter++;
+                const size = this.drawMode === 'deselect' ? 24 : 18;
+                const customField = {
+                    id: `Custom${this.customFieldCounter}`,
+                    type: this.drawMode,
+                    pageIndex: pageIndex,
+                    style: {
+                        position: 'absolute',
+                        left: x + 'px',
+                        top: y + 'px',
+                        width: size + 'px',
+                        height: size + 'px'
+                    }
+                };
+                this.localCustomFields.push(customField);
+                // Ensure edit mode stays on to allow saving
+                if (!this.editMode) {
+                    this.editMode = true;
+                }
+                return;
+            }
+
+            // Textarea drawing mode
             const pageWrapper = event.currentTarget;
             const rect = pageWrapper.getBoundingClientRect();
             const x = event.clientX - rect.left;
@@ -520,6 +598,15 @@ export default {
     z-index: 1000;
 }
 
+.edit-floating-menu {
+    position: absolute;
+    top: 55px;
+    left: 10px;
+    z-index: 2100;
+    display: flex;
+    align-items: center;
+}
+
 .pdf-bg-image {
     display: block;
     width: 100%;
@@ -583,12 +670,13 @@ export default {
     padding: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 255, 0, 0.05);
+    background-color: rgba(0, 38, 255, 0.05);
     appearance: none;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .interactive-input.checkbox:checked {
-    background-color: rgba(13, 110, 253, 0.85);
+    background-color: rgba(13, 109, 253, 0.5);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23fff' d='M6.4 11.2 3.5 8.3l1.4-1.4 1.5 1.5 4.3-4.3 1.4 1.4z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: center;
