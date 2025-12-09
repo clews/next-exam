@@ -649,12 +649,12 @@ export default {
 .edit-tool-icon-deselect {
     width: 20px;
     height: 16px;
-    border: 2px solid currentColor;
-    border-radius: 2px;
+    border: 1px solid #333;
+    border-radius: 0px;
     background-repeat: no-repeat;
     background-position: center;
     background-size: 110% 110%;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cline x1='0' y1='100' x2='100' y2='0' stroke='%23000' stroke-width='8'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cline x1='0' y1='100' x2='100' y2='0' stroke='%23000' stroke-width='6'/%3E%3C/svg%3E");
 }
 
 .edit-tool-label {
