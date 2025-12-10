@@ -31,11 +31,13 @@ const getElectronPath = async () => {
   let electronPath;
   try {
     const electronModulePath = require.resolve('electron');
+    const electronDir = path.dirname(electronModulePath);
     if (process.platform === 'darwin') {
-      const electronDir = path.dirname(electronModulePath);
       electronPath = path.join(electronDir, 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
+    } else if (process.platform === 'win32') {
+      electronPath = path.join(electronDir, 'dist', 'electron.exe');
     } else {
-      electronPath = electronModulePath;
+      electronPath = path.join(electronDir, 'dist', 'electron');
     }
     // Validate that the path exists and is accessible
     await fs.access(electronPath);
@@ -43,18 +45,21 @@ const getElectronPath = async () => {
     return electronPath;
   } catch (err) {
     // Try alternative path resolution
-    if (process.platform === 'darwin') {
-      try {
-        const electronDir = path.dirname(require.resolve('electron/package.json'));
+    try {
+      const electronDir = path.dirname(require.resolve('electron/package.json'));
+      if (process.platform === 'darwin') {
         electronPath = path.join(electronDir, 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron');
-        await fs.access(electronPath);
-        console.log(`✅ Found Electron (alternative path) at: ${electronPath}`);
-        return electronPath;
-      } catch (err2) {
-        throw new Error(`Electron executable not found. Tried: ${electronPath}. Error: ${err.message}. Alternative error: ${err2.message}`);
+      } else if (process.platform === 'win32') {
+        electronPath = path.join(electronDir, 'dist', 'electron.exe');
+      } else {
+        electronPath = path.join(electronDir, 'dist', 'electron');
       }
+      await fs.access(electronPath);
+      console.log(`✅ Found Electron (alternative path) at: ${electronPath}`);
+      return electronPath;
+    } catch (err2) {
+      throw new Error(`Electron executable not found. Tried: ${electronPath}. Error: ${err.message}. Alternative error: ${err2.message}`);
     }
-    throw new Error(`Electron executable not found at: ${electronPath}. Error: ${err.message}`);
   }
 };
 
