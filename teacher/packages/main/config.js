@@ -34,12 +34,12 @@ const config = {
         editor: true,
         math: true,
         microsoft365: true,
-        activesheets: true
+        activesheets: false
     },
 
-    version: '1.2.0.1',
+    version: '1.1.0.18',
     buildDate: '20251211',
-    buildNumber: '1',
-    info: 'DEV'
+    buildNumber: '18',
+    info: 'Release'
 }
 export default config;
