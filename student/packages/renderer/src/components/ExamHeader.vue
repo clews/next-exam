@@ -33,11 +33,11 @@
         <div class="header-item">
 
             <!-- Show WLAN SSID -->
-            <div v-if="wlanInfo && wlanInfo?.ssid" style="font-size: 0.8rem;" class="me-1"> {{ wlanInfo.ssid }}  </div>
+            <div v-if="wlanInfo && wlanInfo?.ssid && !wlanInfo.ssid.includes('redacted') && !wlanInfo.ssid.includes('<') " style="font-size: 0.8rem;" class="me-1"> {{ wlanInfo.ssid }}  </div>
 
             <!-- WLAN quality not available (happens on MacOS sequoia or windows without location services) -->
             <div v-if="wlanInfo && wlanInfo.ssid && !wlanInfo.quality" class="me-2">
-              <img :title="'Quality: not available \nIP: '+hostip" :alt="'Quality: not available'" src="/src/assets/img/svg/network-wireless-connected-00.svg" width="24" height="24" style="vertical-align: bottom;" />
+              <img :title="'WiFi Information not available \nIP: '+hostip" :alt="'WiFi Information not available'" src="/src/assets/img/svg/network-wireless-connected-20.svg" width="24" height="24" style="vertical-align: bottom;" />
             </div>
 
             <!-- Show WLAN quality -->

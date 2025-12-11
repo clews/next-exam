@@ -7,6 +7,7 @@
         }
     },
     "student" : {
+        "password": "Password",
         "exams": "Exams",
         "username": "Username",
         "pin": "Pincode",

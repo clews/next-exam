@@ -397,11 +397,11 @@ export default {
                     </div>
                     <div class=" m-2 mt-4"> 
                         <div class="input-group  m-1 mb-1"> 
-                            <span class="input-group-text col-3" style="width:140px;">Username</span>
+                            <span class="input-group-text col-3" style="width:140px;">${this.$t("student.username")} </span>
                             <input class="form-control" type=text id=localuser placehoder='Username'>
                         </div>
                         <div class="input-group m-1 mb-1"> 
-                            <span class="input-group-text col-3" style="width:140px;">Password</span>
+                            <span class="input-group-text col-3" style="width:140px;">${this.$t("student.password")}</span>
                             <input class="form-control" type=password id=localpassword placehoder='Password'>
                         </div>
                     </div>
