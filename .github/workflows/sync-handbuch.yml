@@ -18,6 +18,7 @@ jobs:
         with:
           ref: Handbuch-mkdocs
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Configure git author
         run: |
@@ -31,8 +32,10 @@ jobs:
           if [ -z "$PUBLIC_TOKEN" ]; then
             echo "PUBLIC_TOKEN is not set"; exit 1; 
           fi
+          git config url."https://x-access-token:${PUBLIC_TOKEN}@github.com/".insteadOf "https://github.com/"
           git remote remove public >/dev/null 2>&1 || true
-          git remote add public https://oauth2:${{ secrets.PAT_BIP_ORG_NEXT_EXAM }}@github.com/Bildungsportal/next-exam.git
+          git remote add public "https://x-access-token:${PUBLIC_TOKEN}@github.com/Bildungsportal/next-exam.git"
+
 
       - name: Push to public handbuch
         env:
