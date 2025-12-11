@@ -32,7 +32,7 @@ jobs:
             echo "PUBLIC_TOKEN is not set"; exit 1; 
           fi
           git remote remove public >/dev/null 2>&1 || true
-          git remote add public "https://${PUBLIC_TOKEN}@github.com/Bildungsportal/next-exam.git"
+          git remote add public https://oauth2:${{ secrets.PAT_BIP_ORG_NEXT_EXAM }}@github.com/Bildungsportal/next-exam.git
 
       - name: Push to public handbuch
         env:
@@ -41,4 +41,4 @@ jobs:
           if [ -z "$PUBLIC_TOKEN" ]; then
             echo "PUBLIC_TOKEN is not set"; exit 1; 
           fi
-          git push public Handbuch-mkdocs:handbuch
+          git push public Handbuch-mkdocs:handbuch --force
