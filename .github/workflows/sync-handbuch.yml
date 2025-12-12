@@ -27,7 +27,7 @@ jobs:
 
       - name: Add public remote
         env:
-          PUBLIC_TOKEN: ${{ secrets.PAT_BIP_ORG_NEXT_EXAM }}
+          PUBLIC_TOKEN: ${{ secrets.PAT_VALUEERROR}}
         run: |
           if [ -z "$PUBLIC_TOKEN" ]; then
             echo "PUBLIC_TOKEN is not set"; exit 1; 
@@ -39,7 +39,7 @@ jobs:
 
       - name: Push to public handbuch
         env:
-          PUBLIC_TOKEN: ${{ secrets.PAT_BIP_ORG_NEXT_EXAM }}
+          PUBLIC_TOKEN: ${{ secrets.PAT_VALUEERROR }}
         run: |
           if [ -z "$PUBLIC_TOKEN" ]; then
             echo "PUBLIC_TOKEN is not set"; exit 1; 
