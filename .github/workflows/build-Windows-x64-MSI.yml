@@ -17,13 +17,13 @@ jobs:
         if: ${{ inputs.prerelease == false }}
         uses: actions/checkout@v4
   
-      - name: Checkout Private Repository
-        if: ${{ inputs.prerelease == true }}
-        uses: actions/checkout@v4
-        with:
-          repository: BiP-org/next-exam
-          ref: main
-          token: ${{ secrets.PAT_BiP_ORG_NEXT_EXAM }}
+      #- name: Checkout Private Repository
+      #  if: ${{ inputs.prerelease == true }}
+      #  uses: actions/checkout@v4
+      #  with:
+      #    repository: BiP-org/next-exam
+      #    ref: main
+      #    token: ${{ secrets.PAT_BiP_ORG_NEXT_EXAM }}
         
         
       - name: Decode .p12 file
